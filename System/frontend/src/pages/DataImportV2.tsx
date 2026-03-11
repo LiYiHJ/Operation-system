@@ -1,46 +1,12 @@
-import { Upload, Button, Card, Steps, Table, Tag, Alert, Progress, Descriptions, Divider, message, Modal, Select, Space, Input, Tabs, Tooltip, Badge, Row, Col, Statistic } from 'antd'
+import { Upload, Button, Card, Steps, Table, Tag, Alert, Progress, Descriptions, Divider, message, Select, Space, Tabs, Tooltip, Badge, Row, Col, Statistic } from 'antd'
 import {
   UploadOutlined, FileExcelOutlined, CheckCircleOutlined, WarningOutlined,
-  LoadingOutlined, EditOutlined, SaveOutlined, EyeOutlined, DeleteOutlined,
-  QuestionCircleOutlined, DatabaseOutlined, SettingOutlined
+  LoadingOutlined, SaveOutlined, EyeOutlined, DatabaseOutlined
 } from '@ant-design/icons'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import type { UploadFile } from 'antd/es/upload/interface'
-import * as XLSX from 'xlsx'
-
-// 字段映射配置
-interface FieldMapping {
-  originalField: string      // 原始字段名
-  standardField: string      // 标准字段名
-  confidence: number         // 置信度 (0-1)
-  sampleValues: any[]        // 样本值（前5行）
-  isManual: boolean          // 是否手动映射
-}
-
-// 导入结果
-interface ImportResult {
-  fileName: string
-  fileSize: number
-  sheetNames: string[]       // Excel 的多个 sheet
-  selectedSheet: string
-  totalRows: number
-  totalColumns: number
-  headerRow: number          // 检测到的表头行
-  dataPreview: any[][]       // 数据预览（前10行）
-  fieldMappings: FieldMapping[]
-  mappedCount: number
-  unmappedCount: number
-  confidence: number         // 整体置信度
-  platform: string
-  status: 'success' | 'warning' | 'error'
-  diagnosis: {
-    encoding: string         // 文件编码
-    delimiter?: string       // CSV 分隔符
-    hasBOM: boolean          // 是否有 BOM
-    issues: string[]         // 问题列表
-    suggestions: string[]    // 建议列表
-  }
-}
+import { importApi } from '../services/api'
+import type { ImportResult, FieldMapping, ConfirmImportResponse } from '../types'
 
 // 标准字段定义（参考 C:\strategy-system）
 const STANDARD_FIELDS = {
@@ -95,31 +61,17 @@ const STANDARD_FIELDS = {
   logistics_cost: { name: '物流成本', category: '成本', required: false },
 }
 
-// 字段关键词映射（支持多语言）
-const FIELD_KEYWORDS = {
-  sku: ['sku', 'артикул', 'artikel', '商品编码', '产品ID', '货号', '编号', 'id', 'code'],
-  product_name: ['name', 'название', '名称', '标题', '品名', 'title', 'product'],
-  orders: ['orders', 'заказы', '订单', '订单数', 'order count', '销量'],
-  revenue: ['revenue', 'выручка', '销售额', '收入', 'sales', '营业额', '金额'],
-  impressions: ['impressions', 'показы', '展示', '展现量', '曝光', 'views', 'pv'],
-  clicks: ['clicks', 'клики', '点击', '点击量', 'click count'],
-  stock_total: ['stock', 'остатки', '库存', '库存量', 'inventory', 'quantity', 'qty'],
-  rating: ['rating', 'рейтинг', '评分', '星级', 'score', 'stars'],
-  sale_price: ['price', 'цена', '价格', '售价', '单价', 'cost'],
-}
 
 export default function DataImportV2() {
   const [currentStep, setCurrentStep] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [importing, setImporting] = useState(false)
-  const [mappingModalVisible, setMappingModalVisible] = useState(false)
-  const [selectedFieldIndex, setSelectedFieldIndex] = useState<number | null>(null)
   const [savedTemplates, setSavedTemplates] = useState<any[]>([])
 
   // 处理文件上传
   const handleUpload = async () => {
-    if (fileList.length === 0) {
+    if (fileList.length === 0 || !fileList[0].originFileObj) {
       message.warning('请先选择文件')
       return
     }
@@ -128,8 +80,7 @@ export default function DataImportV2() {
     setCurrentStep(1)
 
     try {
-      const file = fileList[0]
-      const result = await parseFile(file as any)
+      const result = await importApi.uploadFile(fileList[0].originFileObj as File, 1)
       setImportResult(result)
       setCurrentStep(2)
       message.success('文件解析成功！')
@@ -141,173 +92,8 @@ export default function DataImportV2() {
     }
   }
 
-  // 解析文件
-  const parseFile = async (file: UploadFile): Promise<ImportResult> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer)
-          const workbook = XLSX.read(data, { type: 'array' })
-
-          // 获取第一个 sheet
-          const sheetName = workbook.SheetNames[0]
-          const worksheet = workbook.Sheets[sheetName]
-
-          // 转换为 JSON
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
-
-          // 检测表头行
-          const headerRow = detectHeaderRow(jsonData)
-
-          // 获取表头
-          const headers = jsonData[headerRow]
-
-          // 获取数据预览（前10行）
-          const dataPreview = jsonData.slice(headerRow, headerRow + 10)
-
-          // 智能字段映射
-          const fieldMappings = mapFields(headers, jsonData.slice(headerRow + 1))
-
-          // 统计
-          const mappedCount = fieldMappings.filter(m => m.standardField !== 'unmapped').length
-          const unmappedCount = fieldMappings.length - mappedCount
-
-          // 计算整体置信度
-          const confidence = mappedCount / fieldMappings.length
-
-          // 识别平台
-          const platform = detectPlatform(headers, fieldMappings)
-
-          resolve({
-            fileName: file.name,
-            fileSize: file.size || 0,
-            sheetNames: workbook.SheetNames,
-            selectedSheet: sheetName,
-            totalRows: jsonData.length - headerRow - 1,
-            totalColumns: headers.length,
-            headerRow: headerRow + 1,
-            dataPreview,
-            fieldMappings,
-            mappedCount,
-            unmappedCount,
-            confidence,
-            platform,
-            status: confidence > 0.7 ? 'success' : confidence > 0.5 ? 'warning' : 'error',
-            diagnosis: {
-              encoding: 'UTF-8',
-              hasBOM: false,
-              issues: unmappedCount > 0 ? [`有 ${unmappedCount} 个字段未映射`] : [],
-              suggestions: unmappedCount > 0 ? ['建议手动调整字段映射'] : []
-            }
-          })
-        } catch (error: any) {
-          reject(new Error(`文件解析失败: ${error.message}`))
-        }
-      }
-
-      reader.onerror = () => reject(new Error('文件读取失败'))
-
-      // 读取文件
-      if (file.originFileObj) {
-        reader.readAsArrayBuffer(file.originFileObj)
-      } else {
-        reject(new Error('无效的文件对象'))
-      }
-    })
-  }
-
-  // 检测表头行
-  const detectHeaderRow = (data: any[][]): number => {
-    // 策略1: 查找第一行包含字符串的行
-    for (let i = 0; i < Math.min(20, data.length); i++) {
-      const row = data[i]
-      if (row && row.some(cell => typeof cell === 'string' && cell.trim().length > 0)) {
-        // 检查这一行是否包含常见的关键词
-        const rowStr = row.join(' ').toLowerCase()
-        if (
-          rowStr.includes('sku') ||
-          rowStr.includes('art') ||
-          rowStr.includes('name') ||
-          rowStr.includes('price') ||
-          rowStr.includes('stock') ||
-          rowStr.includes('订单') ||
-          rowStr.includes('商品')
-        ) {
-          return i
-        }
-      }
-    }
-
-    // 默认返回第一行
-    return 0
-  }
-
-  // 智能字段映射
-  const mapFields = (headers: any[], sampleData: any[][]): FieldMapping[] => {
-    return headers.map((header, index) => {
-      const headerStr = String(header || '').trim().toLowerCase()
-
-      // 获取样本值
-      const sampleValues = sampleData.slice(0, 5).map(row => row[index]).filter(v => v !== undefined)
-
-      // 尝试匹配标准字段
-      let matchedField = 'unmapped'
-      let maxScore = 0
-
-      for (const [fieldKey, keywords] of Object.entries(FIELD_KEYWORDS)) {
-        // 计算匹配分数
-        let score = 0
-
-        for (const keyword of keywords) {
-          if (headerStr.includes(keyword.toLowerCase())) {
-            // 完全匹配
-            if (headerStr === keyword.toLowerCase()) {
-              score += 1.0
-            }
-            // 部分匹配
-            else {
-              score += 0.5
-            }
-          }
-        }
-
-        if (score > maxScore) {
-          maxScore = score
-          matchedField = fieldKey
-        }
-      }
-
-      return {
-        originalField: String(header || ''),
-        standardField: matchedField,
-        confidence: maxScore > 0 ? Math.min(maxScore, 1.0) : 0,
-        sampleValues,
-        isManual: false
-      }
-    })
-  }
-
-  // 识别平台
-  const detectPlatform = (headers: any[], mappings: FieldMapping[]): string => {
-    const headerStr = headers.join(' ').toLowerCase()
-
-    if (headerStr.includes('ozon') || headerStr.includes('fbo') || headerStr.includes('fbs')) {
-      return 'Ozon'
-    } else if (headerStr.includes('wildberries') || headerStr.includes('wb')) {
-      return 'Wildberries'
-    } else if (headerStr.includes('aliexpress')) {
-      return 'AliExpress'
-    } else if (headerStr.includes('amazon')) {
-      return 'Amazon'
-    }
-
-    return '通用'
-  }
-
   // 手动调整映射
-  const handleManualMapping = (index: number, newStandardField: string) => {
+  const handleManualMapping = (index: number, newStandardField: string | null) => {
     if (!importResult) return
 
     const newMappings = [...importResult.fieldMappings]
@@ -321,8 +107,8 @@ export default function DataImportV2() {
     setImportResult({
       ...importResult,
       fieldMappings: newMappings,
-      mappedCount: newMappings.filter(m => m.standardField !== 'unmapped').length,
-      unmappedCount: newMappings.filter(m => m.standardField === 'unmapped').length
+      mappedCount: newMappings.filter(m => !!m.standardField && m.standardField !== 'unmapped').length,
+      unmappedCount: newMappings.filter(m => !m.standardField || m.standardField === 'unmapped').length
     })
 
     message.success('映射已更新')
@@ -351,8 +137,8 @@ export default function DataImportV2() {
     setImportResult({
       ...importResult,
       fieldMappings: template.mappings,
-      mappedCount: template.mappings.filter((m: FieldMapping) => m.standardField !== 'unmapped').length,
-      unmappedCount: template.mappings.filter((m: FieldMapping) => m.standardField === 'unmapped').length
+      mappedCount: template.mappings.filter((m: FieldMapping) => !!m.standardField && m.standardField !== 'unmapped').length,
+      unmappedCount: template.mappings.filter((m: FieldMapping) => !m.standardField || m.standardField === 'unmapped').length
     })
 
     message.success(`模板 "${template.name}" 已应用`)
@@ -365,20 +151,17 @@ export default function DataImportV2() {
     setImporting(true)
 
     try {
-      // 调用后端 API
-      const response = await fetch('http://localhost:5000/api/import/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(importResult)
+      const result: ConfirmImportResponse = await importApi.confirmImport({
+        sessionId: importResult.sessionId,
+        shopId: 1,
+        manualOverrides: importResult.fieldMappings,
       })
 
-      const result = await response.json()
-
-      if (result.success) {
-        message.success(`成功导入 ${importResult.totalRows} 条数据！`)
+      if (result.status === 'success') {
+        message.success(`成功导入 ${result.importedRows} 条数据！`)
         setCurrentStep(3)
       } else {
-        throw new Error(result.error || '导入失败')
+        throw new Error(result.errors?.[0] || '导入失败')
       }
     } catch (error: any) {
       message.error(`导入失败: ${error.message}`)

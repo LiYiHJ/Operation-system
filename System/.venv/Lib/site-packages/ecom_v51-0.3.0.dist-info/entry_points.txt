@@ -1,0 +1,2 @@
+[console_scripts]
+v51-ops = ecom_v51.cli:main

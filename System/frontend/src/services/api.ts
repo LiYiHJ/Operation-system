@@ -4,7 +4,6 @@
  * 
  * 设计原则：
  * 1. 优先调用真实后端 API
- * 2. API 失败时返回 mock 数据（确保 UI 正常显示）
  * 3. 所有类型定义从 @/types 导入
  */
 
@@ -17,7 +16,8 @@ import type {
   TrendData,
   ShopHealth,
   ImportResult,
-  FieldMapping,
+  ConfirmImportRequest,
+  ConfirmImportResponse,
   SkuAnalysis,
   AbcAnalysis,
   FunnelAnalysis,
@@ -33,7 +33,7 @@ import type {
 
 // ========== API 基础配置 ==========
 
-const API_BASE_URL = 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // 创建 axios 实例
 const apiClient = axios.create({
@@ -78,48 +78,9 @@ apiClient.interceptors.response.use(
 export const dashboardApi = {
   /**
    * 获取仪表盘总览数据
-   * 优先调用真实 API，失败时返回 mock 数据
    */
   getOverview: async (): Promise<DashboardMetrics> => {
-    try {
-      const response = await apiClient.get<any, any>('/dashboard/overview')
-      return response.data as DashboardMetrics
-    } catch (error) {
-      console.warn('Dashboard API failed, using mock data:', error)
-      // Mock 数据（确保 UI 正常显示）
-      return {
-        totalRevenue: 125680,
-        totalOrders: 1247,
-        avgOrderValue: 100.87,
-        profitMargin: 0.23,
-        totalProducts: 328,
-        totalImpressions: 45600,
-        totalClicks: 3280,
-        avgCtr: 0.072,
-        avgRating: 4.6,
-        period: {
-          start: '2026-03-03',
-          end: '2026-03-10'
-        },
-        topSkus: [
-          { sku: 'HAA132-01', revenue: 15680, orders: 156, margin: 0.28, abcClass: 'A' },
-          { sku: 'HAA128-03', revenue: 12450, orders: 124, margin: 0.25, abcClass: 'A' },
-          { sku: 'HAA145-02', revenue: 9870, orders: 98, margin: 0.22, abcClass: 'B' },
-          { sku: 'HAA136-05', revenue: 7650, orders: 76, margin: 0.20, abcClass: 'B' },
-          { sku: 'HAA142-04', revenue: 5430, orders: 54, margin: 0.18, abcClass: 'C' }
-        ],
-        alerts: [
-          { type: 'P0', message: '库存不足 10 件', sku: 'HAA132-01' },
-          { type: 'P1', message: '评分下降至 3.8', sku: 'HAA128-03' },
-          { type: 'P2', message: '转化率低于 2%', sku: 'HAA145-02' }
-        ],
-        trends: {
-          dates: ['03-04', '03-05', '03-06', '03-07', '03-08', '03-09', '03-10'],
-          revenue: [15200, 16800, 14500, 18200, 17600, 19300, 18100],
-          orders: [152, 168, 145, 182, 176, 193, 181]
-        }
-      }
-    }
+    return apiClient.get('/dashboard/overview')
   },
 
   /**
@@ -183,7 +144,7 @@ export const importApi = {
     file: File,
     shopId: number,
     onProgress?: (progress: number) => void
-  ): Promise<ApiResponse<ImportResult>> => {
+  ): Promise<ImportResult> => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('shop_id', shopId.toString())
@@ -204,18 +165,7 @@ export const importApi = {
   /**
    * 确认导入
    */
-  confirmImport: (data: {
-    filePath: string
-    shopId: number
-    headerRow: number
-    fieldMappings: FieldMapping[]
-    date?: string
-  }): Promise<ApiResponse<{
-    batchId: string
-    importedRows: number
-    errorRows: number
-    status: string
-  }>> => {
+  confirmImport: (data: ConfirmImportRequest): Promise<ConfirmImportResponse> => {
     return apiClient.post('/import/confirm', data)
   },
 
@@ -297,12 +247,66 @@ export const analysisApi = {
   },
 }
 
+
+
+// ========== Profit API ==========
+
+export const profitApi = {
+  getProfiles: (): Promise<any> => {
+    return apiClient.get('/profit/profiles')
+  },
+
+  solve: (data: {
+    mode: string
+    targetValue: number
+    salePrice: number
+    listPrice: number
+    variableRateTotal: number
+    fixedCostTotal: number
+    algorithmProfile?: string
+    layeredParams?: any
+    scenarios?: any[]
+  }): Promise<any> => {
+    return apiClient.post('/profit/solve', data)
+  },
+
+  saveSnapshot: (data: {
+    shopId: number
+    snapshotName: string
+    algorithmProfile: string
+    payload: any
+    result: any
+    operator?: string
+  }): Promise<any> => {
+    return apiClient.post('/profit/snapshots', data)
+  },
+
+  getSnapshots: (params?: { shopId?: number; limit?: number }): Promise<any> => {
+    return apiClient.get('/profit/snapshots', { params })
+  },
+
+  saveTemplate: (data: {
+    shopId: number
+    templateName: string
+    algorithmProfile: string
+    layeredParams: any
+    scenarios: any[]
+    operator?: string
+  }): Promise<any> => {
+    return apiClient.post('/profit/templates', data)
+  },
+
+  getTemplates: (params?: { shopId?: number; limit?: number }): Promise<any> => {
+    return apiClient.get('/profit/templates', { params })
+  },
+
+}
+
 // ========== Strategy API ==========
 
 export const strategyApi = {
   /**
    * 获取策略任务列表
-   * 优先调用真实 API，失败时返回 mock 数据
    */
   getStrategyList: async (params?: {
     shop_id?: number
@@ -310,139 +314,8 @@ export const strategyApi = {
     status?: string
     limit?: number
   }): Promise<StrategyListResponse> => {
-    try {
-      const response = await apiClient.get<any, any>('/strategy/list', { params })
-      return response.data as StrategyListResponse
-    } catch (error) {
-      console.warn('Strategy API failed, using mock data:', error)
-      // Mock 数据
-      return {
-        tasks: [
-          {
-            id: '1',
-            sku: 'HAA132-01',
-            strategyType: 'pricing',
-            priority: 'P0',
-            issueSummary: '价格低于成本线，亏损严重',
-            recommendedAction: '立即提价 15% 至成本线以上',
-            observationMetrics: ['profit_margin', 'price_gap'],
-            status: 'pending',
-            assignee: '运营主管',
-            dueDate: '2026-03-10',
-            createdAt: '2026-03-08 09:00',
-            impact: 9,
-            urgency: 9
-          },
-          {
-            id: '2',
-            sku: 'HAA128-03',
-            strategyType: 'inventory',
-            priority: 'P0',
-            issueSummary: '库存不足 5 件，即将断货',
-            recommendedAction: '紧急补货 500 件',
-            observationMetrics: ['stock_days', 'sales_velocity'],
-            status: 'in_progress',
-            assignee: '库存专员',
-            dueDate: '2026-03-11',
-            createdAt: '2026-03-08 10:00',
-            impact: 8,
-            urgency: 10
-          },
-          {
-            id: '3',
-            sku: 'HAA145-02',
-            strategyType: 'ads',
-            priority: 'P1',
-            issueSummary: '广告 ROI 仅 1.2，低于目标',
-            recommendedAction: '优化关键词和投放时段',
-            observationMetrics: ['ad_roi', 'ctr', 'conversion_rate'],
-            status: 'pending',
-            createdAt: '2026-03-08 11:00',
-            impact: 7,
-            urgency: 6
-          },
-          {
-            id: '4',
-            sku: 'HAA136-05',
-            strategyType: 'conversion',
-            priority: 'P2',
-            issueSummary: '加购转化率仅 3.2%，低于类目平均',
-            recommendedAction: '优化详情页和价格策略',
-            observationMetrics: ['add_to_cart_rate', 'conversion_rate'],
-            status: 'pending',
-            createdAt: '2026-03-08 12:00',
-            impact: 6,
-            urgency: 5
-          },
-          {
-            id: '5',
-            sku: 'HAA142-04',
-            strategyType: 'risk_control',
-            priority: 'P1',
-            issueSummary: '退货率超过 15%，评分低于 4.0',
-            recommendedAction: '排查差评原因并修复',
-            observationMetrics: ['return_rate', 'rating'],
-            status: 'pending',
-            dueDate: '2026-03-12',
-            createdAt: '2026-03-08 11:00',
-            impact: 7,
-            urgency: 7
-          },
-          {
-            id: '6',
-            sku: 'HAA150-01',
-            strategyType: 'conversion',
-            priority: 'P2',
-            issueSummary: '加购率偏低，转化漏斗受阻',
-            recommendedAction: '优化价格竞争力，提升加购转化',
-            observationMetrics: ['add_to_cart_rate', 'conversion_rate'],
-            status: 'pending',
-            createdAt: '2026-03-08 12:00',
-            impact: 6,
-            urgency: 5
-          },
-          {
-            id: '7',
-            sku: 'HAA160-02',
-            strategyType: 'inventory',
-            priority: 'P2',
-            issueSummary: '库存周转天数不足 14 天',
-            recommendedAction: '准备补货计划',
-            observationMetrics: ['days_of_supply'],
-            status: 'in_progress',
-            assignee: '运营专员',
-            dueDate: '2026-03-13',
-            createdAt: '2026-03-08 13:00',
-            impact: 5,
-            urgency: 6
-          },
-          {
-            id: '8',
-            sku: 'HAA170-03',
-            strategyType: 'pricing',
-            priority: 'P3',
-            issueSummary: '价格略低于市场均价',
-            recommendedAction: '可适当提价 5%',
-            observationMetrics: ['price_gap', 'profit_margin'],
-            status: 'completed',
-            completedAt: '2026-03-07 16:00',
-            createdAt: '2026-03-06 10:00',
-            impact: 4,
-            urgency: 3
-          }
-        ],
-        summary: {
-          total: 8,
-          pending: 5,
-          in_progress: 2,
-          completed: 1,
-          P0: 2,
-          P1: 2,
-          P2: 3,
-          P3: 1
-        }
-      }
-    }
+    const response = await apiClient.get<any, any>('/strategy/list', { params })
+    return response as StrategyListResponse
   },
 
   /**
@@ -475,6 +348,14 @@ export const strategyApi = {
    */
   makeDecision: (data: DecisionInput): Promise<ApiResponse<DecisionOutput>> => {
     return apiClient.post('/strategy/decision', data)
+  },
+
+  decisionPreview: (scope: 'all' | 'high_priority' | 'low_hanging_fruit' = 'all'): Promise<ApiResponse<any>> => {
+    return apiClient.get('/strategy/decision/preview', { params: { scope } })
+  },
+
+  decisionConfirm: (taskIds: number[], operator = 'planner'): Promise<ApiResponse<any>> => {
+    return apiClient.post('/strategy/decision/confirm', { taskIds, operator })
   },
 
   /**
@@ -515,6 +396,37 @@ export const adsApi = {
   }): Promise<ApiResponse<AdCampaign>> => {
     return apiClient.put(`/ads/campaign/${campaignId}`, data)
   },
+}
+
+
+
+export const thematicApi = {
+  getABC: (params?: { shopId?: number; days?: number }): Promise<any> => apiClient.get('/analysis/abc', { params }),
+  getPriceCockpit: (params?: { shopId?: number; days?: number; view?: string }): Promise<any> => apiClient.get('/analysis/price-cockpit', { params }),
+  getFunnel: (params?: { shopId?: number; days?: number }): Promise<any> => apiClient.get('/analysis/funnel', { params }),
+  getInventory: (params?: { shopId?: number; days?: number }): Promise<any> => apiClient.get('/analysis/inventory', { params }),
+  getAds: (params?: { shopId?: number; days?: number }): Promise<any> => apiClient.get('/analysis/ads', { params }),
+  pushActionToStrategy: (data: {
+    shopId?: number
+    sourcePage: string
+    sku: string
+    issueSummary: string
+    recommendedAction: string
+    strategyType: string
+    priority: string
+    operator?: string
+  }): Promise<any> => apiClient.post('/analysis/action-to-strategy', data),
+}
+
+export const authApi = {
+  login: (username: string, password: string): Promise<any> => apiClient.post('/auth/login', { username, password }),
+  me: (): Promise<any> => apiClient.get('/auth/me'),
+  logout: (): Promise<any> => apiClient.post('/auth/logout', {}),
+}
+
+export const reminderApi = {
+  list: (params?: { shopId?: number }): Promise<any> => apiClient.get('/reminders/list', { params }),
+  ack: (): Promise<any> => apiClient.post('/reminders/ack', {}),
 }
 
 // ========== Health Check ==========

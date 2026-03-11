@@ -1,0 +1,8 @@
+System/docs/最新版可运行部署启动手册.md
+.gitignore
+.gitignore
+System/frontend/.venv/pyvenv.cfg
+System/frontend/.venv/Lib/site-packages/pip/__init__.py
+System/frontend/.venv/Lib/site-packages/pip/py.typed
+
+System/frontend/.venv/Lib/site-packages/pip/__main__.py
