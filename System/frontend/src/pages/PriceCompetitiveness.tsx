@@ -1,413 +1,177 @@
-import { Table, Tag, Card, Row, Col, Statistic, Button, Select, Space, Badge, Tooltip, message } from 'antd'
-import { DollarOutlined, WarningOutlined, CheckCircleOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
+import { useMemo, useState } from 'react'
+import { Card, Row, Col, Statistic, Tabs, Tag, Table, Space, Select, Button, List, message, Drawer, Typography, Empty } from 'antd'
+import { DollarOutlined, WarningOutlined, CheckCircleOutlined, ThunderboltOutlined, SendOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { thematicApi } from '../services/api'
+import { formatCurrency, formatPercent, formatInteger, formatRate, displayOrDash } from '../utils/format'
+import { strategyGroupLabels } from '../utils/labels'
+import { OpsConclusion, OpsPageHeader, OpsRiskTag } from '../components/ops/ProductSection'
 
-interface PriceCompetitivenessData {
-  sku: string
-  ourPrice: number
-  marketPrice: number
-  priceGap: number
-  competitiveness: 'green' | 'yellow' | 'red'
-  ctr: number
-  conversionRate: number
-  roas: number
-  salesVelocity: number
-  recommendation: string
-  lastUpdated: string
-}
+const { Text } = Typography
 
 export default function PriceCompetitiveness() {
-  const [filterZone, setFilterZone] = useState<string>('all')
-  const [sortBy, setSortBy] = useState<string>('priceGap')
+  const [view, setView] = useState<'daily' | 'campaign' | 'promo'>('daily')
+  const [groupFilter, setGroupFilter] = useState('all')
+  const [selectedRow, setSelectedRow] = useState<any>(null)
+  const [flowStatus, setFlowStatus] = useState<Record<string, string>>({})
+  const navigate = useNavigate()
 
-  // 获取数据
-  const { data: priceData, isLoading } = useQuery<PriceCompetitivenessData[]>({
-    queryKey: ['price-competitiveness', filterZone, sortBy],
-    queryFn: async () => {
-      // TODO: 调用后端 API
-      return [
-        {
-          sku: 'SKU-001',
-          ourPrice: 1299,
-          marketPrice: 1199,
-          priceGap: 100,
-          competitiveness: 'green',
-          ctr: 0.028,
-          conversionRate: 0.15,
-          roas: 4.5,
-          salesVelocity: 8.5,
-          recommendation: '价格有竞争力，保持当前策略',
-          lastUpdated: '2026-03-08 15:30'
-        },
-        {
-          sku: 'SKU-002',
-          ourPrice: 899,
-          marketPrice: 949,
-          priceGap: -50,
-          competitiveness: 'yellow',
-          ctr: 0.018,
-          conversionRate: 0.12,
-          roas: 2.8,
-          salesVelocity: 5.2,
-          recommendation: '价格略低，可适当提价5%',
-          lastUpdated: '2026-03-08 14:45'
-        },
-        {
-          sku: 'SKU-003',
-          ourPrice: 1599,
-          marketPrice: 1299,
-          priceGap: 300,
-          competitiveness: 'red',
-          ctr: 0.012,
-          conversionRate: 0.08,
-          roas: 1.2,
-          salesVelocity: 2.1,
-          recommendation: '价格过高，建议降价15%或优化价值感知',
-          lastUpdated: '2026-03-08 16:00'
-        },
-        {
-          sku: 'SKU-004',
-          ourPrice: 799,
-          marketPrice: 849,
-          priceGap: -50,
-          competitiveness: 'green',
-          ctr: 0.025,
-          conversionRate: 0.14,
-          roas: 3.9,
-          salesVelocity: 7.2,
-          recommendation: '价格优势明显，可维持或小幅提价',
-          lastUpdated: '2026-03-08 15:15'
-        },
-        {
-          sku: 'SKU-005',
-          ourPrice: 1999,
-          marketPrice: 1599,
-          priceGap: 400,
-          competitiveness: 'red',
-          ctr: 0.008,
-          conversionRate: 0.05,
-          roas: 0.6,
-          salesVelocity: 1.2,
-          recommendation: '严重价格劣势，需立即降价20%或优化产品',
-          lastUpdated: '2026-03-08 15:50'
-        }
-      ]
-    }
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['price-cockpit', view],
+    queryFn: () => thematicApi.getPriceCockpit({ shopId: 1, days: 7, view }),
   })
 
-  // 统计数据
-  const stats = {
-    greenZone: priceData?.filter(p => p.competitiveness === 'green').length || 0,
-    yellowZone: priceData?.filter(p => p.competitiveness === 'yellow').length || 0,
-    redZone: priceData?.filter(p => p.competitiveness === 'red').length || 0,
-    avgPriceGap: priceData ? priceData.reduce((sum, p) => sum + p.priceGap, 0) / priceData.length : 0,
-    avgConversionRate: priceData ? priceData.reduce((sum, p) => sum + p.conversionRate, 0) / priceData.length : 0
-  }
+  const pushMutation = useMutation({
+    mutationFn: (row: any) => thematicApi.pushActionToStrategy({
+      shopId: 1,
+      sourcePage: 'price',
+      sku: row.sku,
+      issueSummary: `价格分析（${view === 'daily' ? '日常' : view === 'campaign' ? '平台活动' : '自建促销'}）：${row.competitiveness} 区 / 价差 ${formatCurrency(row.priceGap)}`,
+      recommendedAction: row.recommendation,
+      strategyType: 'pricing',
+      priority: row.competitiveness === 'red' ? 'P0' : 'P1',
+      operator: 'price_ui',
+    }),
+    onSuccess: (resp: any, row: any) => {
+      setFlowStatus((prev) => ({ ...prev, [row.sku]: '已推入策略' }))
+      message.success('已推送至策略清单，请在决策队列继续确认')
+    },
+    onError: (e: any) => message.error(`推送失败: ${e.message}`),
+  })
 
-  // 价格竞争力分布图表
-  const competitivenessChartOption = {
-    title: { text: '价格竞争力分布', left: 'center' },
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+  const rows = useMemo(() => {
+    const source = data?.batchRecommendations || []
+    if (groupFilter === 'all') return source
+    return source.filter((x: any) => x.group === groupFilter)
+  }, [data, groupFilter])
+
+  const zoneChart = {
+    tooltip: { trigger: 'item' },
     legend: { bottom: 0 },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: { show: true, formatter: '{b}: {c}' },
-        data: [
-          { value: stats.greenZone, name: '绿区', itemStyle: { color: '#52c41a' } },
-          { value: stats.yellowZone, name: '黄区', itemStyle: { color: '#faad14' } },
-          { value: stats.redZone, name: '红区', itemStyle: { color: '#f5222d' } }
-        ]
-      }
-    ]
-  }
-
-  // 价格差距散点图
-  const priceGapChartOption = {
-    title: { text: '价格差距 vs 转化率', left: 'center' },
-    tooltip: {
-      trigger: 'item',
-      formatter: (params: any) => {
-        return `${params.data[2]}<br/>价格差距: ¥${params.data[0]}<br/>转化率: ${(params.data[1] * 100).toFixed(1)}%`
-      }
-    },
-    xAxis: {
-      type: 'value',
-      name: '价格差距 (¥)',
-      splitLine: { show: true }
-    },
-    yAxis: {
-      type: 'value',
-      name: '转化率',
-      min: 0,
-      max: 0.3,
-      axisLabel: { formatter: (value: number) => `${(value * 100).toFixed(0)}%` }
-    },
-    series: [
-      {
-        type: 'scatter',
-        symbolSize: 20,
-        data: priceData?.map(p => [
-          p.priceGap,
-          p.conversionRate,
-          p.sku,
-          p.competitiveness
-        ]) || [],
-        itemStyle: {
-          color: (params: any) => {
-            const competitiveness = params.data[3]
-            return competitiveness === 'green' ? '#52c41a' :
-                   competitiveness === 'yellow' ? '#faad14' : '#f5222d'
-          }
-        }
-      }
-    ]
-  }
-
-  // 表格列定义
-  const columns = [
-    {
-      title: 'SKU',
-      dataIndex: 'sku',
-      key: 'sku',
-      fixed: 'left' as const,
-      width: 120
-    },
-    {
-      title: '竞争力区域',
-      dataIndex: 'competitiveness',
-      key: 'competitiveness',
-      width: 130,
-      render: (val: string) => {
-        const config: Record<string, { color: string; text: string; icon: any }> = {
-          green: { color: 'success', text: '绿区', icon: <CheckCircleOutlined /> },
-          yellow: { color: 'warning', text: '黄区', icon: <WarningOutlined /> },
-          red: { color: 'error', text: '红区', icon: <WarningOutlined /> }
-        }
-        const { color, text, icon } = config[val]
-        return (
-          <Badge status={color as any} text={
-            <Space>
-              {icon}
-              <span>{text}</span>
-            </Space>
-          } />
-        )
-      },
-      filters: [
-        { text: '绿区', value: 'green' },
-        { text: '黄区', value: 'yellow' },
-        { text: '红区', value: 'red' }
+    series: [{
+      type: 'pie', radius: ['35%', '70%'],
+      data: [
+        { name: '绿区', value: rows.filter((x: any) => x.competitiveness === 'green').length },
+        { name: '黄区', value: rows.filter((x: any) => x.competitiveness === 'yellow').length },
+        { name: '红区', value: rows.filter((x: any) => x.competitiveness === 'red').length },
       ],
-      onFilter: (value: any, record: PriceCompetitivenessData) => record.competitiveness === value
-    },
+    }],
+  }
+
+  const groupChart = {
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: (data?.groupedStrategies || []).map((g: any) => strategyGroupLabels[g.key] || g.label) },
+    yAxis: { type: 'value' },
+    series: [{ type: 'bar', data: (data?.groupedStrategies || []).map((g: any) => g.count) }],
+  }
+
+  const columns: any[] = [
+    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 120, render: (v: string) => displayOrDash(v) },
+    { title: '策略分组', dataIndex: 'group', key: 'group', width: 130, render: (v: string) => <Tag>{strategyGroupLabels[v] || v}</Tag> },
+    { title: '当前成交价', dataIndex: 'ourPrice', key: 'ourPrice', width: 120, render: (v: number) => <Text strong>{formatCurrency(v)}</Text> },
+    { title: '参考价', dataIndex: 'marketPrice', key: 'marketPrice', width: 120, render: (v: number) => formatCurrency(v) },
+    { title: '价差', dataIndex: 'priceGap', key: 'priceGap', width: 120, render: (v: number) => <Text type={v > 0 ? 'danger' : 'success'}>{formatCurrency(v)}</Text> },
+    { title: '平台活动净利率', dataIndex: 'margin', key: 'margin', width: 130, render: (v: number) => formatPercent(v, 1, true) },
+    { title: '自建促销净利率', dataIndex: 'promoMargin', key: 'promoMargin', width: 130, render: (v: number, r: any) => formatPercent(v ?? r.margin, 1, true) },
+    { title: '订单', dataIndex: 'orders', key: 'orders', width: 80, render: (v: number) => formatInteger(v) },
+    { title: 'ROAS', dataIndex: 'roas', key: 'roas', width: 90, render: (v: number) => formatRate(v, 2) },
+    { title: '推荐策略', dataIndex: 'recommendation', key: 'recommendation', ellipsis: true, render: (v: string) => <Text strong>{displayOrDash(v)}</Text> },
+    { title: '风险等级', dataIndex: 'competitiveness', key: 'competitiveness', width: 90, render: (v: string) => <OpsRiskTag level={v === 'red' ? 'critical' : v === 'yellow' ? 'warning' : 'normal'} /> },
+    { title: '动作去向', key: 'flowStatus', width: 120, render: (_: any, row: any) => <Tag color={flowStatus[row.sku] ? 'processing' : 'default'}>{flowStatus[row.sku] || '未推送'}</Tag> },
     {
-      title: '我们的价格',
-      dataIndex: 'ourPrice',
-      key: 'ourPrice',
-      width: 120,
-      render: (val: number) => `¥${val.toLocaleString()}`
+      title: '操作', key: 'action', width: 200,
+      render: (_: any, row: any) => (
+        <Space>
+          <Button size="small" onClick={() => setSelectedRow(row)}>解释</Button>
+          <Button size="small" type="primary" icon={<SendOutlined />} loading={pushMutation.isPending} onClick={() => pushMutation.mutate(row)}>推策略</Button>
+        </Space>
+      ),
     },
-    {
-      title: '市场均价',
-      dataIndex: 'marketPrice',
-      key: 'marketPrice',
-      width: 120,
-      render: (val: number) => `¥${val.toLocaleString()}`
-    },
-    {
-      title: '价格差距',
-      dataIndex: 'priceGap',
-      key: 'priceGap',
-      width: 130,
-      sorter: (a: PriceCompetitivenessData, b: PriceCompetitivenessData) => a.priceGap - b.priceGap,
-      render: (val: number) => (
-        <span style={{ color: val > 0 ? '#f5222d' : '#52c41a' }}>
-          {val > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-          {' '}¥{Math.abs(val).toLocaleString()}
-        </span>
-      )
-    },
-    {
-      title: 'CTR',
-      dataIndex: 'ctr',
-      key: 'ctr',
-      width: 90,
-      render: (val: number) => `${(val * 100).toFixed(2)}%`
-    },
-    {
-      title: '转化率',
-      dataIndex: 'conversionRate',
-      key: 'conversionRate',
-      width: 100,
-      render: (val: number) => (
-        <span style={{ color: val > 0.1 ? '#52c41a' : '#f5222d' }}>
-          {(val * 100).toFixed(1)}%
-        </span>
-      )
-    },
-    {
-      title: 'ROAS',
-      dataIndex: 'roas',
-      key: 'roas',
-      width: 90,
-      render: (val: number) => (
-        <span style={{ color: val > 2 ? '#52c41a' : '#f5222d' }}>
-          {val.toFixed(1)}
-        </span>
-      )
-    },
-    {
-      title: '销售速度',
-      dataIndex: 'salesVelocity',
-      key: 'salesVelocity',
-      width: 100,
-      render: (val: number) => `${val.toFixed(1)} 件/天`
-    },
-    {
-      title: '优化建议',
-      dataIndex: 'recommendation',
-      key: 'recommendation',
-      width: 250,
-      ellipsis: true,
-      render: (text: string) => (
-        <Tooltip title={text}>
-          {text}
-        </Tooltip>
-      )
-    },
-    {
-      title: '更新时间',
-      dataIndex: 'lastUpdated',
-      key: 'lastUpdated',
-      width: 150
-    }
   ]
 
-  // 过滤数据
-  const filteredData = filterZone === 'all'
-    ? priceData
-    : priceData?.filter(p => p.competitiveness === filterZone)
-
   return (
-    <div style={{ padding: '24px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>
-        💰 价格竞争力分析
-      </h1>
+    <div style={{ padding: 24 }}>
+      <OpsPageHeader title="💰 价格竞争力决策驾驶舱" subtitle="先看高风险与高机会分组，再批量下发策略进入决策。" />
+      <OpsConclusion
+        title="价格结论"
+        desc={`当前红区风险 ${formatInteger(data?.summary?.redZone || 0)} 个，优先处理利润受损与高价差SKU，再推进活动参与与促销分组。`}
+        actionText="去决策队列"
+        onAction={() => navigate('/decision')}
+        level="warning"
+      />
+      <div style={{ height: 16 }} />
 
-      {/* 统计卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="绿区商品"
-              value={stats.greenZone}
-              prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-              suffix="个"
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="黄区商品"
-              value={stats.yellowZone}
-              prefix={<WarningOutlined style={{ color: '#faad14' }} />}
-              suffix="个"
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="红区商品"
-              value={stats.redZone}
-              prefix={<WarningOutlined style={{ color: '#f5222d' }} />}
-              suffix="个"
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="平均价格差距"
-              value={stats.avgPriceGap}
-              prefix={<DollarOutlined />}
-              suffix="¥"
-            />
-          </Card>
-        </Col>
+      <Tabs activeKey={view} onChange={(k) => setView(k as any)} items={[
+        { key: 'daily', label: '日常价格视图' },
+        { key: 'campaign', label: '平台活动视图' },
+        { key: 'promo', label: '自建促销视图' },
+      ]} />
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} lg={6}><Card><Statistic title="SKU 总数" value={data?.summary?.totalSku || 0} prefix={<DollarOutlined />} formatter={(v) => formatInteger(v)} /></Card></Col>
+        <Col xs={24} lg={6}><Card><Statistic title="红区风险" value={data?.summary?.redZone || 0} prefix={<WarningOutlined />} valueStyle={{ color: '#f5222d' }} formatter={(v) => formatInteger(v)} /></Card></Col>
+        <Col xs={24} lg={6}><Card><Statistic title="平均价差" value={data?.summary?.avgPriceGap || 0} formatter={(v) => formatCurrency(v)} /></Card></Col>
+        <Col xs={24} lg={6}><Card><Statistic title="平均毛利率" value={data?.summary?.avgMargin || 0} formatter={(v) => formatPercent(v, 1, true)} prefix={<CheckCircleOutlined />} /></Card></Col>
       </Row>
 
-      {/* 图表 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} lg={12}>
-          <Card>
-            <ReactECharts option={competitivenessChartOption} style={{ height: '350px' }} />
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card>
-            <ReactECharts option={priceGapChartOption} style={{ height: '350px' }} />
-          </Card>
-        </Col>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} lg={12}><Card title="竞争力区域分布"><ReactECharts option={zoneChart} style={{ height: 320 }} /></Card></Col>
+        <Col xs={24} lg={12}><Card title="策略分组管理（引流/标准/高毛利/清仓/活动）"><ReactECharts option={groupChart} style={{ height: 320 }} /></Card></Col>
       </Row>
 
-      {/* 过滤器和表格 */}
-      <Card
-        title="价格竞争力详情"
-        extra={
-          <Space>
-            <Select
-              value={filterZone}
-              onChange={setFilterZone}
-              style={{ width: 120 }}
-            >
-              <Select.Option value="all">全部</Select.Option>
-              <Select.Option value="green">绿区</Select.Option>
-              <Select.Option value="yellow">黄区</Select.Option>
-              <Select.Option value="red">红区</Select.Option>
-            </Select>
-            <Select
-              value={sortBy}
-              onChange={setSortBy}
-              style={{ width: 150 }}
-            >
-              <Select.Option value="priceGap">按价格差距</Select.Option>
-              <Select.Option value="conversionRate">按转化率</Select.Option>
-              <Select.Option value="salesVelocity">按销售速度</Select.Option>
-            </Select>
-            <Button type="primary" onClick={() => message.info('导出功能')}>
-              导出报表
-            </Button>
+      <Tabs
+        defaultActiveKey="insight"
+        items={[
+          {
+            key: 'insight',
+            label: '问题与解释（首屏）',
+            children: (
+              <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                <Col xs={24} lg={8}>
+                  <Card title="问题识别">
+                    {data?.issues?.length ? <List size="small" dataSource={data?.issues || []} renderItem={(x: any) => <List.Item>{displayOrDash(x.sku)} / 价差{formatCurrency(x.priceGap)} / 毛利{formatPercent(x.margin, 1, true)}</List.Item>} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无问题" />}
+                  </Card>
+                </Col>
+                <Col xs={24} lg={16}>
+                  <Card title="推荐解释面板" size="small">
+                    {(data?.explanations?.length ? data.explanations : [
+                      { title: '价格建议', content: '当前价格处于可接受区间，可维持并观察。' },
+                      { title: '活动建议', content: '平台活动折扣过深时，建议提价后再参与，避免利润透支。' },
+                      { title: '利润建议', content: '当前利润偏低时，不建议继续放量，优先修复毛利结构。' },
+                      { title: '库存联动', content: '库存风险较高时，建议先补货并收敛广告投放。' },
+                    ]).map((x: any, i: number) => <div key={i} style={{ marginBottom: 8 }}><Text strong>{x.title}：</Text>{x.content}</div>)}
+                  </Card>
+                </Col>
+              </Row>
+            ),
+          },
+          {
+            key: 'detail',
+            label: '批量推荐表（深度分析）',
+            children: (
+              <Card title="批量推荐表" extra={<Space><Select value={groupFilter} onChange={setGroupFilter} style={{ width: 220 }} options={[{ value: 'all', label: '全部分组' }, ...(data?.groupedStrategies || []).map((g: any) => ({ value: g.key, label: `${strategyGroupLabels[g.key] || g.label} (${formatInteger(g.count)})` }))]} /><Button icon={<ThunderboltOutlined />} onClick={() => navigate('/decision')}>去决策队列</Button><Button onClick={() => refetch()}>刷新</Button></Space>}>
+                <Table rowKey="sku" dataSource={rows} columns={columns} loading={isLoading} locale={{ emptyText: '暂无数据' }} scroll={{ x: 1400, y: 420 }} pagination={{ pageSize: 8 }} size="small" />
+              </Card>
+            ),
+          },
+        ]}
+      />
+
+      <Drawer title="推荐解释" open={!!selectedRow} onClose={() => setSelectedRow(null)} width={520}>
+        {selectedRow && (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Text strong>{displayOrDash(selectedRow.sku)}</Text>
+            <Text>当前视图：{view === 'daily' ? '日常价格视图' : view === 'campaign' ? '平台活动视图' : '自建促销视图'}</Text>
+            <Text>分组：{strategyGroupLabels[selectedRow.group] || selectedRow.group}</Text>
+            <Text>价差：{formatCurrency(selectedRow.priceGap)}</Text>
+            <Text>毛利率：{formatPercent(selectedRow.margin, 1, true)}</Text>
+            <Text>建议：{displayOrDash(selectedRow.recommendation)}</Text>
+            <Button type="primary" onClick={() => pushMutation.mutate(selectedRow)}>推送到策略/决策链路</Button>
           </Space>
-        }
-      >
-        <Table
-          dataSource={filteredData}
-          columns={columns}
-          rowKey="sku"
-          loading={isLoading}
-          scroll={{ x: 1600 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`
-          }}
-        />
-      </Card>
+        )}
+      </Drawer>
     </div>
   )
 }
