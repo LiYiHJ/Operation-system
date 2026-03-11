@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}利润中心 | V5.1{% endblock %}
+{% block content %}
+<h3 class="mb-3">利润中心</h3>
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card p-3"><small>当前真净利润</small><h5 class="{% if data.current.net_profit < 0 %}text-danger{% else %}text-success{% endif %}">{{ data.current.net_profit }}</h5></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>净利率</small><h5 class="{% if data.current.net_margin < 0 %}text-danger{% else %}text-success{% endif %}">{{ data.current.net_margin }}</h5></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>保本价</small><h5>{{ data.current.break_even_price }}</h5></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>亏损状态</small><h5>{% if data.current.is_loss %}<span class="badge text-bg-danger">亏损</span>{% else %}<span class="badge text-bg-success">盈利</span>{% endif %}</h5></div></div>
+</div>
+
+<div class="card p-3 mb-3">
+  <h6>目标反推求解器</h6>
+  <form method="post" action="{{ url_for('profit.profit_solve') }}" class="row g-2">
+    <div class="col-md-2">
+      <select name="mode" class="form-select">
+        <option value="target_profit">目标净利润</option>
+        <option value="target_margin">目标净利率</option>
+        <option value="target_roi">目标 ROI</option>
+      </select>
+    </div>
+    <div class="col-md-2"><input class="form-control" name="target_value" placeholder="目标值" value="10"></div>
+    <div class="col-md-2"><input class="form-control" name="sale_price" value="{{ data.input.sale_price }}" placeholder="当前售价"></div>
+    <div class="col-md-2"><input class="form-control" name="list_price" value="{{ data.input.list_price }}" placeholder="原价"></div>
+    <div class="col-md-2"><input class="form-control" name="variable_rate_total" value="{{ data.input.variable_rate_total }}" placeholder="变量费率 V"></div>
+    <div class="col-md-2"><input class="form-control" name="fixed_cost_total" value="{{ data.input.fixed_cost_total }}" placeholder="固定成本 F"></div>
+    <div class="col-12"><button class="btn btn-primary">计算建议售价</button></div>
+  </form>
+  {% if data.suggested_price is defined %}
+    <hr>
+    <div class="alert alert-info mb-0">
+      建议售价：<strong>{{ data.suggested_price }}</strong>
+      ｜对应净利润：<strong>{{ data.suggested_result.net_profit }}</strong>
+      ｜对应净利率：<strong>{{ data.suggested_result.net_margin }}</strong>
+    </div>
+  {% endif %}
+</div>
+
+<div class="card p-3">
+  <h6>折扣模拟结果（95折 / 9折 / 85折 / 自定义预留）</h6>
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>折扣系数</th><th>成交价</th><th>净利润</th><th>净利率</th><th>亏损</th></tr></thead>
+    <tbody>
+      {% for d in data.discounts %}
+      <tr>
+        <td>{{ d.discount_ratio }}</td>
+        <td>{{ d.deal_price }}</td>
+        <td class="{% if d.net_profit < 0 %}text-danger{% else %}text-success{% endif %}">{{ d.net_profit }}</td>
+        <td class="{% if d.net_margin < 0 %}text-danger{% else %}text-success{% endif %}">{{ d.net_margin }}</td>
+        <td>{% if d.is_loss %}<span class="badge text-bg-danger">是</span>{% else %}<span class="badge text-bg-success">否</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

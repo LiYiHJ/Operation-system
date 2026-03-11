@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h3 class="mb-3">设置中心</h3>
+<div class="row g-3">
+  <div class="col-md-4"><div class="card p-3"><h6>运行环境</h6><pre>{{ info.runtime|tojson(indent=2) }}</pre></div></div>
+  <div class="col-md-4"><div class="card p-3"><h6>数据源配置</h6><pre>{{ info.data_sources|tojson(indent=2) }}</pre></div></div>
+  <div class="col-md-4"><div class="card p-3"><h6>调度开关</h6><pre>{{ info.scheduler|tojson(indent=2) }}</pre></div></div>
+</div>
+<div class="card p-3 mt-3">
+  <h6>阈值 / 利润口径配置（占位）</h6>
+  <p class="mb-0">下一阶段接入可编辑配置表单与版本化存储。</p>
+</div>
+{% endblock %}

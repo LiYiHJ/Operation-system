@@ -1,0 +1,23 @@
+{
+  "header_scan_max_rows": 20,
+  "allow_multi_level_header": true,
+  "primary_key_priority": ["sku", "Артикул", "seller_sku", "offer_id"],
+  "forbidden_primary_key": ["product_name", "商品名称", "Наименование"],
+  "value_cleaning": {
+    "currency_tokens": ["₽", "руб", "RUB"],
+    "remove_spaces": true,
+    "remove_line_breaks": true,
+    "percent_to_decimal": true,
+    "parse_russian_date": true
+  },
+  "error_codes": [
+    "NO_HEADER_FOUND",
+    "NO_PRIMARY_KEY",
+    "NO_REQUIRED_METRICS",
+    "INVALID_NUMBER_FORMAT",
+    "INVALID_DATE_FORMAT",
+    "EMPTY_SHEET",
+    "UNKNOWN_PLATFORM",
+    "MAPPING_CONFLICT"
+  ]
+}

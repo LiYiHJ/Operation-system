@@ -1,0 +1,42 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Layout from './layout/Layout'
+import Dashboard from './pages/Dashboard'
+import DataImport from './pages/DataImportV2'
+import ABCAnalysis from './pages/ABCAnalysis'
+import PriceCompetitiveness from './pages/PriceCompetitiveness'
+import FunnelAnalysis from './pages/FunnelAnalysis'
+import InventoryAlert from './pages/InventoryAlert'
+import AdsManagement from './pages/AdsManagement'
+import StrategyList from './pages/StrategyList'
+import DecisionEngine from './pages/DecisionEngine'
+import ProfitCalculator from './pages/ProfitCalculator'
+import './App.css'
+
+function App() {
+  return (
+    <BrowserRouter 
+      future={{ 
+        v7_startTransition: true,
+        v7_relativeSplatPath: true 
+      }}
+    >
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="import" element={<DataImport />} />
+          <Route path="abc" element={<ABCAnalysis />} />
+          <Route path="price" element={<PriceCompetitiveness />} />
+          <Route path="funnel" element={<FunnelAnalysis />} />
+          <Route path="inventory" element={<InventoryAlert />} />
+          <Route path="ads" element={<AdsManagement />} />
+          <Route path="strategy" element={<StrategyList />} />
+          <Route path="decision" element={<DecisionEngine />} />
+          <Route path="profit" element={<ProfitCalculator />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+export default App

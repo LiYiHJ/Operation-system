@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecom-v51"
+version = "0.3.0"
+description = "V5.1 跨境电商智能运营系统骨架"
+requires-python = ">=3.10"
+dependencies = [
+  "flask>=3.0.0",
+  "sqlalchemy>=2.0.0",
+  "psycopg[binary]>=3.1.0",
+  "pandas>=2.1.0",     
+  "openpyxl>=3.1.0",    
+  "xlrd>=2.0.0"        
+]
+
+[project.scripts]
+v51-ops = "ecom_v51.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

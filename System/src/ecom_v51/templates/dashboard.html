@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | V5.1{% endblock %}
+{% block content %}
+<h3 class="mb-3">经营总览</h3>
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card p-3"><small>销售额</small><h4>{{ overview.sales }}</h4></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>订单数</small><h4>{{ overview.orders }}</h4></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>净利润</small><h4>{{ overview.net_profit }}</h4></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>待处理策略</small><h4>{{ overview.pending_strategies }}</h4></div></div>
+</div>
+<div class="card p-3">
+  <h6>近7天销售趋势</h6>
+  <canvas id="salesTrend" height="100"></canvas>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.renderLineChart('salesTrend', {{ overview.trend_labels|tojson }}, {{ overview.trend_sales|tojson }});
+</script>
+{% endblock %}

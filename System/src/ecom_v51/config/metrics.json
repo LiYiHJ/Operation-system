@@ -1,0 +1,9 @@
+{
+  "ctr": "card_visits / impressions_total",
+  "add_to_cart_rate": "add_to_cart_total / card_visits",
+  "order_rate": "orders_count / add_to_cart_total",
+  "roas": "ad_revenue / ad_spend",
+  "net_profit": "sale_price * (1 - variable_rate_total) - fixed_cost_total",
+  "net_margin": "net_profit / sale_price",
+  "break_even_price": "fixed_cost_total / (1 - variable_rate_total)"
+}

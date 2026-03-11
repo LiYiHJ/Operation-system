@@ -1,0 +1,24 @@
+{
+  "funnel": {
+    "ctr_low": 0.015,
+    "add_to_cart_rate_low": 0.05,
+    "order_rate_low": 0.2
+  },
+  "ads": {
+    "roas_low": 2.0,
+    "ad_dependency_high": 0.7
+  },
+  "inventory": {
+    "days_of_supply_low": 7,
+    "days_of_supply_high": 90
+  },
+  "risk": {
+    "return_rate_high": 0.15,
+    "cancel_rate_high": 0.1,
+    "rating_low": 3.8
+  },
+  "profit": {
+    "net_margin_warning": 0.05,
+    "net_margin_critical": 0.0
+  }
+}

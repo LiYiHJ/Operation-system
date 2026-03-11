@@ -1,0 +1,191 @@
+{
+  "version": "1.0",
+  "description": "Ozon 自动化系统配置文件",
+  
+  "ozon_api": {
+    "shops": {
+      "YunElite": {
+        "client_id": "3055895",
+        "api_key": "YOUR_API_KEY_HERE",
+        "enabled": true
+      },
+      "ALORA": {
+        "client_id": "3328779",
+        "api_key": "YOUR_API_KEY_HERE",
+        "enabled": true
+      },
+      "YunYi": {
+        "client_id": "4022219",
+        "api_key": "YOUR_API_KEY_HERE",
+        "enabled": true
+      }
+    }
+  },
+  
+  "notification": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.qq.com",
+      "smtp_port": 587,
+      "username": "your_email@qq.com",
+      "password": "YOUR_EMAIL_PASSWORD",
+      "from_name": "Ozon 智能决策引擎",
+      "recipients": [
+        "team@example.com",
+        "ceo@example.com"
+      ]
+    },
+    
+    "telegram": {
+      "enabled": false,
+      "bot_token": "YOUR_BOT_TOKEN",
+      "chat_id": "YOUR_CHAT_ID",
+      "parse_mode": "Markdown"
+    }
+  },
+  
+  "scheduler": {
+    "enabled": true,
+    "timezone": "Asia/Shanghai",
+    
+    "tasks": {
+      "morning_check": {
+        "enabled": true,
+        "schedule": "08:00",
+        "description": "晨间巡检"
+      },
+      
+      "noon_check": {
+        "enabled": true,
+        "schedule": "12:00",
+        "description": "午间巡检"
+      },
+      
+      "evening_check": {
+        "enabled": true,
+        "schedule": "16:00",
+        "description": "日终巡检"
+      },
+      
+      "auto_execute_p0": {
+        "enabled": true,
+        "interval_minutes": 30,
+        "description": "自动执行 P0 策略"
+      },
+      
+      "data_sync": {
+        "enabled": true,
+        "interval_minutes": 60,
+        "description": "数据同步"
+      }
+    }
+  },
+  
+  "auto_execute": {
+    "enabled": true,
+    
+    "price_adjustment": {
+      "enabled": true,
+      "strategies": {
+        "profit_optimize": {
+          "description": "利润优化（净利率 < 10%）",
+          "action": "increase",
+          "percentage": 0.10,
+          "max_price_increase": 0.30
+        },
+        
+        "sell_through": {
+          "description": "加速清仓（库存 > 60天）",
+          "action": "decrease",
+          "percentage": 0.15,
+          "min_price": "cost * 1.1"
+        },
+        
+        "competitive": {
+          "description": "竞争定价",
+          "action": "decrease",
+          "percentage": 0.05,
+          "min_price": "cost * 1.05"
+        }
+      },
+      
+      "limits": {
+        "max_adjustments_per_day": 50,
+        "cooldown_hours": 24,
+        "require_approval": false
+      }
+    },
+    
+    "stock_replenishment": {
+      "enabled": true,
+      "actions": {
+        "send_email": true,
+        "send_telegram": true,
+        "auto_order": false
+      },
+      
+      "thresholds": {
+        "critical": 7,
+        "warning": 14,
+        "reorder_point": 30
+      }
+    },
+    
+    "ad_management": {
+      "enabled": true,
+      "actions": {
+        "pause_low_roas": true,
+        "roas_threshold": 1.0,
+        "reduce_budget": true,
+        "budget_reduction_percentage": 0.30
+      }
+    }
+  },
+  
+  "monitoring": {
+    "health_score": {
+      "calculation": "100 - (P0*10 + P1*5 + P2*2 + P3*1)",
+      "thresholds": {
+        "excellent": 90,
+        "good": 75,
+        "fair": 60,
+        "poor": 40
+      }
+    },
+    
+    "alerts": {
+      "p0_alert": {
+        "enabled": true,
+        "channels": ["telegram", "email"],
+        "immediate": true
+      },
+      
+      "p1_alert": {
+        "enabled": true,
+        "channels": ["telegram"],
+        "immediate": false,
+        "batch_interval_minutes": 60
+      },
+      
+      "daily_report": {
+        "enabled": true,
+        "channels": ["telegram", "email"],
+        "schedule": "16:30"
+      }
+    }
+  },
+  
+  "data": {
+    "storage_path": "C:/Operation-system/System/data",
+    "retention_days": 90,
+    "backup_enabled": true,
+    "backup_interval_days": 7
+  },
+  
+  "logging": {
+    "level": "INFO",
+    "file": "logs/automation.log",
+    "max_size_mb": 10,
+    "backup_count": 5
+  }
+}

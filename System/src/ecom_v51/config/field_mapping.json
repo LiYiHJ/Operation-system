@@ -1,0 +1,12 @@
+{
+  "sku": ["SKU", "Артикул", "seller_sku", "offer_id", "SKU编码"],
+  "impressions_total": ["Показы", "展示次数", "impressions"],
+  "card_visits": ["Переходы в карточку", "商品卡访问", "card_visits"],
+  "add_to_cart_total": ["Добавлено в корзину", "加购数", "add_to_cart"],
+  "orders_count": ["Заказано", "订单数", "orders"],
+  "revenue_ordered": ["Заказано на сумму", "订购金额", "ordered_revenue"],
+  "ad_spend": ["Расходы на рекламу", "广告花费", "ad_spend"],
+  "ad_revenue": ["Рекламная выручка", "广告销售额", "ad_revenue"],
+  "stock_total": ["Остаток", "库存", "stock_total"],
+  "rating": ["Рейтинг", "评分", "rating"]
+}

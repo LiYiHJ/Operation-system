@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}商品中心 | V5.1{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">商品中心</h3>
+  <button class="btn btn-sm btn-outline-secondary">导出（预留）</button>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-5"><input class="form-control" name="q" value="{{ q }}" placeholder="搜索 SKU / 店铺 / 类目"></div>
+  <div class="col-auto"><button class="btn btn-primary">查询</button></div>
+</form>
+
+<div class="table-responsive card p-2">
+<table class="table table-sm table-hover align-middle mb-0">
+  <thead class="table-light"><tr>
+    <th>SKU</th><th>店铺</th><th>类目</th><th>销售额</th><th>订单</th><th>CTR</th><th>加购率</th><th>价格指数</th><th>广告 ROI</th><th>库存天数</th><th>真净利润</th><th>净利率</th><th>健康度</th>
+  </tr></thead>
+  <tbody>
+  {% if rows %}
+    {% for r in rows %}
+    <tr>
+      <td><a href="{{ url_for('products.product_detail', sku=r.sku) }}">{{ r.sku }}</a></td>
+      <td>{{ r.shop }}</td>
+      <td>{{ r.category }}</td>
+      <td>¥ {{ r.sales }}</td>
+      <td>{{ r.orders }}</td>
+      <td>{{ r.ctr }}</td>
+      <td>{{ r.add_to_cart_rate }}</td>
+      <td>{{ r.price_index }}</td>
+      <td>{{ r.ad_roi }}</td>
+      <td>{{ r.days_of_supply }}</td>
+      <td class="{% if r.net_profit < 0 %}text-danger{% else %}text-success{% endif %}">{{ r.net_profit }}</td>
+      <td class="{% if r.net_margin < 0 %}text-danger{% else %}text-success{% endif %}">{{ r.net_margin }}</td>
+      <td>
+        {% if r.health_score < 60 %}
+          <span class="badge text-bg-danger">{{ r.health_score }}</span>
+        {% elif r.health_score < 75 %}
+          <span class="badge text-bg-warning">{{ r.health_score }}</span>
+        {% else %}
+          <span class="badge text-bg-success">{{ r.health_score }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  {% else %}
+    <tr><td colspan="13" class="text-center text-muted py-4">暂无匹配商品，请调整筛选条件。</td></tr>
+  {% endif %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

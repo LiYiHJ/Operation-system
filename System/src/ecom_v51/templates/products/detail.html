@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}单商品作战室 {{ sku }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">单商品作战室 - {{ sku }}</h3>
+  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('products.product_list') }}">返回商品中心</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-3"><div class="card p-3"><small>真净利润</small><h5 class="{% if report.net_profit < 0 %}text-danger{% else %}text-success{% endif %}">{{ report.net_profit }}</h5></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>净利率</small><h5 class="{% if report.net_margin < 0 %}text-danger{% else %}text-success{% endif %}">{{ report.net_margin }}</h5></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>保本价</small><h5>{{ report.break_even_price }}</h5></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>CTR</small><h5>{{ report.funnel.ctr }}</h5></div></div>
+</div>
+
+<div class="row g-3 mt-1">
+  <div class="col-md-6">
+    <div class="card p-3 h-100">
+      <h6>漏斗诊断</h6>
+      <ul class="mb-0">
+        <li>展示 → 点击（CTR）：{{ report.funnel.ctr }}</li>
+        <li>点击 → 加购（加购率）：{{ report.funnel.add_to_cart_rate }}</li>
+        <li>加购 → 下单（下单率）：{{ report.funnel.order_rate }}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3 h-100">
+      <h6>定价与利润模拟</h6>
+      <table class="table table-sm align-middle">
+        <thead><tr><th>折扣</th><th>成交价</th><th>净利润</th><th>净利率</th><th>亏损</th></tr></thead>
+        <tbody>
+          {% for d in report.discount_simulations %}
+          <tr>
+            <td>{{ d.discount_ratio }}</td>
+            <td>{{ d.deal_price }}</td>
+            <td class="{% if d.net_profit < 0 %}text-danger{% else %}text-success{% endif %}">{{ d.net_profit }}</td>
+            <td class="{% if d.net_margin < 0 %}text-danger{% else %}text-success{% endif %}">{{ d.net_margin }}</td>
+            <td>{% if d.is_loss %}<span class="badge text-bg-danger">是</span>{% else %}<span class="badge text-bg-success">否</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
+  <div class="col-md-4"><div class="card p-3"><h6>广告与流量区</h6><p class="mb-0 small">查看广告效率、依赖度并执行增投/减投策略。</p></div></div>
+  <div class="col-md-4"><div class="card p-3"><h6>库存与供给区</h6><p class="mb-0 small">关注可售天数、安全库存与补货建议。</p></div></div>
+  <div class="col-md-4"><div class="card p-3"><h6>风险控制区</h6><p class="mb-0 small">聚焦退货、取消、评分和利润侵蚀风险。</p></div></div>
+</div>
+
+<div class="card p-3 mt-3">
+  <h6>策略组合</h6>
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>策略类型</th><th>优先级</th><th>问题描述</th><th>建议动作</th><th>观察指标</th></tr></thead>
+    <tbody>
+      {% for task in report.strategy_tasks %}
+      <tr>
+        <td>{{ task.strategy_type }}</td>
+        <td>
+          {% if task.priority == 'P0' %}<span class="badge text-bg-danger">P0</span>
+          {% elif task.priority == 'P1' %}<span class="badge text-bg-warning">P1</span>
+          {% elif task.priority == 'P2' %}<span class="badge text-bg-info">P2</span>
+          {% else %}<span class="badge text-bg-success">P3</span>{% endif %}
+        </td>
+        <td>{{ task.issue_summary }}</td>
+        <td>{{ task.recommended_action }}</td>
+        <td>{{ task.observation_metrics|join('、') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

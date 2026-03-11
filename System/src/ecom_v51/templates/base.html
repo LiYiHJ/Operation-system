@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}V5.1 跨境电商智能运营系统{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+</head>
+<body>
+<div class="d-flex app-shell">
+  <aside class="sidebar p-3 border-end bg-white">
+    <div class="brand-title mb-1">V5.1 智能运营系统</div>
+    <div class="brand-subtitle mb-3">Ozon 多店铺经营后台</div>
+
+    <ul class="nav nav-pills flex-column gap-1">
+      <li><a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{{ url_for('core.dashboard') }}">经营驾驶舱</a></li>
+      <li><a class="nav-link {% if request.path.startswith('/imports') %}active{% endif %}" href="{{ url_for('imports.imports_index') }}">导入中心</a></li>
+      <li><a class="nav-link {% if request.path.startswith('/products') %}active{% endif %}" href="{{ url_for('products.product_list') }}">商品中心</a></li>
+      <li><a class="nav-link {% if request.path.startswith('/profit') %}active{% endif %}" href="{{ url_for('profit.profit_index') }}">利润中心</a></li>
+      <li><a class="nav-link {% if request.path.startswith('/strategies') %}active{% endif %}" href="{{ url_for('strategies.strategies_index') }}">策略中心</a></li>
+      <li><a class="nav-link {% if request.path.startswith('/reports') %}active{% endif %}" href="{{ url_for('reports.reports_index') }}">报告中心</a></li>
+      <li><a class="nav-link {% if request.path.startswith('/settings') %}active{% endif %}" href="{{ url_for('settings.settings_index') }}">系统设置</a></li>
+    </ul>
+  </aside>
+
+  <main class="flex-grow-1">
+    <header class="topbar border-bottom bg-white px-4 py-2 d-flex justify-content-between align-items-center">
+      <div>
+        <div class="topbar-title">跨境电商智能运营系统 V5.1</div>
+        <div class="topbar-subtitle">以 SKU 为核心 · 以净利润与策略任务驱动经营决策</div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-success">运行中</span>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('core.health') }}" target="_blank">健康检查</a>
+      </div>
+    </header>
+
+    <section class="p-4">
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
