@@ -4,7 +4,6 @@ Flask API层 - 前后端分离架构
 """
 
 from flask import Flask, jsonify
-from flask_cors import CORS
 import os
 
 # 导入已有的session管理
@@ -25,6 +24,10 @@ from .routes.products import products_bp
 from .routes.profit import profit_bp
 from .routes.strategy import strategy_bp
 from .routes.import_route import import_bp
+from .routes.analysis import analysis_bp
+from .routes.auth import auth_bp
+from .routes.reminder import reminder_bp
+from .routes.integration import integration_bp
 
 
 def create_app(config_name='default'):  
@@ -68,6 +71,10 @@ def create_app(config_name='default'):
     app.register_blueprint(profit_bp, url_prefix='/api/profit')
     app.register_blueprint(strategy_bp, url_prefix='/api/strategy')
     app.register_blueprint(import_bp, url_prefix='/api/import')
+    app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(reminder_bp, url_prefix='/api/reminders')
+    app.register_blueprint(integration_bp, url_prefix='/api/integration')
     
     # 健康检查
     @app.route('/api/health', methods=['GET'])
@@ -75,7 +82,7 @@ def create_app(config_name='default'):
         return jsonify({
             'status': 'ok',
             'service': 'ecom_v51_api',
-            'version': '5.1.0'
+            'version': '1.0.0'
         })
     
     # 错误处理
@@ -96,7 +103,7 @@ app = create_app()
 
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("V5.1 Flask API (前后端分离)")
+    print("运营系统 Flask API (前后端分离)")
     print("="*70)
     print(f"API地址: http://localhost:5000/api")
     print(f"健康检查: http://localhost:5000/api/health")

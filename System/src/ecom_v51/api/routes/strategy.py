@@ -58,3 +58,27 @@ def quick_summary():
         return jsonify({'summary': {}})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@strategy_bp.route('/decision/preview', methods=['GET'])
+def decision_preview():
+    """组合决策预演"""
+    try:
+        scope = request.args.get('scope', 'all')
+        service = StrategyTaskService()
+        return jsonify(service.decision_preview(scope=scope))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@strategy_bp.route('/decision/confirm', methods=['POST'])
+def decision_confirm():
+    """人工确认并回写策略任务"""
+    try:
+        data = request.get_json() or {}
+        task_ids = data.get('taskIds') or []
+        operator = data.get('operator', 'planner')
+        service = StrategyTaskService()
+        return jsonify(service.decision_confirm(selected_task_ids=task_ids, operator=operator))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
