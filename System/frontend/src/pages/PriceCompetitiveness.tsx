@@ -11,6 +11,8 @@ import { OpsConclusion, OpsPageHeader, OpsRiskTag } from '../components/ops/Prod
 
 const { Text } = Typography
 
+const competitivenessColorMap: Record<string, string> = { red: '#f5222d', yellow: '#faad14', green: '#52c41a' }
+
 export default function PriceCompetitiveness() {
   const [view, setView] = useState<'daily' | 'campaign' | 'promo'>('daily')
   const [groupFilter, setGroupFilter] = useState('all')
@@ -53,9 +55,9 @@ export default function PriceCompetitiveness() {
     series: [{
       type: 'pie', radius: ['35%', '70%'],
       data: [
-        { name: '绿区', value: rows.filter((x: any) => x.competitiveness === 'green').length },
-        { name: '黄区', value: rows.filter((x: any) => x.competitiveness === 'yellow').length },
-        { name: '红区', value: rows.filter((x: any) => x.competitiveness === 'red').length },
+        { name: '绿区', value: rows.filter((x: any) => x.competitiveness === 'green').length, itemStyle: { color: competitivenessColorMap.green } },
+        { name: '黄区', value: rows.filter((x: any) => x.competitiveness === 'yellow').length, itemStyle: { color: competitivenessColorMap.yellow } },
+        { name: '红区', value: rows.filter((x: any) => x.competitiveness === 'red').length, itemStyle: { color: competitivenessColorMap.red } },
       ],
     }],
   }
