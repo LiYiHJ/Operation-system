@@ -17,11 +17,14 @@ class Settings:
     app_env = os.getenv('APP_ENV', 'development')
     APP_ENV = app_env  # 别名
     
-    debug = os.getenv('APP_DEBUG', 'true').lower() == 'true'
+    debug = os.getenv('APP_DEBUG', 'true' if app_env != 'production' else 'false').lower() == 'true'
     DEBUG = debug  # 别名
     
     secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     SECRET_KEY = secret_key  # 别名
+
+    allow_seed_users = os.getenv('ALLOW_SEED_USERS', 'true' if app_env != 'production' else 'false').lower() == 'true'
+    ALLOW_SEED_USERS = allow_seed_users
     UPLOAD_FOLDER = BASE_DIR / 'uploads'
     DATA_FOLDER = BASE_DIR / 'data'
     LOG_FOLDER = BASE_DIR / 'logs'

@@ -4,15 +4,17 @@
 
 from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
-import os
 from datetime import datetime
 from pathlib import Path
+
+from ecom_v51.services.import_service import ImportService
 
 import_bp = Blueprint('import', __name__)
 
 # 上传目录
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent.parent / 'uploads'
 UPLOAD_FOLDER.mkdir(exist_ok=True)
+import_service = ImportService()
 
 
 @import_bp.route('/upload', methods=['POST'])
@@ -36,14 +38,9 @@ def upload_file():
         filepath = UPLOAD_FOLDER / filename_with_ts
         file.save(filepath)
         
-        # TODO: 调用ingestion.py解析文件
-        
-        result = {
-            'fileName': filename,
-            'filePath': str(filepath),
-            'fileSize': os.path.getsize(filepath),
-            'status': 'uploaded',
-        }
+        shop_id = int(request.form.get('shop_id') or 1)
+        operator = request.form.get('operator') or 'frontend_user'
+        result = import_service.parse_import_file(str(filepath), shop_id=shop_id, operator=operator)
         
         return jsonify(result)
     except Exception as e:
@@ -57,14 +54,14 @@ def confirm_import():
     前端调用: importAPI.confirmImport(data)
     """
     try:
-        data = request.get_json()
-        
-        # TODO: 执行导入
-        
-        result = {
-            'batchId': f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            'status': 'success',
-        }
+        data = request.get_json() or {}
+        result = import_service.confirm_import(
+            session_id=int(data.get('sessionId') or 0),
+            shop_id=int(data.get('shopId') or 1),
+            manual_overrides=data.get('manualOverrides') or [],
+            operator=data.get('operator') or 'frontend_user',
+        )
+        result['success'] = result.get('status') == 'success'
         
         return jsonify(result)
     except Exception as e:
