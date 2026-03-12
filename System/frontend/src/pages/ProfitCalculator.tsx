@@ -126,6 +126,10 @@ export default function ProfitCalculator() {
         }} />
       )
     },
+  ]
+
+  const fixedColumns = [
+    { title: '成本项', dataIndex: 'label', width: 170, ellipsis: true },
     {
       title: '原价',
       dataIndex: 'list_price',

@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Layout as AntLayout, Menu, Button, Avatar, Dropdown, Badge, Space, Drawer, List, Tag, Typography } from 'antd'
 import {
   DashboardOutlined,
-  UploadOutlined,
   BarChartOutlined,
   DollarOutlined,
   FunnelPlotOutlined,
@@ -78,6 +77,22 @@ export default function Layout() {
       await logout()
       navigate('/login', { replace: true })
     }
+    if (key === 'profile' || key === 'settings') navigate('/settings')
+  }
+
+  const summaryTags = useMemo(() => [
+    { key: 'new_orders', label: '新订单', value: reminderData?.summary?.new_orders || 0 },
+    { key: 'new_reviews', label: '新评价', value: reminderData?.summary?.new_reviews || 0 },
+    { key: 'system_alerts', label: '系统告警', value: reminderData?.summary?.system_alerts || 0 },
+    { key: 'pending_confirmations', label: '待确认', value: reminderData?.summary?.pending_confirmations || 0 },
+    { key: 'execution_writeback', label: '执行回写', value: reminderData?.summary?.execution_writeback || 0 },
+    { key: 'import_exceptions', label: '导入异常', value: reminderData?.summary?.import_exceptions || 0 },
+  ], [reminderData])
+
+  const openReminder = async () => {
+    setReminderOpen(true)
+    await reminderApi.ack()
+    refetch()
   }
 
   const summaryTags = useMemo(() => [

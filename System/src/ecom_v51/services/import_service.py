@@ -244,6 +244,29 @@ class ImportService:
         self.intelligent_mapper = IntelligentFieldMapper()  # 🆕 智能映射器
         self.profit_solver = ProfitSolver()
     
+    def _detect_excel_header_row(self, file_path: str, max_scan_rows: int = 30) -> int:
+        """尝试检测 Excel 真正表头行（兼容 Ozon 导出前置说明行）"""
+        try:
+            preview = pd.read_excel(file_path, header=None, nrows=max_scan_rows, engine='openpyxl')
+        except Exception:
+            return 0
+
+        known_headers = {str(k).strip().lower() for k in self.mapping.ozon_mapping.keys()}
+        known_headers.update({
+            'sku', 'seller sku', 'seller_sku', 'offer_id', 'артикул', 'name', 'product name',
+            'orders', 'revenue', 'impressions', 'card visits', 'add to cart', 'sale_price',
+            'list_price', 'cost_price', 'commission_rate',
+        })
+
+        for idx in range(min(len(preview), max_scan_rows)):
+            row = [str(x).strip().lower() for x in preview.iloc[idx].tolist() if str(x).strip() and str(x).lower() != 'nan']
+            if not row:
+                continue
+            hit = sum(1 for cell in row if cell in known_headers)
+            if hit >= 2:
+                return idx
+        return 0
+
     def read_file(self, file_path: str) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
         """
         读取Excel或CSV文件
@@ -257,7 +280,11 @@ class ImportService:
         
         try:
             if path.suffix in ['.xlsx', '.xls']:
-                df = pd.read_excel(file_path, engine='openpyxl' if path.suffix == '.xlsx' else 'xlrd')
+                if path.suffix == '.xlsx':
+                    header_row = self._detect_excel_header_row(file_path)
+                    df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
+                else:
+                    df = pd.read_excel(file_path, engine='xlrd')
             elif path.suffix == '.csv':
                 # 尝试不同编码
                 for encoding in ['utf-8', 'utf-8-sig', 'gbk', 'cp1251']:
