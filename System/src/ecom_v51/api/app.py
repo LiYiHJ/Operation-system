@@ -27,6 +27,7 @@ from .routes.import_route import import_bp
 from .routes.analysis import analysis_bp
 from .routes.auth import auth_bp
 from .routes.reminder import reminder_bp
+from .routes.integration import integration_bp
 
 
 def create_app(config_name='default'):  
@@ -39,6 +40,9 @@ def create_app(config_name='default'):
     elif config_name == 'production':
         app.config['DEBUG'] = False
         app.config['TESTING'] = False
+    else:
+        app.config['DEBUG'] = bool(settings.debug)
+        app.config['TESTING'] = False
     
     # ... 其他配置
     # 配置
@@ -48,8 +52,12 @@ def create_app(config_name='default'):
         UPLOAD_FOLDER=os.path.join(os.path.dirname(__file__), '../../uploads'),
     )
     
-    # CORS（允许React前端跨域）
-        # CORS（允许React前端跨域）
+
+    
+    if settings.APP_ENV == 'production' and settings.secret_key == 'dev-secret-key-change-in-production':
+        raise RuntimeError('生产环境必须设置安全的 SECRET_KEY')
+
+
     try:
         from flask_cors import CORS
         CORS(app, resources={
@@ -73,6 +81,7 @@ def create_app(config_name='default'):
     app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(reminder_bp, url_prefix='/api/reminders')
+    app.register_blueprint(integration_bp, url_prefix='/api/integration')
     
     # 健康检查
     @app.route('/api/health', methods=['GET'])
@@ -108,4 +117,4 @@ if __name__ == '__main__':
     print(f"前端地址: http://localhost:5173")
     print("="*70 + "\n")
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', '5000')), debug=bool(settings.debug))

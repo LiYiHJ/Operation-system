@@ -11,6 +11,7 @@ import StrategyList from './pages/StrategyList'
 import DecisionEngine from './pages/DecisionEngine'
 import ProfitCalculator from './pages/ProfitCalculator'
 import LoginPage from './pages/Login'
+import SystemSettings from './pages/SystemSettings'
 import { AuthProvider, useAuth } from './auth'
 import './App.css'
 
@@ -36,6 +37,7 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="import" element={<DataImport />} />
+            <Route path="settings" element={<SystemSettings />} />
             <Route path="abc" element={<ABCAnalysis />} />
             <Route path="price" element={<PriceCompetitiveness />} />
             <Route path="funnel" element={<FunnelAnalysis />} />

@@ -16,7 +16,8 @@ class AuthService:
     def __init__(self) -> None:
         self.signer = URLSafeTimedSerializer(settings.secret_key, salt='ecom_v51_auth')
         self._ensure_auth_tables()
-        self._ensure_seed_users()
+        if settings.ALLOW_SEED_USERS:
+            self._ensure_seed_users()
 
     @staticmethod
     def _ensure_auth_tables() -> None:

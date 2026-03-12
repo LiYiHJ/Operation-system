@@ -54,7 +54,6 @@ export default function Layout() {
 
   const menuItems = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: '运营总览' },
-    { key: '/import', icon: <UploadOutlined />, label: '数据导入' },
     { key: '/profit', icon: <CalculatorOutlined />, label: '利润求解器' },
     { key: '/abc', icon: <BarChartOutlined />, label: 'ABC分析' },
     { key: '/price', icon: <DollarOutlined />, label: '价格竞争力' },
@@ -63,11 +62,11 @@ export default function Layout() {
     { key: '/ads', icon: <AimOutlined />, label: '广告管理' },
     { key: '/strategy', icon: <BulbOutlined />, label: '策略清单' },
     { key: '/decision', icon: <ThunderboltOutlined />, label: '智能决策' },
+    { key: '/settings', icon: <SettingOutlined />, label: '系统设置' },
   ]
 
   const userMenuItems = [
     { key: 'profile', icon: <UserOutlined />, label: '个人设置' },
-    { key: 'settings', icon: <SettingOutlined />, label: '系统设置' },
     { type: 'divider' as const },
     { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
   ]
@@ -76,23 +75,9 @@ export default function Layout() {
     if (key === 'logout') {
       await logout()
       navigate('/login', { replace: true })
+      return
     }
     if (key === 'profile' || key === 'settings') navigate('/settings')
-  }
-
-  const summaryTags = useMemo(() => [
-    { key: 'new_orders', label: '新订单', value: reminderData?.summary?.new_orders || 0 },
-    { key: 'new_reviews', label: '新评价', value: reminderData?.summary?.new_reviews || 0 },
-    { key: 'system_alerts', label: '系统告警', value: reminderData?.summary?.system_alerts || 0 },
-    { key: 'pending_confirmations', label: '待确认', value: reminderData?.summary?.pending_confirmations || 0 },
-    { key: 'execution_writeback', label: '执行回写', value: reminderData?.summary?.execution_writeback || 0 },
-    { key: 'import_exceptions', label: '导入异常', value: reminderData?.summary?.import_exceptions || 0 },
-  ], [reminderData])
-
-  const openReminder = async () => {
-    setReminderOpen(true)
-    await reminderApi.ack()
-    refetch()
   }
 
   const summaryTags = useMemo(() => [
@@ -114,7 +99,7 @@ export default function Layout() {
     <AntLayout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} style={{ overflow: 'auto', height: '100vh', position: 'fixed', left: 0, top: 0, bottom: 0 }}>
         <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: collapsed ? '16px' : '20px', fontWeight: 'bold', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-          {collapsed ? 'V5.1' : 'V5.1 运营系统'}
+          {collapsed ? '运营' : '跨境电商运营系统'}
         </div>
         <Menu theme="dark" mode="inline" selectedKeys={[location.pathname]} items={menuItems} onClick={({ key }) => navigate(key)} />
       </Sider>
@@ -124,7 +109,7 @@ export default function Layout() {
           <Space align="center">
             <Text type="secondary" style={{ fontSize: 12, opacity: 0.6 }}>总览</Text>
           </Space>
-          <div style={{ fontSize: '16px', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap' }}>V5.1 跨境电商智能运营系统</div>
+          <div style={{ fontSize: '16px', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap' }}>跨境电商智能运营系统</div>
           <Space style={{ justifySelf: 'end' }}>
             <Badge count={reminderCount} size="small">
               <Button type="text" icon={<BellOutlined />} style={{ fontSize: '16px' }} onClick={openReminder} />

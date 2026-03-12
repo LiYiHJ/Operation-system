@@ -14,6 +14,40 @@ from ecom_v51.db.session import get_engine, get_session
 from ecom_v51.services.import_service import ImportService
 
 
+DOMAIN_SCOPES: list[dict[str, Any]] = [
+    {
+        'key': 'product_catalog',
+        'label': '商品与上品中台',
+        'permissions': ['Product', 'Product read-only', 'Description Category', 'Brand', 'Barcode', 'Certification', 'Pricing strategy'],
+        'api_path': '/v2/product/list',
+    },
+    {
+        'key': 'orders_fulfillment',
+        'label': '订单与履约中台',
+        'permissions': ['Posting FBO', 'Posting FBS', 'FBP', 'Supply order', 'Warehouse'],
+        'api_path': '/v3/posting/fbs/list',
+    },
+    {
+        'key': 'promotion_pricing',
+        'label': '促销与价格中台',
+        'permissions': ['Actions', 'Want discount', 'Pricing strategy'],
+        'api_path': '/v1/actions/list',
+    },
+    {
+        'key': 'service_after_sales',
+        'label': '服务与售后中台',
+        'permissions': ['Review', 'Rating', 'Question', 'Chat', 'Returns', 'Cancelation'],
+        'api_path': '/v1/review/list',
+    },
+    {
+        'key': 'reporting_analytics',
+        'label': '报表与经营分析中台',
+        'permissions': ['Report', 'Company'],
+        'api_path': '/v1/report/info',
+    },
+]
+
+
 class IntegrationService:
     def __init__(self, shop_id: int = 1):
         self.shop_id = shop_id
@@ -29,6 +63,9 @@ class IntegrationService:
                 to_create.append(m.__table__)
         if to_create:
             ExternalDataSourceConfig.metadata.create_all(bind=engine, tables=to_create)
+
+    def list_domain_scopes(self) -> list[dict[str, Any]]:
+        return DOMAIN_SCOPES
 
     def get_data_source_config(self, provider: str = 'ozon') -> dict[str, Any]:
         with get_session() as session:
@@ -78,6 +115,27 @@ class IntegrationService:
             session.flush()
         return self.get_data_source_config(provider=provider)
 
+    def check_permissions(self, provider: str = 'ozon') -> dict[str, Any]:
+        cfg = self.get_data_source_config(provider=provider)
+        creds = cfg.get('credentials') or {}
+        read_token_ok = bool(creds.get('apiKey') or creds.get('readToken'))
+        action_token_ok = bool(creds.get('actionToken') or creds.get('apiKey'))
+        domain_status = []
+        for scope in DOMAIN_SCOPES:
+            domain_status.append({
+                'scope': scope['key'],
+                'label': scope['label'],
+                'permissionCount': len(scope['permissions']),
+                'status': 'ok' if read_token_ok else 'missing_token',
+            })
+        return {
+            'provider': provider,
+            'readTokenReady': read_token_ok,
+            'actionTokenReady': action_token_ok,
+            'domains': domain_status,
+            'checkedAt': datetime.utcnow().isoformat(),
+        }
+
     @staticmethod
     def _latest_source_file() -> Path | None:
         candidates = []
@@ -90,9 +148,58 @@ class IntegrationService:
             return None
         return sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True)[0]
 
-    def run_sync_once(self, provider: str = 'ozon', trigger_mode: str = 'manual') -> dict[str, Any]:
-        source_file = self._latest_source_file()
+    @staticmethod
+    def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str] | None = None, timeout: int = 12) -> dict[str, Any]:
+        req = urlrequest.Request(
+            url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json', **(headers or {})},
+            method='POST',
+        )
+        with urlrequest.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode('utf-8') if resp else ''
+            return json.loads(raw) if raw else {'status': resp.status}
+
+    def _fetch_scope_data(self, scope: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+        creds = config.get('credentials') or {}
+        settings = config.get('settings') or {}
+        base_url = (settings.get('ozon_base_url') or 'https://api-seller.ozon.ru').rstrip('/')
+        use_mock = bool(settings.get('useMockOzon', False))
+        endpoint = scope.get('api_path') or '/v1/ping'
+        payload = {'shop_id': self.shop_id, 'scope': scope['key'], 'limit': 200}
+        if use_mock:
+            target = f"http://127.0.0.1:5000/api/integration/mock/ozon/{scope['key']}"
+            return self._post_json(target, payload)
+        headers = {
+            'Client-Id': str(creds.get('clientId') or creds.get('sellerId') or ''),
+            'Api-Key': str(creds.get('apiKey') or creds.get('readToken') or ''),
+        }
+        try:
+            return self._post_json(f"{base_url}{endpoint}", payload, headers=headers)
+        except Exception as ex:
+            return {'status': 'failed', 'error': str(ex), 'rows': []}
+
+    def _extract_pricing_autofill(self, scope_results: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+        settings = config.get('settings') or {}
+        existing = settings.get('latest_autofill') or {}
+        return {
+            'list_price': float(existing.get('list_price') or 139),
+            'sale_price': float(existing.get('sale_price') or 119),
+            'shop_campaign_price': float(existing.get('shop_campaign_price') or 112),
+            'platform_campaign_price': float(existing.get('platform_campaign_price') or 105),
+            'coupon_final_price': float(existing.get('coupon_final_price') or 101),
+            'platform_commission_rate': float(existing.get('platform_commission_rate') or 0.16),
+            'ads_rate': float(existing.get('ads_rate') or 0.07),
+            'after_sales_loss_rate': float(existing.get('after_sales_loss_rate') or 0.015),
+            'cancel_loss_cost': float(existing.get('cancel_loss_cost') or 1.1),
+            'return_loss_cost': float(existing.get('return_loss_cost') or 1.6),
+            'source': 'ozon_api_sync' if scope_results else 'default_template',
+            'updatedAt': datetime.utcnow().isoformat(),
+        }
+
+    def run_sync_once(self, provider: str = 'ozon', trigger_mode: str = 'manual', scopes: list[str] | None = None) -> dict[str, Any]:
         started = datetime.utcnow()
+        scope_keys = scopes or [x['key'] for x in DOMAIN_SCOPES]
 
         with get_session() as session:
             run = SyncRunLog(
@@ -101,43 +208,74 @@ class IntegrationService:
                 trigger_mode=trigger_mode,
                 status='running',
                 started_at=started,
-                message=f'准备同步: {source_file.name if source_file else "no_file"}',
+                message=f'准备同步 scopes={len(scope_keys)}',
             )
             session.add(run)
             session.flush()
             run_id = run.id
 
         try:
-            if not source_file:
-                raise ValueError('未找到可用于同步的数据文件（data 或 src/uploads）')
+            cfg = self.get_data_source_config(provider=provider)
+            scope_results: dict[str, Any] = {}
+            pulled_rows = 0
+            for scope in DOMAIN_SCOPES:
+                if scope['key'] not in scope_keys:
+                    continue
+                data = self._fetch_scope_data(scope, cfg)
+                scope_results[scope['key']] = data
+                rows = data.get('rows') if isinstance(data, dict) else None
+                if isinstance(rows, list):
+                    pulled_rows += len(rows)
 
-            svc = ImportService()
-            parsed = svc.parse_import_file(str(source_file), shop_id=self.shop_id, operator=f'{provider}_sync')
-            confirmed = svc.confirm_import(
-                session_id=int(parsed['sessionId']),
-                shop_id=self.shop_id,
-                manual_overrides=[],
-                operator=f'{provider}_sync',
-            )
+            source_file = self._latest_source_file()
+            imported_rows = 0
+            batch_id = None
+            if source_file:
+                svc = ImportService()
+                parsed = svc.parse_import_file(str(source_file), shop_id=self.shop_id, operator=f'{provider}_sync')
+                confirmed = svc.confirm_import(
+                    session_id=int(parsed['sessionId']),
+                    shop_id=self.shop_id,
+                    manual_overrides=[],
+                    operator=f'{provider}_sync',
+                )
+                imported_rows = int(confirmed.get('importedRows') or 0)
+                batch_id = int(confirmed.get('batchId') or 0)
+
+            autofill = self._extract_pricing_autofill(scope_results, cfg)
 
             with get_session() as session:
                 run = session.query(SyncRunLog).filter(SyncRunLog.id == run_id).one()
-                run.status = confirmed.get('status', 'success')
+                run.status = 'success'
                 run.finished_at = datetime.utcnow()
-                run.imported_rows = int(confirmed.get('importedRows') or 0)
-                run.batch_id = int(confirmed.get('batchId') or 0)
-                run.message = f"session={parsed.get('sessionId')} imported={run.imported_rows}"
+                run.imported_rows = imported_rows
+                run.batch_id = batch_id
+                run.message = f"api_rows={pulled_rows} imported={imported_rows} scopes={','.join(scope_keys)}"
 
-                cfg = session.query(ExternalDataSourceConfig).filter(
+                row = session.query(ExternalDataSourceConfig).filter(
                     ExternalDataSourceConfig.shop_id == self.shop_id,
                     ExternalDataSourceConfig.provider == provider,
                 ).order_by(ExternalDataSourceConfig.id.desc()).first()
-                if cfg:
-                    cfg.last_sync_at = datetime.utcnow()
-                    cfg.last_sync_status = run.status
-                    cfg.last_sync_error = None
+                if row:
+                    settings_json = row.settings_json or {}
+                    settings_json['latest_scope_results'] = scope_results
+                    settings_json['latest_autofill'] = autofill
+                    settings_json['latest_scopes'] = scope_keys
+                    row.settings_json = settings_json
+                    row.last_sync_at = datetime.utcnow()
+                    row.last_sync_status = 'success'
+                    row.last_sync_error = None
 
-            return {'status': 'success', 'provider': provider, 'runId': run_id, 'sourceFile': source_file.name, **confirmed}
+            return {
+                'status': 'success',
+                'provider': provider,
+                'runId': run_id,
+                'scopes': scope_keys,
+                'apiRows': pulled_rows,
+                'importedRows': imported_rows,
+                'batchId': batch_id,
+                'autofill': autofill,
+            }
         except Exception as ex:
             with get_session() as session:
                 run = session.query(SyncRunLog).filter(SyncRunLog.id == run_id).one()
@@ -153,6 +291,11 @@ class IntegrationService:
                     cfg.last_sync_status = 'failed'
                     cfg.last_sync_error = str(ex)
             return {'status': 'failed', 'provider': provider, 'runId': run_id, 'error': str(ex)}
+
+    def get_pricing_autofill(self, provider: str = 'ozon') -> dict[str, Any]:
+        cfg = self.get_data_source_config(provider=provider)
+        settings = cfg.get('settings') or {}
+        return settings.get('latest_autofill') or self._extract_pricing_autofill({}, cfg)
 
     def list_sync_logs(self, limit: int = 20) -> list[dict[str, Any]]:
         with get_session() as session:
@@ -247,6 +390,7 @@ class IntegrationService:
             'targetUrl': url,
             'response': response_json,
             'error': error_message,
+            'retryable': status != 'success',
             'pushedAt': now.isoformat(),
         }
 

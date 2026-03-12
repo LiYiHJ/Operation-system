@@ -30,22 +30,6 @@ def build_action_source(*, source_page: str, source_reason: str, source_module: 
     return payload
 
 
-SOURCE_SCHEMA_VERSION = 'v1'
-
-
-def build_action_source(*, source_page: str, source_reason: str, source_module: str = 'analysis', extra: dict[str, object] | None = None) -> dict[str, object]:
-    payload = {
-        'version': SOURCE_SCHEMA_VERSION,
-        'sourcePage': source_page,
-        'sourceReason': source_reason,
-        'sourceModule': source_module,
-        'pushedAt': datetime.utcnow().isoformat(),
-    }
-    if extra:
-        payload.update(extra)
-    return payload
-
-
 class StrategyTaskService:
     """策略任务服务 - 使用真实引擎和数据库"""
 
@@ -266,7 +250,7 @@ class StrategyTaskService:
                 task.owner = operator
                 result_summary = f"已执行：{task.recommended_action[:80]}"
 
-                session.add(ExecutionLog(
+                execution = ExecutionLog(
                     strategy_task_id=task.id,
                     source_page=source_info['sourcePage'],
                     action_before=task.issue_summary,
@@ -279,7 +263,26 @@ class StrategyTaskService:
                     extra_json={
                         'sourceReason': source_info['sourceReason'],
                     },
-                ))
+                )
+                session.add(execution)
+                session.flush()
+
+                push_result = IntegrationService(shop_id=task.shop_id).push_to_sales_backend(
+                    strategy_task_id=task.id,
+                    execution_log_id=execution.id,
+                    payload={
+                        'sku': self._build_sku_map(session, [task]).get(int(task.sku_id), str(task.sku_id or '-')) if task.sku_id else '-',
+                        'actionType': task.strategy_type,
+                        'actionBefore': task.issue_summary,
+                        'actionAfter': task.recommended_action,
+                        'sourcePage': source_info['sourcePage'],
+                        'sourceReason': source_info['sourceReason'],
+                        'operator': operator,
+                        'confirmedAt': now.isoformat(),
+                    },
+                )
+                execution.result_summary = f"{result_summary} | 推送:{push_result.get('status')}"
+                execution.extra_json = {**(execution.extra_json or {}), 'pushResult': push_result}
 
                 execution_payload = {
                     'taskId': task.id,
@@ -288,8 +291,10 @@ class StrategyTaskService:
                     'beforeStatus': before_status,
                     'afterStatus': task.status,
                     'action': task.recommended_action,
-                    'resultSummary': result_summary,
+                    'resultSummary': execution.result_summary,
                     'sourcePage': source_info['sourcePage'],
+                    'pushStatus': push_result.get('status'),
+                    'pushId': push_result.get('pushId'),
                 }
                 session.add(ReportSnapshot(
                     shop_id=task.shop_id,

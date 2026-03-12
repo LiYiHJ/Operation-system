@@ -8,6 +8,7 @@ from .settings_service import SettingsService
 from .strategy_service import StrategyTaskService
 from .analysis_service import AnalysisService
 from .auth_service import AuthService
+from .integration_service import IntegrationService
 
 __all__ = [
     "DashboardService",
@@ -19,4 +20,5 @@ __all__ = [
     "StrategyTaskService",
     "AnalysisService",
     "AuthService",
+    "IntegrationService",
 ]
