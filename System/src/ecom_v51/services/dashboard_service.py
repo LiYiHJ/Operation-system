@@ -13,7 +13,6 @@ from ecom_v51.db.models import (
     FactSkuDaily,
     ImportBatch,
     StrategyTask,
-    ReportSnapshot,
     ExecutionLog,
 )
 from ecom_v51.db.session import get_session, get_engine
@@ -60,9 +59,6 @@ class DashboardService:
 
     def __init__(self, shop_id: int = 1):
         self.shop_id = shop_id
-        engine = get_engine()
-        if 'execution_log' not in inspect(engine).get_table_names():
-            ExecutionLog.metadata.create_all(bind=engine, tables=[ExecutionLog.__table__])
 
     @staticmethod
     def _sku_map(session, sku_ids: list[int]) -> dict[int, str]:

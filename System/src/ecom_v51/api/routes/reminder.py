@@ -6,9 +6,8 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func, inspect
-from sqlalchemy.exc import OperationalError
 
-from ecom_v51.db.models import AlertEvent, DimDate, ExecutionLog, FactOrdersDaily, FactReviewsDaily, ImportErrorLog, ReminderReadState, StrategyTask
+from ecom_v51.db.models import AlertEvent, DimDate, ExecutionLog, FactOrdersDaily, FactReviewsDaily, ImportErrorLog, ReminderReadState, StrategyTask, UserAccount
 from ecom_v51.db.session import get_session, get_engine
 from ecom_v51.services.auth_service import AuthService
 
@@ -35,17 +34,17 @@ def _get_current_user() -> dict[str, object] | None:
 def _ensure_tables() -> None:
     engine = get_engine()
     existing = set(inspect(engine).get_table_names())
+
+    # 读接口空库兼容：不在请求路径创建业务链表（strategy_task/execution_log 等）
+    # 仅确保提醒已读状态所需表存在，避免 ack 接口写入失败。
     to_create = []
-    if 'execution_log' not in existing:
-        to_create.append(ExecutionLog.__table__)
+    if 'user_account' not in existing:
+        to_create.append(UserAccount.__table__)
     if 'reminder_read_state' not in existing:
         to_create.append(ReminderReadState.__table__)
+
     if to_create:
-        try:
-            ExecutionLog.metadata.create_all(bind=engine, tables=to_create)
-        except OperationalError:
-            # 避免多进程/热重载并发建表时出现“已存在”异常
-            pass
+        ReminderReadState.metadata.create_all(bind=engine, tables=to_create)
 
 
 @reminder_bp.route('/list', methods=['GET'])
