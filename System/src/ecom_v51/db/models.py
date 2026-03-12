@@ -125,6 +125,9 @@ class FxRateDaily(Base, TimestampMixin):
 # -----------------------------
 class FactSkuDaily(Base, TimestampMixin):
     __tablename__ = "fact_sku_daily"
+    __table_args__ = (
+        UniqueConstraint("date_id", "shop_id", "sku_id", name="uq_fact_sku_daily_date_shop_sku"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     date_id: Mapped[int] = mapped_column(ForeignKey("dim_date.id"), nullable=False)
@@ -206,6 +209,9 @@ class FactReviewsDaily(Base, TimestampMixin):
 
 class FactProfitSnapshot(Base, TimestampMixin):
     __tablename__ = "fact_profit_snapshot"
+    __table_args__ = (
+        UniqueConstraint("date_id", "shop_id", "sku_id", name="uq_fact_profit_snapshot_date_shop_sku"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     date_id: Mapped[int] = mapped_column(ForeignKey("dim_date.id"), nullable=False)
@@ -419,3 +425,41 @@ class ReportSnapshot(Base, TimestampMixin):
     content_md: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class UserAccount(Base, TimestampMixin):
+    __tablename__ = "user_account"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="operator")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+
+
+class ReminderReadState(Base, TimestampMixin):
+    __tablename__ = "reminder_read_state"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_reminder_read_state_user"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user_account.id"), nullable=False)
+    last_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ExecutionLog(Base, TimestampMixin):
+    __tablename__ = "execution_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    strategy_task_id: Mapped[int] = mapped_column(ForeignKey("strategy_task.id"), nullable=False)
+    source_page: Mapped[str] = mapped_column(String(64), nullable=False)
+    action_before: Mapped[str | None] = mapped_column(Text, nullable=True)
+    action_after: Mapped[str | None] = mapped_column(Text, nullable=True)
+    operator: Mapped[str] = mapped_column(String(64), nullable=False)
+    confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    result_summary: Mapped[str] = mapped_column(String(512), nullable=False)
+    status_before: Mapped[str] = mapped_column(String(32), nullable=False)
+    status_after: Mapped[str] = mapped_column(String(32), nullable=False)
+    extra_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
