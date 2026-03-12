@@ -130,7 +130,7 @@ export default function ApiTest() {
 
         {Object.keys(testResults).length === 0 && (
           <Alert
-            message="点击"运行测试"按钮开始测试 API 连接"
+            message={'点击"运行测试"按钮开始测试 API 连接'}
             type="info"
           />
         )}

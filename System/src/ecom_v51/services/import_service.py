@@ -13,9 +13,23 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import json
 
-from ecom_v51.models import ImportBatchDiagnosis
+from ecom_v51.models import ImportBatchDiagnosis, ProfitInput
 from ecom_v51.ingestion import ImportDiagnoser
 from ecom_v51.intelligent_field_mapper import IntelligentFieldMapper
+from ecom_v51.db.session import get_session
+from ecom_v51.db.models import (
+    DimPlatform,
+    DimShop,
+    DimSku,
+    DimDate,
+    ImportBatch,
+    ImportBatchFile,
+    ImportErrorLog,
+    MappingFeedback,
+    FactSkuDaily,
+    FactProfitSnapshot,
+)
+from ecom_v51.profit_solver import ProfitSolver
 
 
 
@@ -228,7 +242,31 @@ class ImportService:
         self.validator = DataValidator()
         self.mapping = FieldMapping()
         self.intelligent_mapper = IntelligentFieldMapper()  # 🆕 智能映射器
+        self.profit_solver = ProfitSolver()
     
+    def _detect_excel_header_row(self, file_path: str, max_scan_rows: int = 30) -> int:
+        """尝试检测 Excel 真正表头行（兼容 Ozon 导出前置说明行）"""
+        try:
+            preview = pd.read_excel(file_path, header=None, nrows=max_scan_rows, engine='openpyxl')
+        except Exception:
+            return 0
+
+        known_headers = {str(k).strip().lower() for k in self.mapping.ozon_mapping.keys()}
+        known_headers.update({
+            'sku', 'seller sku', 'seller_sku', 'offer_id', 'артикул', 'name', 'product name',
+            'orders', 'revenue', 'impressions', 'card visits', 'add to cart', 'sale_price',
+            'list_price', 'cost_price', 'commission_rate',
+        })
+
+        for idx in range(min(len(preview), max_scan_rows)):
+            row = [str(x).strip().lower() for x in preview.iloc[idx].tolist() if str(x).strip() and str(x).lower() != 'nan']
+            if not row:
+                continue
+            hit = sum(1 for cell in row if cell in known_headers)
+            if hit >= 2:
+                return idx
+        return 0
+
     def read_file(self, file_path: str) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
         """
         读取Excel或CSV文件
@@ -242,7 +280,11 @@ class ImportService:
         
         try:
             if path.suffix in ['.xlsx', '.xls']:
-                df = pd.read_excel(file_path, engine='openpyxl' if path.suffix == '.xlsx' else 'xlrd')
+                if path.suffix == '.xlsx':
+                    header_row = self._detect_excel_header_row(file_path)
+                    df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
+                else:
+                    df = pd.read_excel(file_path, engine='xlrd')
             elif path.suffix == '.csv':
                 # 尝试不同编码
                 for encoding in ['utf-8', 'utf-8-sig', 'gbk', 'cp1251']:
@@ -363,7 +405,7 @@ class ImportService:
             return df, 0
         
         before_count = len(df)
-        df = df.drop_duplicates(subset=['sku'], keep='first')
+        df = df.drop_duplicates(subset=['sku'], keep='last')
         after_count = len(df)
         
         return df, before_count - after_count
@@ -485,3 +527,389 @@ class ImportService:
         if not hasattr(self, 'batches'):
             self.batches = []
         return self.batches
+
+    def parse_import_file(self, file_path: str, shop_id: int = 1, operator: str = 'frontend_user') -> dict:
+        """上传后解析文件，返回诊断与映射结果（创建后端草稿 session）"""
+        df, error = self.read_file(file_path)
+        if error:
+            raise ValueError(error)
+
+        mapped_df = self.map_columns(df.copy())
+        unmapped_fields = [col for col in df.columns if col not in mapped_df.columns]
+
+        diagnosis = self.diagnoser.diagnose(
+            file_name=Path(file_path).name,
+            preview_rows=df.head(20).fillna('').values.tolist(),
+            headers=df.columns.astype(str).tolist(),
+            mapped_fields=len(mapped_df.columns),
+            unmapped_fields=unmapped_fields,
+            row_error_count=0,
+        )
+
+        field_mappings: list[dict] = []
+        extra_map = {
+            'sale_price': 'sale_price',
+            'list_price': 'list_price',
+            'cost_price': 'cost_price',
+            'commission_rate': 'commission_rate',
+            'orders': 'orders',
+            'revenue': 'revenue',
+            'impressions': 'impressions',
+            'add to cart': 'add_to_cart',
+            'add_to_cart': 'add_to_cart',
+        }
+        for col in df.columns.astype(str):
+            norm_col = col.lower().strip()
+            std_field = None
+            confidence = 0.0
+            reasons: list[str] = []
+
+            # 先用显式映射，避免智能映射误判
+            std_field = self.mapping.ozon_mapping.get(col) or self.mapping.ozon_mapping.get(col.strip())
+            if not std_field:
+                std_field = extra_map.get(norm_col)
+            if std_field:
+                confidence = 0.95
+                reasons = ['explicit_mapping']
+            else:
+                mapped_name, mapped_conf, mapped_reasons = self.intelligent_mapper.detect_field(col)
+                if mapped_name != 'unknown':
+                    std_field = mapped_name
+                    confidence = mapped_conf
+                    reasons = mapped_reasons
+
+            # 防止非SKU字段被错误识别为SKU
+            if std_field == 'sku' and norm_col not in {'sku', 'артикул', 'offer_id', 'seller_sku', 'product id'}:
+                explicit_sku_alias = {'sku', 'артикул', 'offer_id', 'seller_sku', 'product id'}
+                if norm_col not in explicit_sku_alias:
+                    std_field = extra_map.get(norm_col)
+                    if std_field != 'sku':
+                        confidence = 0.8 if std_field else 0.0
+                        reasons = ['sku_false_positive_fixed'] if std_field else []
+
+            sample_values = df[col].dropna().head(5).astype(str).tolist() if col in df.columns else []
+            field_mappings.append(
+                {
+                    'originalField': col,
+                    'standardField': std_field,
+                    'confidence': round(confidence, 3),
+                    'sampleValues': sample_values,
+                    'isManual': False,
+                    'reasons': reasons,
+                }
+            )
+
+        preview_rows = df.head(10).fillna('').values.tolist()
+
+        with get_session() as session:
+            platform_code = diagnosis.platform if diagnosis.platform != 'unknown' else 'ozon'
+            platform_name = platform_code.upper() if platform_code != 'ozon' else 'Ozon'
+            platform = self._ensure_platform(session, platform_code, platform_name)
+            shop = self._ensure_shop(session, platform.id, shop_id)
+
+            batch = ImportBatch(
+                source_type='file_upload',
+                platform_code=platform_code,
+                shop_id=shop.id,
+                started_at=datetime.utcnow(),
+                status='draft',
+                message='upload parsed, waiting confirm',
+            )
+            session.add(batch)
+            session.flush()
+
+            mapped_fields_json = {
+                'filePath': file_path,
+                'fieldMappings': field_mappings,
+                'dataPreview': preview_rows,
+                'totalRows': len(df),
+                'totalColumns': len(df.columns),
+                'headerRow': (diagnosis.detected_header_row or 0) + 1,
+                'platform': diagnosis.platform,
+                'diagnosis': {
+                    'suggestions': diagnosis.suggestions,
+                    'keyField': diagnosis.key_field,
+                    'unmappedFields': diagnosis.unmapped_fields,
+                    'status': diagnosis.status,
+                },
+            }
+            batch_file = ImportBatchFile(
+                batch_id=batch.id,
+                file_name=Path(file_path).name,
+                detected_header_row=(diagnosis.detected_header_row or 0) + 1,
+                detected_key_field=diagnosis.key_field,
+                mapped_fields_json=mapped_fields_json,
+                unmapped_fields_json=diagnosis.unmapped_fields,
+                status='draft',
+            )
+            session.add(batch_file)
+
+            return {
+                'sessionId': batch.id,
+                'fileName': Path(file_path).name,
+                'fileSize': Path(file_path).stat().st_size,
+                'sheetNames': ['Sheet1'],
+                'selectedSheet': 'Sheet1',
+                'totalRows': len(df),
+                'totalColumns': len(df.columns),
+                'headerRow': (diagnosis.detected_header_row or 0) + 1,
+                'dataPreview': preview_rows,
+                'fieldMappings': field_mappings,
+                'mappedCount': len([x for x in field_mappings if x['standardField']]),
+                'unmappedCount': len([x for x in field_mappings if not x['standardField']]),
+                'confidence': round(sum(x['confidence'] for x in field_mappings) / max(len(field_mappings), 1), 3),
+                'platform': diagnosis.platform,
+                'status': diagnosis.status,
+                'diagnosis': {
+                    'suggestions': diagnosis.suggestions,
+                    'keyField': diagnosis.key_field,
+                    'unmappedFields': diagnosis.unmapped_fields,
+                    'status': diagnosis.status,
+                },
+            }
+
+    def confirm_import(self, session_id: int, shop_id: int, manual_overrides: list[dict], operator: str = 'system') -> dict:
+        """确认导入并入库：以后端 draft session 为真实来源"""
+        with get_session() as session:
+            batch = session.query(ImportBatch).filter(ImportBatch.id == session_id).one_or_none()
+            if not batch:
+                raise ValueError(f'导入会话不存在: {session_id}')
+
+            batch_file = session.query(ImportBatchFile).filter(ImportBatchFile.batch_id == batch.id).one_or_none()
+            if not batch_file:
+                raise ValueError(f'导入会话缺少批次文件: {session_id}')
+
+            parsed_state = batch_file.mapped_fields_json or {}
+            file_path = parsed_state.get('filePath')
+            if not file_path:
+                raise ValueError('导入会话缺少源文件路径')
+
+            df, error = self.read_file(file_path)
+            if error:
+                raise ValueError(error)
+
+            draft_mappings = parsed_state.get('fieldMappings', [])
+            merged = {item.get('originalField'): item.get('standardField') for item in draft_mappings if item.get('standardField')}
+            for item in manual_overrides or []:
+                if item.get('originalField'):
+                    merged[item['originalField']] = item.get('standardField')
+
+            rename_map = {k: v for k, v in merged.items() if v}
+            df = df.rename(columns=rename_map)
+            df = df.loc[:, ~df.columns.duplicated()]
+            df = self.clean_data(df)
+            valid_df, errors = self.validate_data(df)
+            valid_df, duplicate_count = self.remove_duplicates(valid_df)
+
+            platform = self._ensure_platform(session, batch.platform_code, 'Ozon')
+            shop = self._ensure_shop(session, platform.id, shop_id)
+
+            batch.shop_id = shop.id
+            batch.status = 'processing'
+            batch_file.mapped_fields_json = {
+                **parsed_state,
+                'finalMappings': rename_map,
+                'manualOverrides': manual_overrides,
+                'confirmedBy': operator,
+                'confirmedAt': datetime.utcnow().isoformat(),
+            }
+            batch_file.status = 'processing'
+
+            inserted = 0
+            for idx, row in valid_df.iterrows():
+                row_dict = row.to_dict()
+                try:
+                    sku_obj = self._ensure_sku(session, shop.id, str(row_dict.get('sku')), row_dict.get('product_name') or row_dict.get('name'))
+                    date_obj = self._ensure_date(session, datetime.utcnow().date())
+                    self._upsert_daily_facts(session, batch.id, shop.id, sku_obj.id, date_obj.id, row_dict)
+                    inserted += 1
+                except Exception as exc:
+                    errors.append(f"行{idx + 1}入库失败: {exc}")
+                    session.add(
+                        ImportErrorLog(
+                            batch_file_id=batch_file.id,
+                            row_no=idx + 1,
+                            column_name=None,
+                            error_type='db_insert',
+                            raw_value=str(row_dict),
+                            error_message=str(exc),
+                        )
+                    )
+
+            for original, mapped in rename_map.items():
+                session.add(
+                    MappingFeedback(
+                        platform_code=batch.platform_code,
+                        raw_field_name=original,
+                        mapped_field_name=mapped,
+                        confirmed_by=operator,
+                        confirmed_at=datetime.utcnow(),
+                    )
+                )
+
+            batch.success_count = inserted
+            batch.error_count = len(errors)
+            batch.status = 'success' if inserted > 0 else 'failed'
+            batch.message = f"去重{duplicate_count}条，错误{len(errors)}条"
+            batch.finished_at = datetime.utcnow()
+            batch_file.status = batch.status
+
+            return {
+                'sessionId': session_id,
+                'batchId': batch.id,
+                'importedRows': inserted,
+                'errorRows': len(errors),
+                'status': batch.status,
+                'warnings': [f'发现并移除 {duplicate_count} 条重复记录'] if duplicate_count else [],
+                'errors': errors[:20],
+            }
+
+    def _ensure_platform(self, session, platform_code: str, platform_name: str) -> DimPlatform:
+        obj = session.query(DimPlatform).filter(DimPlatform.platform_code == platform_code).one_or_none()
+        if obj:
+            return obj
+        obj = DimPlatform(platform_code=platform_code, platform_name=platform_name, is_active=True)
+        session.add(obj)
+        session.flush()
+        return obj
+
+    def _ensure_shop(self, session, platform_id: int, shop_id: int) -> DimShop:
+        obj = session.query(DimShop).filter(DimShop.id == shop_id).one_or_none()
+        if obj:
+            return obj
+        obj = DimShop(
+            id=shop_id,
+            platform_id=platform_id,
+            shop_code=f'shop-{shop_id}',
+            shop_name=f'默认店铺{shop_id}',
+            currency_code='RUB',
+            timezone='Europe/Moscow',
+            status='active',
+        )
+        session.add(obj)
+        session.flush()
+        return obj
+
+    def _ensure_sku(self, session, shop_id: int, sku: str, sku_name: str | None) -> DimSku:
+        obj = session.query(DimSku).filter(DimSku.shop_id == shop_id, DimSku.sku == sku).one_or_none()
+        if obj:
+            if sku_name and not obj.sku_name:
+                obj.sku_name = sku_name
+            return obj
+        obj = DimSku(shop_id=shop_id, sku=sku, sku_name=sku_name, status='active', is_active=True)
+        session.add(obj)
+        session.flush()
+        return obj
+
+    def _ensure_date(self, session, target_date) -> DimDate:
+        obj = session.query(DimDate).filter(DimDate.date_value == target_date).one_or_none()
+        if obj:
+            return obj
+        obj = DimDate(
+            date_value=target_date,
+            year=target_date.year,
+            month=target_date.month,
+            day=target_date.day,
+            week_of_year=target_date.isocalendar().week,
+        )
+        session.add(obj)
+        session.flush()
+        return obj
+
+
+    @staticmethod
+    def _scalar(value):
+        """将可能为 Series/list 的值转成标量"""
+        try:
+            import pandas as _pd
+            if isinstance(value, _pd.Series):
+                return value.iloc[0] if len(value) else None
+        except Exception:
+            pass
+        if isinstance(value, (list, tuple)):
+            return value[0] if value else None
+        return value
+
+    def _upsert_daily_facts(self, session, batch_id: int, shop_id: int, sku_id: int, date_id: int, row: dict) -> None:
+        fact = (
+            session.query(FactSkuDaily)
+            .filter(
+                FactSkuDaily.date_id == date_id,
+                FactSkuDaily.shop_id == shop_id,
+                FactSkuDaily.sku_id == sku_id,
+            )
+            .one_or_none()
+        )
+        if fact is None:
+            fact = FactSkuDaily(
+                date_id=date_id,
+                shop_id=shop_id,
+                sku_id=sku_id,
+                batch_id=batch_id,
+            )
+            session.add(fact)
+
+        fact.impressions_total = int(self._scalar(row.get('impressions')) or 0)
+        fact.card_visits = int(self._scalar(row.get('card_visits')) or self._scalar(row.get('visits')) or 0)
+        fact.add_to_cart_total = int(self._scalar(row.get('add_to_cart')) or 0)
+        fact.orders_count = int(self._scalar(row.get('orders')) or 0)
+        fact.cancelled_count = int(self._scalar(row.get('cancelled_count')) or 0)
+        fact.returned_count = int(self._scalar(row.get('returns')) or 0)
+        fact.revenue_ordered = float(self._scalar(row.get('revenue')) or 0)
+        fact.revenue_delivered = float(self._scalar(row.get('revenue')) or 0)
+        fact.batch_id = batch_id
+
+        sale_price = float(self._scalar(row.get('sale_price')) or self._scalar(row.get('list_price')) or 0)
+        list_price = float(self._scalar(row.get('list_price')) or sale_price)
+        fixed_cost_total = float(self._scalar(row.get('fixed_cost_total')) or self._scalar(row.get('cost_price')) or 0)
+        variable_rate_total = float(self._scalar(row.get('variable_rate_total')) or self._scalar(row.get('commission_rate')) or 0.2)
+        profit = self.profit_solver.solve_current(
+            ProfitInput(
+                sale_price=sale_price,
+                list_price=list_price,
+                variable_rate_total=variable_rate_total,
+                fixed_cost_total=fixed_cost_total,
+            )
+        )
+
+        profit_fact = (
+            session.query(FactProfitSnapshot)
+            .filter(
+                FactProfitSnapshot.date_id == date_id,
+                FactProfitSnapshot.shop_id == shop_id,
+                FactProfitSnapshot.sku_id == sku_id,
+            )
+            .one_or_none()
+        )
+        if profit_fact is None:
+            profit_fact = FactProfitSnapshot(
+                date_id=date_id,
+                shop_id=shop_id,
+                sku_id=sku_id,
+                batch_id=batch_id,
+                sale_price=0.0,
+                list_price=0.0,
+                fixed_cost_total=0.0,
+                variable_rate_total=0.0,
+                base_profit=0.0,
+                contribution_profit=0.0,
+                post_fulfillment_profit=0.0,
+                net_profit=0.0,
+                net_margin=0.0,
+                break_even_price=0.0,
+                break_even_discount_ratio=0.0,
+            )
+            session.add(profit_fact)
+
+        profit_fact.sale_price = sale_price
+        profit_fact.list_price = list_price
+        profit_fact.fixed_cost_total = fixed_cost_total
+        profit_fact.variable_rate_total = variable_rate_total
+        profit_fact.base_profit = profit.net_profit
+        profit_fact.contribution_profit = profit.net_profit
+        profit_fact.post_fulfillment_profit = profit.net_profit
+        profit_fact.net_profit = profit.net_profit
+        profit_fact.net_margin = profit.net_margin
+        profit_fact.break_even_price = profit.break_even_price
+        profit_fact.break_even_discount_ratio = profit.break_even_discount_ratio
+        profit_fact.batch_id = batch_id

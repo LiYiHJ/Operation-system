@@ -28,6 +28,12 @@ from .models import (
     SkuCostMaster,
     SkuPriceMaster,
     StrategyTask,
+    ExecutionLog,
+    PushDeliveryLog,
+    SyncRunLog,
+    ExternalDataSourceConfig,
+    ReminderReadState,
+    UserAccount,
 )
 
 __all__ = [
@@ -61,4 +67,10 @@ __all__ = [
     "StrategyTask",
     "AlertEvent",
     "ReportSnapshot",
+    "ExecutionLog",
+    "PushDeliveryLog",
+    "SyncRunLog",
+    "ExternalDataSourceConfig",
+    "ReminderReadState",
+    "UserAccount",
 ]

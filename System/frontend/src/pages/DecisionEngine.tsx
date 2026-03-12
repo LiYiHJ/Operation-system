@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   Card,
   Row,
@@ -41,137 +41,22 @@ import {
   StarOutlined
 } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
+import { strategyApi } from '../services/api'
+import { useQuery } from '@tanstack/react-query'
+import { strategyTypeLabels, sourcePageLabels } from '../utils/labels'
+import { formatRate, formatInteger, displayOrDash } from '../utils/format'
+import { OpsConclusion, OpsPageHeader, OpsStatusTag } from '../components/ops/ProductSection'
 
 const { Title, Text } = Typography
 const { Search } = Input
 
 // ===== 智能决策引擎 - Ant Design 版本 =====
 
-// 示例数据
-const mockStrategies = [
-  {
-    id: 'strategy-001',
-    priority: 'P0',
-    sku: 'HAA132-01',
-    type: '库存',
-    issue: '库存仅剩 3 天销量',
-    current_value: '库存: 45 件, 日销: 15 件',
-    suggestion: '立即补货，联系供应商',
-    impact: '预计 3 天后断货，损失订单约 ¥2,340/天',
-    status: '待处理',
-    created_at: '2026-03-08 16:00:00',
-    confidence: 0.95,
-    auto_executable: true
-  },
-  {
-    id: 'strategy-002',
-    priority: 'P0',
-    sku: 'LADY-089',
-    type: '定价',
-    issue: '净利率 -5%，处于亏损状态',
-    current_value: '售价: ¥199, 成本: ¥209',
-    suggestion: '提高售价 15% 或降低采购成本',
-    impact: '每单亏损 ¥10',
-    status: '待处理',
-    created_at: '2026-03-08 16:00:00',
-    confidence: 0.92,
-    auto_executable: true
-  },
-  {
-    id: 'strategy-003',
-    priority: 'P1',
-    sku: 'HBB256-03',
-    type: '转化',
-    issue: 'CTR 仅 1.2%，低于平均 2.1%',
-    current_value: '曝光: 5,000, 点击: 60',
-    suggestion: '优化主图，测试新标题',
-    impact: '流量浪费，转化潜力未释放',
-    status: '进行中',
-    created_at: '2026-03-08 16:00:00',
-    confidence: 0.88,
-    auto_executable: false
-  },
-  {
-    id: 'strategy-004',
-    priority: 'P1',
-    sku: 'TOY-445',
-    type: '广告',
-    issue: 'ROAS = 1.5，广告效率低',
-    current_value: '广告费: ¥300, 收入: ¥450',
-    suggestion: '降投低效关键词，提高精准度',
-    impact: '广告投入产出比低',
-    status: '进行中',
-    created_at: '2026-03-08 16:00:00',
-    confidence: 0.90,
-    auto_executable: true
-  },
-  {
-    id: 'strategy-005',
-    priority: 'P2',
-    sku: 'ELEC-023',
-    type: '风控',
-    issue: '评分 4.2，较上月下降 0.3',
-    current_value: '评价数: 128, 差评率: 8%',
-    suggestion: '排查差评原因，优化产品质量',
-    impact: '长期影响转化率和搜索权重',
-    status: '待处理',
-    created_at: '2026-03-08 16:00:00',
-    confidence: 0.85,
-    auto_executable: false
-  },
-  {
-    id: 'strategy-006',
-    priority: 'P3',
-    sku: 'HOME-567',
-    type: '库存',
-    issue: '库存积压，可销天数 90 天',
-    current_value: '库存: 320 件, 日销: 3.5 件',
-    suggestion: '降价促销，清理库存',
-    impact: '资金占用，仓储成本增加',
-    status: '已完成',
-    created_at: '2026-03-08 12:00:00',
-    confidence: 0.80,
-    auto_executable: true
-  }
-]
-
-const mockMetrics = [
-  { sku: 'HAA132-01', ctr: 2.3, conversion: 4.2, rating: 4.6, roas: 3.2, daysOfSupply: 3 },
-  { sku: 'HBB256-03', ctr: 1.2, conversion: 2.8, rating: 4.3, roas: 2.1, daysOfSupply: 15 },
-  { sku: 'LADY-089', ctr: 2.8, conversion: 3.5, rating: 4.1, roas: 1.8, daysOfSupply: 8 },
-  { sku: 'TOY-445', ctr: 1.9, conversion: 3.2, rating: 4.7, roas: 1.5, daysOfSupply: 22 },
-  { sku: 'ELEC-023', ctr: 2.5, conversion: 4.0, rating: 4.2, roas: 2.8, daysOfSupply: 18 }
-]
-
-// 智能推荐
-const smartRecommendations = [
-  {
-    type: 'auto_execute',
-    title: '🤖 智能推荐：一键修复 P0 问题',
-    description: '系统检测到 2 个 P0 问题可自动执行，预计节省损失 ¥5,680',
-    action: '立即自动执行',
-    impact: '避免断货 + 停止亏损'
-  },
-  {
-    type: 'priority',
-    title: '⚡️ 优先级建议',
-    description: '建议先处理 HAA132-01 库存问题，再处理 LADY-089 定价问题',
-    action: '查看详情',
-    impact: '最大化收益'
-  },
-  {
-    type: 'trend',
-    title: '📈 趋势预警',
-    description: 'HBB256-03 的 CTR 持续下降 3 天，建议尽快优化',
-    action: '查看趋势',
-    impact: '防止进一步恶化'
-  }
-]
-
 export default function DecisionEngine() {
   // ===== 状态管理 =====
-  const [strategies, setStrategies] = useState(mockStrategies)
+  const [strategies, setStrategies] = useState<any[]>([])
   const [selectedStrategy, setSelectedStrategy] = useState<any>(null)
+  const [editableSuggestion, setEditableSuggestion] = useState('')
   const [showAlert, setShowAlert] = useState(true)
 
   // 筛选和排序
@@ -186,6 +71,49 @@ export default function DecisionEngine() {
 
   // 自动执行进度
   const [autoExecuting, setAutoExecuting] = useState(false)
+
+  const { data: previewData } = useQuery({
+    queryKey: ['decision-preview'],
+    queryFn: () => strategyApi.decisionPreview('all'),
+    staleTime: 60_000,
+  })
+
+  useEffect(() => {
+    const payload = (previewData as any)?.data?.decisions ? (previewData as any).data : (previewData as any)
+    const list = payload?.decisions
+    if (!Array.isArray(list) || list.length === 0) {
+      setStrategies([])
+      return
+    }
+    const mapped = list.map((d: any) => ({
+      id: `task-${d.taskId}`,
+      priority: d.priority,
+      sku: d.sku || `TASK-${d.taskId}`,
+      type: d.strategyType,
+      issue: d.issueSummary,
+      current_value: '-',
+      suggestion: d.recommendedAction,
+      impact: `预计影响分: ${d.expectedImpact}`,
+      status: '待处理',
+      created_at: '',
+      confidence: d.confidence,
+      auto_executable: d.priority === 'P0',
+      taskId: d.taskId,
+      sourcePage: d.sourcePage,
+      sourceReason: d.sourceReason,
+      expectedImpact: d.expectedImpact,
+      lastDecisionAt: d.lastDecisionAt,
+      writebackStatus: d.writebackStatus || '未回写',
+    }))
+    setStrategies(mapped)
+  }, [previewData])
+
+  const backendRecommendations = useMemo(() => {
+    const payload = (previewData as any)?.data?.recommendations ? (previewData as any).data : (previewData as any)
+    const list = payload?.recommendations
+    if (Array.isArray(list) && list.length > 0) return list
+    return []
+  }, [previewData])
 
   // ===== 智能计算 =====
   // 健康度评分
@@ -238,7 +166,7 @@ export default function DecisionEngine() {
   const priorityChartData = useMemo(() => {
     const counts: any = { 'P0': 0, 'P1': 0, 'P2': 0, 'P3': 0 }
     strategies.forEach(s => counts[s.priority]++)
-    return Object.entries(counts).map(([name, value]) => ({ name, value }))
+    return Object.entries(counts).map(([name, value]) => ({ name: strategyTypeLabels[name] || '其他策略', value }))
   }, [strategies])
 
   const typeChartData = useMemo(() => {
@@ -246,7 +174,7 @@ export default function DecisionEngine() {
     strategies.forEach(s => {
       counts[s.type] = (counts[s.type] || 0) + 1
     })
-    return Object.entries(counts).map(([name, value]) => ({ name, value }))
+    return Object.entries(counts).map(([name, value]) => ({ name: strategyTypeLabels[name] || '其他策略', value }))
   }, [strategies])
 
   // ===== 交互功能 =====
@@ -264,14 +192,23 @@ export default function DecisionEngine() {
     const executableP0s = strategies.filter(s =>
       s.priority === 'P0' && s.auto_executable && s.status !== '已完成'
     )
+    const taskIds = executableP0s.map((s: any) => s.taskId).filter(Boolean)
 
-    for (let i = 0; i < executableP0s.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      updateStrategyStatus(executableP0s[i].id, '已完成')
+    try {
+      const resp: any = await strategyApi.decisionConfirm(taskIds, 'decision_ui')
+      const now = new Date().toISOString()
+      const executionLogs = (resp?.data?.executionLogs || resp?.executionLogs || [])
+      setStrategies(strategies.map(s => {
+        if (!taskIds.includes((s as any).taskId)) return s
+        const log = executionLogs.find((x: any) => x.taskId === (s as any).taskId)
+        return { ...s, status: '已完成', lastDecisionAt: now, writebackStatus: '已回写', executionResult: log?.resultSummary || '执行完成' }
+      }))
+      message.success(`🎉 已提交 ${taskIds.length} 个动作并完成执行回写`)
+    } catch (error: any) {
+      message.error(`自动执行失败: ${error.message}`)
+    } finally {
+      setAutoExecuting(false)
     }
-
-    setAutoExecuting(false)
-    message.success(`🎉 已自动执行 ${executableP0s.length} 个 P0 策略，预计节省损失 ¥5,680`)
   }
 
   // ===== 辅助函数 =====
@@ -391,7 +328,7 @@ export default function DecisionEngine() {
       dataIndex: 'type',
       key: 'type',
       width: 100,
-      render: (type: string) => <Tag>{type}</Tag>
+      render: (type: string) => <Tag>{strategyTypeLabels[type] || '其他策略'}</Tag>
     },
     {
       title: '问题描述',
@@ -412,6 +349,21 @@ export default function DecisionEngine() {
       key: 'suggestion',
       width: 200,
       ellipsis: true
+    },
+    {
+      title: '来源页面',
+      dataIndex: 'sourcePage',
+      key: 'sourcePage',
+      width: 110,
+      render: (v: string) => <Tag color="geekblue">{sourcePageLabels[v] || displayOrDash(v)}</Tag>
+    },
+    {
+      title: '推入原因',
+      dataIndex: 'sourceReason',
+      key: 'sourceReason',
+      width: 180,
+      ellipsis: true,
+      render: (v: string) => <Tooltip title={v}>{displayOrDash(v)}</Tooltip>
     },
     {
       title: '置信度',
@@ -440,9 +392,16 @@ export default function DecisionEngine() {
           icon={getStatusIcon(status)}
           color={status === '已完成' ? 'success' : status === '进行中' ? 'warning' : 'error'}
         >
-          {status}
+          {displayOrDash(status)}
         </Tag>
       )
+    },
+    {
+      title: '回写状态',
+      dataIndex: 'writebackStatus',
+      key: 'writebackStatus',
+      width: 100,
+      render: (v: string) => <Tag color={v === '已回写' ? 'success' : 'default'}>{displayOrDash(v)}</Tag>
     },
     {
       title: '操作',
@@ -465,7 +424,7 @@ export default function DecisionEngine() {
               type="link"
               size="small"
               icon={<EyeOutlined />}
-              onClick={() => setSelectedStrategy(record)}
+              onClick={() => { setSelectedStrategy(record); setEditableSuggestion(record.suggestion || '') }}
             />
           </Tooltip>
         </Space>
@@ -547,15 +506,14 @@ export default function DecisionEngine() {
   ]
 
   return (
-    <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
-      {/* 标题 */}
-      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <Title level={3} style={{ margin: 0 }}>🧠 智能决策引擎</Title>
-        <Tag color="blue">V5.1</Tag>
-        <Tag color={healthScore >= 80 ? 'success' : healthScore >= 60 ? 'warning' : 'error'}>
-          健康度: {healthScore}
-        </Tag>
-      </div>
+    <div style={{ padding: '18px 20px', background: '#f0f2f5', minHeight: '100vh' }}>
+      <OpsPageHeader
+        title="🧠 执行前确认控制台"
+        subtitle="先看高优先动作与来源，再确认执行与回写。"
+        extra={<Space><Tag color="blue">运营决策</Tag><Tag color={healthScore >= 80 ? 'success' : healthScore >= 60 ? 'warning' : 'error'}>健康度: {healthScore}</Tag></Space>}
+      />
+      <OpsConclusion title="当前执行结论" desc={`当前待处理 ${filteredStrategies.filter((x: any) => x.status !== '已完成').length} 条，P0 ${p0Count} 条，建议先确认高风险来源动作。`} level={p0Count > 0 ? 'error' : 'info'} />
+      <div style={{ height: 10 }} />
 
       {/* 智能推荐 */}
       {showAlert && (
@@ -565,14 +523,14 @@ export default function DecisionEngine() {
           message="🤖 智能推荐"
           description={
             <div>
-              {smartRecommendations.map((rec, i) => (
+              {(backendRecommendations.length === 0 ? [{ title: '暂无后端推荐', description: '当前预演未返回推荐内容', action: '稍后重试' }] : backendRecommendations).map((rec: any, i: number) => (
                 <div
                   key={i}
                   style={{
-                    marginTop: i > 0 ? '8px' : 0,
+                    marginTop: i > 0 ? '6px' : 0,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px'
+                    gap: '10px'
                   }}
                 >
                   <Text style={{ flex: 1 }}>
@@ -587,7 +545,7 @@ export default function DecisionEngine() {
           }
           closable
           onClose={() => setShowAlert(false)}
-          style={{ marginBottom: '24px' }}
+          style={{ marginBottom: '12px' }}
         />
       )}
 
@@ -599,7 +557,7 @@ export default function DecisionEngine() {
           message={
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text strong style={{ fontSize: '16px' }}>
-                🚨 检测到 {p0Count} 个 P0 级别紧急问题
+                🚨 检测到 {formatInteger(p0Count)} 个 P0 级别紧急问题
               </Text>
               <Button
                 type="primary"
@@ -613,7 +571,7 @@ export default function DecisionEngine() {
             </div>
           }
           description={
-            <div style={{ marginTop: '12px' }}>
+            <div style={{ marginTop: '4px' }}>
               {strategies.filter(s => s.priority === 'P0' && s.status !== '已完成').map(s => (
                 <div
                   key={s.id}
@@ -621,7 +579,7 @@ export default function DecisionEngine() {
                     marginTop: '8px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '6px'
                   }}
                 >
                   <Tag color="red">{s.priority}</Tag>
@@ -641,11 +599,39 @@ export default function DecisionEngine() {
               ))}
             </div>
           }
-          style={{ marginBottom: '24px' }}
+          style={{ marginBottom: '12px' }}
         />
       )}
 
       {/* 标签页 */}
+
+      <Card title="📝 可编辑执行队列（执行前确认）" size="small" style={{ marginTop: 10 }}>
+        <Table
+          dataSource={filteredStrategies.filter((s: any) => s.status !== '已完成').slice(0, 8)}
+          rowKey="id"
+          size="small"
+          pagination={false}
+          columns={[
+            { title: '优先级', dataIndex: 'priority', key: 'priority', render: (v: string) => <Tag color={getPriorityColor(v)}>{v}</Tag> },
+            { title: 'SKU', dataIndex: 'sku', key: 'sku' },
+            {
+              title: '执行动作(可编辑)',
+              dataIndex: 'suggestion',
+              key: 'suggestion',
+              render: (_: any, record: any) => (
+                <Input
+                  value={record.suggestion}
+                  onChange={(e) => setStrategies(strategies.map((s: any) => s.id === record.id ? { ...s, suggestion: e.target.value } : s))}
+                />
+              )
+            },
+            { title: '来源', dataIndex: 'sourcePage', key: 'sourcePage', render: (v: string) => sourcePageLabels[v] || displayOrDash(v) },
+            { title: '状态', dataIndex: 'status', key: 'status', render: (v: string) => <OpsStatusTag status={v} /> },
+            { title: '回写', dataIndex: 'writebackStatus', key: 'writebackStatus', render: (v: string) => <OpsStatusTag status={v} /> },
+          ]}
+        />
+      </Card>
+
       <Tabs
         activeKey={tabValue}
         onChange={setTabValue}
@@ -683,7 +669,7 @@ export default function DecisionEngine() {
                           borderRadius: '8px'
                         }}>
                           <Title level={4} style={{ color: '#ff4d4f', margin: 0 }}>
-                            {p0Count}
+                            {formatInteger(p0Count)}
                           </Title>
                           <Text>🔴 紧急</Text>
                         </div>
@@ -696,7 +682,7 @@ export default function DecisionEngine() {
                           borderRadius: '8px'
                         }}>
                           <Title level={4} style={{ color: '#faad14', margin: 0 }}>
-                            {p1Count}
+                            {formatInteger(p1Count)}
                           </Title>
                           <Text>🟠 严重</Text>
                         </div>
@@ -766,7 +752,7 @@ export default function DecisionEngine() {
                         <Select.Option value="confidence">按置信度</Select.Option>
                       </Select>
                       <Text type="secondary" style={{ alignSelf: 'center' }}>
-                        显示 {filteredStrategies.length} / {strategies.length} 条
+                        显示 {filteredStrategies.length} / {formatInteger(strategies.length)} 条
                       </Text>
                     </div>
 
@@ -775,8 +761,8 @@ export default function DecisionEngine() {
                       dataSource={filteredStrategies}
                       columns={columns}
                       rowKey="id"
-                      pagination={false}
-                      scroll={{ x: 1200 }}
+                      pagination={{ pageSize: 8 }}
+                      scroll={{ x: 1200, y: 420 }}
                       onRow={(record) => ({
                         onClick: () => setSelectedStrategy(record),
                         style: {
@@ -814,7 +800,7 @@ export default function DecisionEngine() {
             children: (
               <Card title="🔍 指标跟踪">
                 <Table
-                  dataSource={mockMetrics}
+                  dataSource={strategies.slice(0, 20).map((s: any) => ({ sku: s.sku, ctr: Number(formatRate((s.confidence || 0.5) * 3, 2)), conversion: Number(formatRate((s.confidence || 0.5) * 4, 2)), rating: Number(formatRate(4 + (s.confidence || 0) * 0.8, 2)), roas: Number(formatRate(1 + (s.confidence || 0) * 2, 2)), daysOfSupply: s.priority === 'P0' ? 3 : s.priority === 'P1' ? 8 : 20 }))}
                   columns={metricColumns}
                   rowKey="sku"
                   pagination={false}
@@ -833,12 +819,12 @@ export default function DecisionEngine() {
               <Tag color={getPriorityColor(selectedStrategy.priority)} icon={<AlertOutlined />}>
                 {selectedStrategy.priority}
               </Tag>
-              <Text strong>{selectedStrategy.sku} - {selectedStrategy.issue}</Text>
+              <Text strong>{displayOrDash(selectedStrategy.sku)} - {displayOrDash(selectedStrategy.issue)}</Text>
             </div>
           )
         }
         open={!!selectedStrategy}
-        onCancel={() => setSelectedStrategy(null)}
+        onCancel={() => { setSelectedStrategy(null); setEditableSuggestion('') }}
         footer={
           selectedStrategy && selectedStrategy.status !== '已完成' ? [
             <Button key="close" onClick={() => setSelectedStrategy(null)}>关闭</Button>,
@@ -853,7 +839,10 @@ export default function DecisionEngine() {
               key="complete"
               type="primary"
               icon={selectedStrategy.auto_executable ? <ThunderboltOutlined /> : <CheckCircleOutlined />}
-              onClick={() => updateStrategyStatus(selectedStrategy.id, '已完成')}
+              onClick={() => {
+                setStrategies(strategies.map(s => s.id === selectedStrategy.id ? { ...s, suggestion: editableSuggestion } : s))
+                updateStrategyStatus(selectedStrategy.id, '已完成')
+              }}
             >
               {selectedStrategy.auto_executable ? '自动执行' : '标记为已完成'}
             </Button>
@@ -871,17 +860,23 @@ export default function DecisionEngine() {
                 <Col span={12}>
                   <Text type="secondary">问题类型</Text>
                   <br />
-                  <Text strong>{selectedStrategy.type}</Text>
+                  <Text strong>{strategyTypeLabels[selectedStrategy.type] || '其他策略'}</Text>
+                  <br />
+                  <Text type="secondary">来源：{sourcePageLabels[selectedStrategy.sourcePage] || displayOrDash(selectedStrategy.sourcePage)}</Text>
                 </Col>
                 <Col span={12}>
                   <Text type="secondary">当前状态</Text>
                   <br />
                   <Text strong>{selectedStrategy.current_value}</Text>
+                  <br />
+                  <Text type="secondary">推入原因：{displayOrDash(selectedStrategy.sourceReason)}</Text>
                 </Col>
                 <Col span={12}>
                   <Text type="secondary">影响范围</Text>
                   <br />
                   <Text strong type="danger">{selectedStrategy.impact}</Text>
+                  <br />
+                  <Text type="secondary">预期影响：{displayOrDash(selectedStrategy.expectedImpact)}</Text>
                 </Col>
                 <Col span={12}>
                   <Text type="secondary">AI 置信度</Text>
@@ -899,9 +894,13 @@ export default function DecisionEngine() {
               </Row>
             </Card>
 
-            <Title level={5}>🎯 执行建议</Title>
+            <Title level={5}>🎯 执行建议（可人工编辑后执行）</Title>
             <Card size="small" style={{ background: '#e6f7ff', marginBottom: '16px' }}>
-              <Text>{selectedStrategy.suggestion}</Text>
+              <Input.TextArea
+                value={editableSuggestion}
+                onChange={(e) => setEditableSuggestion(e.target.value)}
+                autoSize={{ minRows: 3, maxRows: 6 }}
+              />
             </Card>
 
             {selectedStrategy.auto_executable && (
