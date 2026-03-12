@@ -27,7 +27,6 @@ from .routes.import_route import import_bp
 from .routes.analysis import analysis_bp
 from .routes.auth import auth_bp
 from .routes.reminder import reminder_bp
-from .routes.integration import integration_bp
 
 
 def create_app(config_name='default'):  
@@ -74,7 +73,6 @@ def create_app(config_name='default'):
     app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(reminder_bp, url_prefix='/api/reminders')
-    app.register_blueprint(integration_bp, url_prefix='/api/integration')
     
     # 健康检查
     @app.route('/api/health', methods=['GET'])

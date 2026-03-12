@@ -16,10 +16,6 @@ reminder_bp = Blueprint('reminder', __name__)
 _auth_service = AuthService()
 
 
-def _table_exists(table_name: str) -> bool:
-    return table_name in set(inspect(get_engine()).get_table_names())
-
-
 def _extract_token() -> str | None:
     auth = request.headers.get('Authorization', '')
     if auth.startswith('Bearer '):
@@ -60,43 +56,25 @@ def reminder_list():
             state = session.query(ReminderReadState).filter(ReminderReadState.user_id == int(current_user['id'])).first()
             read_at = state.last_read_at if state else None
 
-        new_orders = 0
-        new_reviews = 0
-        latest_order_day = None
-        latest_review_day = None
-        system_alerts = []
-        pending_confirmations = []
-        exec_results = []
-        import_exceptions = []
+        new_orders = int(session.query(func.coalesce(func.sum(FactOrdersDaily.ordered_qty), 0)).filter(FactOrdersDaily.shop_id == shop_id).scalar() or 0)
+        new_reviews = int(session.query(func.coalesce(func.sum(FactReviewsDaily.new_reviews_count), 0)).filter(FactReviewsDaily.shop_id == shop_id).scalar() or 0)
+        latest_order_day = (
+            session.query(func.max(DimDate.date_value))
+            .join(FactOrdersDaily, FactOrdersDaily.date_id == DimDate.id)
+            .filter(FactOrdersDaily.shop_id == shop_id)
+            .scalar()
+        )
+        latest_review_day = (
+            session.query(func.max(DimDate.date_value))
+            .join(FactReviewsDaily, FactReviewsDaily.date_id == DimDate.id)
+            .filter(FactReviewsDaily.shop_id == shop_id)
+            .scalar()
+        )
 
-        if _table_exists('fact_orders_daily'):
-            new_orders = int(session.query(func.coalesce(func.sum(FactOrdersDaily.ordered_qty), 0)).filter(FactOrdersDaily.shop_id == shop_id).scalar() or 0)
-            if _table_exists('dim_date'):
-                latest_order_day = (
-                    session.query(func.max(DimDate.date_value))
-                    .join(FactOrdersDaily, FactOrdersDaily.date_id == DimDate.id)
-                    .filter(FactOrdersDaily.shop_id == shop_id)
-                    .scalar()
-                )
-
-        if _table_exists('fact_reviews_daily'):
-            new_reviews = int(session.query(func.coalesce(func.sum(FactReviewsDaily.new_reviews_count), 0)).filter(FactReviewsDaily.shop_id == shop_id).scalar() or 0)
-            if _table_exists('dim_date'):
-                latest_review_day = (
-                    session.query(func.max(DimDate.date_value))
-                    .join(FactReviewsDaily, FactReviewsDaily.date_id == DimDate.id)
-                    .filter(FactReviewsDaily.shop_id == shop_id)
-                    .scalar()
-                )
-
-        if _table_exists('alert_event'):
-            system_alerts = session.query(AlertEvent).filter(AlertEvent.shop_id == shop_id).order_by(AlertEvent.detected_at.desc()).limit(10).all()
-        if _table_exists('strategy_task'):
-            pending_confirmations = session.query(StrategyTask).filter(StrategyTask.shop_id == shop_id, StrategyTask.status == 'pending').order_by(StrategyTask.created_at.desc()).limit(10).all()
-            if _table_exists('execution_log'):
-                exec_results = session.query(ExecutionLog).join(StrategyTask, StrategyTask.id == ExecutionLog.strategy_task_id).filter(StrategyTask.shop_id == shop_id).order_by(ExecutionLog.confirmed_at.desc()).limit(10).all()
-        if _table_exists('import_error_log'):
-            import_exceptions = session.query(ImportErrorLog).order_by(ImportErrorLog.created_at.desc()).limit(10).all()
+        system_alerts = session.query(AlertEvent).filter(AlertEvent.shop_id == shop_id).order_by(AlertEvent.detected_at.desc()).limit(10).all()
+        pending_confirmations = session.query(StrategyTask).filter(StrategyTask.shop_id == shop_id, StrategyTask.status == 'pending').order_by(StrategyTask.created_at.desc()).limit(10).all()
+        exec_results = session.query(ExecutionLog).join(StrategyTask, StrategyTask.id == ExecutionLog.strategy_task_id).filter(StrategyTask.shop_id == shop_id).order_by(ExecutionLog.confirmed_at.desc()).limit(10).all()
+        import_exceptions = session.query(ImportErrorLog).order_by(ImportErrorLog.created_at.desc()).limit(10).all()
 
         items = [
             {
@@ -133,7 +111,7 @@ def reminder_list():
             for x in exec_results
         ])
         items.extend([
-            {'id': f'import-{e.id}', 'category': 'import_exceptions', 'title': '导入异常', 'summary': e.error_message, 'count': 1, 'time': e.created_at.isoformat() if e.created_at else None, 'source': '数据导入', 'target': '/settings'}
+            {'id': f'import-{e.id}', 'category': 'import_exceptions', 'title': '导入异常', 'summary': e.error_message, 'count': 1, 'time': e.created_at.isoformat() if e.created_at else None, 'source': '数据导入', 'target': '/import'}
             for e in import_exceptions
         ])
 

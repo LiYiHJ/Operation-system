@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Alert, Button, Card, Checkbox, Col, Form, Input, Row, Select, Space, Switch, Table, Tabs, Tag, message } from 'antd'
-import { ReloadOutlined, ApiOutlined, SendOutlined, SafetyOutlined } from '@ant-design/icons'
+import { Alert, Button, Card, Col, Form, Input, Row, Select, Space, Switch, Table, Tabs, Tag, message } from 'antd'
+import { ReloadOutlined, ApiOutlined, UploadOutlined, SendOutlined } from '@ant-design/icons'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { integrationApi } from '../services/api'
 import DataImportV2 from './DataImportV2'
@@ -9,13 +9,11 @@ import { OpsPageHeader } from '../components/ops/ProductSection'
 export default function SystemSettings() {
   const [form] = Form.useForm()
   const [pushForm] = Form.useForm()
-  const [selectedScopes, setSelectedScopes] = useState<string[]>([])
 
   const { data: cfg, refetch: refetchCfg } = useQuery({ queryKey: ['integration-config'], queryFn: () => integrationApi.getDataSource({ provider: 'ozon', shopId: 1 }) })
   const { data: syncLogs, refetch: refetchSyncLogs } = useQuery({ queryKey: ['sync-logs'], queryFn: () => integrationApi.getSyncLogs({ shopId: 1, limit: 20 }) })
   const { data: importLogs, refetch: refetchImportLogs } = useQuery({ queryKey: ['import-logs'], queryFn: () => integrationApi.getImportLogs({ shopId: 1, limit: 20 }) })
   const { data: pushLogs, refetch: refetchPushLogs } = useQuery({ queryKey: ['push-logs'], queryFn: () => integrationApi.getPushLogs({ shopId: 1, limit: 20 }) })
-  const { data: domains } = useQuery({ queryKey: ['integration-domains'], queryFn: () => integrationApi.getDomains({ shopId: 1 }) })
 
   const saveMutation = useMutation({
     mutationFn: (payload: any) => integrationApi.saveDataSource(payload),
@@ -23,14 +21,8 @@ export default function SystemSettings() {
     onError: (e: any) => message.error(e.message),
   })
 
-  const checkPermissionMutation = useMutation({
-    mutationFn: () => integrationApi.checkPermission({ provider: 'ozon', shopId: 1 }),
-    onSuccess: (res: any) => message.success(`权限检查完成：read=${res.readTokenReady ? 'ok' : 'missing'} / action=${res.actionTokenReady ? 'ok' : 'missing'}`),
-    onError: (e: any) => message.error(`权限检查失败: ${e.message}`),
-  })
-
   const syncMutation = useMutation({
-    mutationFn: () => integrationApi.syncOnce({ provider: 'ozon', shopId: 1, scopes: selectedScopes.length ? selectedScopes : undefined }),
+    mutationFn: () => integrationApi.syncOnce({ provider: 'ozon', shopId: 1 }),
     onSuccess: (res: any) => { message.success(`同步完成: ${res.status}`); refetchCfg(); refetchSyncLogs(); refetchImportLogs() },
     onError: (e: any) => message.error(`同步失败: ${e.message}`),
   })
@@ -47,10 +39,8 @@ export default function SystemSettings() {
     autoSyncEnabled: !!cfg?.autoSyncEnabled,
     syncFrequency: cfg?.syncFrequency || 'manual',
     clientId: cfg?.credentials?.clientId || '',
-    readToken: cfg?.credentials?.readToken || '',
-    actionToken: cfg?.credentials?.actionToken || '',
+    apiKey: cfg?.credentials?.apiKey || '',
     sellerId: cfg?.credentials?.sellerId || '',
-    useMockOzon: !!cfg?.settings?.useMockOzon,
     salesPushUrl: cfg?.settings?.sales_push_url || 'http://127.0.0.1:5000/api/integration/mock/sales-backend',
   }), [cfg])
 
@@ -81,25 +71,19 @@ export default function SystemSettings() {
     { title: '错误', dataIndex: 'error', ellipsis: true },
   ]
 
-  const domainColumns = [
-    { title: '业务域', dataIndex: 'label', width: 220 },
-    { title: '权限项', dataIndex: 'permissions', render: (v: string[]) => (v || []).slice(0, 3).join(' / ') + ((v || []).length > 3 ? ' ...' : '') },
-    { title: 'scopeKey', dataIndex: 'key', width: 180 },
-  ]
-
   return (
     <div style={{ padding: 24 }}>
-      <OpsPageHeader title="⚙️ 系统设置" subtitle="数据接入中心：Ozon API 自动拉取为主，文件导入为辅。" />
+      <OpsPageHeader title="⚙️ 系统设置" subtitle="数据接入以 API 自动拉取为主，文件导入为辅。" />
       <Tabs
         defaultActiveKey="access"
         items={[
           {
             key: 'access',
-            label: '数据接入中心',
+            label: '数据接入',
             children: (
               <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                <Alert type="info" showIcon message="主接入方式：Ozon API 自动拉取" description="业务域按 商品、履约、促销、售后、报表 统一管理，避免零散接口堆叠。" />
-                <Card title="平台连接与权限" extra={<Button icon={<ReloadOutlined />} onClick={() => refetchCfg()}>刷新配置</Button>}>
+                <Alert type="info" showIcon message="主接入方式：Ozon API 自动拉取" description="可配置手工同步、自动拉取、最近同步与最近导入记录。" />
+                <Card title="Ozon API 配置" extra={<Button icon={<ReloadOutlined />} onClick={() => refetchCfg()}>刷新配置</Button>}>
                   <Form
                     form={form}
                     layout="vertical"
@@ -112,8 +96,8 @@ export default function SystemSettings() {
                         enabled: values.enabled,
                         autoSyncEnabled: values.autoSyncEnabled,
                         syncFrequency: values.syncFrequency,
-                        credentials: { clientId: values.clientId, readToken: values.readToken, actionToken: values.actionToken, sellerId: values.sellerId },
-                        settings: { sales_push_url: values.salesPushUrl, useMockOzon: values.useMockOzon },
+                        credentials: { clientId: values.clientId, apiKey: values.apiKey, sellerId: values.sellerId },
+                        settings: { sales_push_url: values.salesPushUrl },
                       })
                     }}
                   >
@@ -123,30 +107,15 @@ export default function SystemSettings() {
                       <Col xs={24} lg={8}><Form.Item label="自动拉取" name="autoSyncEnabled" valuePropName="checked"><Switch /></Form.Item></Col>
                       <Col xs={24} lg={8}><Form.Item label="同步频率" name="syncFrequency"><Select options={[{ value: 'manual', label: '手动' }, { value: 'hourly', label: '每小时' }, { value: 'daily', label: '每日' }]} /></Form.Item></Col>
                       <Col xs={24} lg={8}><Form.Item label="Client ID" name="clientId"><Input placeholder="ozon client id" /></Form.Item></Col>
+                      <Col xs={24} lg={8}><Form.Item label="API Key" name="apiKey"><Input.Password placeholder="ozon api key" /></Form.Item></Col>
                       <Col xs={24} lg={8}><Form.Item label="Seller ID" name="sellerId"><Input placeholder="seller id" /></Form.Item></Col>
-                      <Col xs={24} lg={12}><Form.Item label="只读采集 Token" name="readToken"><Input.Password placeholder="read-only token" /></Form.Item></Col>
-                      <Col xs={24} lg={12}><Form.Item label="动作执行 Token" name="actionToken"><Input.Password placeholder="action token" /></Form.Item></Col>
-                      <Col xs={24} lg={8}><Form.Item label="使用Mock Ozon（联调）" name="useMockOzon" valuePropName="checked"><Switch /></Form.Item></Col>
                       <Col xs={24} lg={16}><Form.Item label="销售后台推送URL" name="salesPushUrl"><Input /></Form.Item></Col>
                     </Row>
                     <Space>
                       <Button type="primary" htmlType="submit" icon={<ApiOutlined />} loading={saveMutation.isPending}>保存配置</Button>
-                      <Button icon={<SafetyOutlined />} loading={checkPermissionMutation.isPending} onClick={() => checkPermissionMutation.mutate()}>权限校验</Button>
+                      <Button icon={<ReloadOutlined />} loading={syncMutation.isPending} onClick={() => syncMutation.mutate()}>立即同步一次</Button>
                     </Space>
                   </Form>
-                </Card>
-
-                <Card title="同步范围（按业务中台）" extra={<Tag color="blue">可多选并立即同步</Tag>}>
-                  <Checkbox.Group
-                    value={selectedScopes}
-                    onChange={(vals) => setSelectedScopes(vals as string[])}
-                    options={(domains?.rows || []).map((x: any) => ({ label: x.label, value: x.key }))}
-                  />
-                  <Space style={{ marginTop: 12 }}>
-                    <Button icon={<ReloadOutlined />} loading={syncMutation.isPending} onClick={() => syncMutation.mutate()}>立即同步一次</Button>
-                    <Button onClick={() => setSelectedScopes([])}>全量同步</Button>
-                  </Space>
-                  <Table rowKey="key" style={{ marginTop: 12 }} size="small" dataSource={domains?.rows || []} columns={domainColumns as any} pagination={false} scroll={{ x: 980 }} tableLayout="fixed" />
                 </Card>
 
                 <Row gutter={[12, 12]}>
