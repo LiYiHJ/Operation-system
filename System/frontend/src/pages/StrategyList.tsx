@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { strategyApi } from '../services/api'
 import type { StrategyTask } from '../types'
+import { strategyTypeLabels, statusLabels, sourcePageLabels } from '../utils/labels'
+import { displayOrDash, formatInteger, formatRate } from '../utils/format'
 
 export default function StrategyList() {
   const [filterPriority, setFilterPriority] = useState<string>('all')
@@ -150,7 +152,7 @@ export default function StrategyList() {
           ads: { color: 'purple', text: '广告优化' },
           risk_control: { color: 'red', text: '风控策略' }
         }
-        const { color, text } = typeMap[val] || { color: 'default', text: val }
+        const { color, text } = typeMap[val] || { color: 'default', text: strategyTypeLabels[val] || '其他策略' }
         return <Tag color={color}>{text}</Tag>
       }
     },
@@ -171,6 +173,35 @@ export default function StrategyList() {
       render: (text: string) => <Tooltip title={text}>{text}</Tooltip>
     },
     {
+      title: '来源页面',
+      dataIndex: 'sourcePage',
+      key: 'sourcePage',
+      width: 120,
+      render: (v: string) => <Tag color="geekblue">{sourcePageLabels[v] || displayOrDash(v)}</Tag>
+    },
+    {
+      title: '来源原因',
+      dataIndex: 'sourceReason',
+      key: 'sourceReason',
+      width: 220,
+      ellipsis: true,
+      render: (v: string) => <Tooltip title={v}>{displayOrDash(v)}</Tooltip>
+    },
+    {
+      title: '最近决策时间',
+      dataIndex: 'lastDecisionAt',
+      key: 'lastDecisionAt',
+      width: 160,
+      render: (v: string) => displayOrDash(v ? new Date(v).toLocaleString('zh-CN') : '—')
+    },
+    {
+      title: '最近执行结果',
+      dataIndex: 'lastExecution',
+      key: 'lastExecution',
+      width: 220,
+      render: (v: any) => <Tooltip title={v?.resultSummary || '暂无执行记录'}>{displayOrDash(v?.resultSummary || '暂无执行记录')}</Tooltip>
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
@@ -182,7 +213,7 @@ export default function StrategyList() {
           completed: { color: 'success', text: '已完成', icon: <CheckCircleOutlined /> },
           cancelled: { color: 'error', text: '已取消', icon: <WarningOutlined /> }
         }
-        const { color, text, icon } = config[val] || { color: 'default', text: val, icon: null }
+        const { color, text, icon } = config[val] || { color: 'default', text: statusLabels[val] || '未知状态', icon: null }
         return <Badge status={color as any} text={<Space>{icon}<span>{text}</span></Space>} />
       }
     },
@@ -219,7 +250,7 @@ export default function StrategyList() {
         <Progress
           percent={val * 10}
           size="small"
-          format={percent => `${(percent || 0) / 10}`}
+          format={percent => formatRate((percent || 0) / 10, 1)}
           strokeColor={val > 7 ? '#52c41a' : val > 5 ? '#faad14' : '#f5222d'}
         />
       ) : '-'
@@ -233,7 +264,7 @@ export default function StrategyList() {
         <Progress
           percent={val * 10}
           size="small"
-          format={percent => `${(percent || 0) / 10}`}
+          format={percent => formatRate((percent || 0) / 10, 1)}
           strokeColor={val > 7 ? '#f5222d' : val > 5 ? '#faad14' : '#52c41a'}
         />
       ) : '-'
@@ -401,7 +432,7 @@ export default function StrategyList() {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`
+            showTotal: (total) => `共 ${formatInteger(total)} 条`
           }}
         />
       </Card>
@@ -454,28 +485,45 @@ export default function StrategyList() {
 
             <Row gutter={16}>
               <Col span={12}>
-                <div><strong>策略类型:</strong> {selectedTask.strategyType}</div>
+                <div><strong>策略类型:</strong> {strategyTypeLabels[selectedTask.strategyType] || '其他策略'}</div>
               </Col>
               <Col span={12}>
-                <div><strong>当前状态:</strong> {selectedTask.status}</div>
+                <div><strong>当前状态:</strong> {statusLabels[selectedTask.status] || selectedTask.status || '未知状态'}</div>
+              </Col>
+            </Row>
+            <Row gutter={16} style={{ marginTop: '16px' }}>
+              <Col span={12}>
+                <div><strong>来源页面:</strong> {sourcePageLabels[(selectedTask as any).sourcePage] || displayOrDash((selectedTask as any).sourcePage)}</div>
+              </Col>
+              <Col span={12}>
+                <div><strong>来源原因:</strong> {displayOrDash((selectedTask as any).sourceReason)}</div>
               </Col>
             </Row>
 
             <Row gutter={16} style={{ marginTop: '16px' }}>
               <Col span={12}>
-                <div><strong>负责人:</strong> {selectedTask.assignee || '-'}</div>
+                <div><strong>最近进入决策:</strong> {displayOrDash((selectedTask as any).lastDecisionAt ? new Date((selectedTask as any).lastDecisionAt).toLocaleString('zh-CN') : '—')}</div>
               </Col>
               <Col span={12}>
-                <div><strong>截止日期:</strong> {selectedTask.dueDate || '-'}</div>
+                <div><strong>最近执行结果:</strong> {displayOrDash((selectedTask as any).lastExecution?.resultSummary || '暂无执行记录')}</div>
               </Col>
             </Row>
 
             <Row gutter={16} style={{ marginTop: '16px' }}>
               <Col span={12}>
-                <div><strong>创建时间:</strong> {selectedTask.createdAt || '-'}</div>
+                <div><strong>负责人:</strong> {displayOrDash(selectedTask.assignee)}</div>
               </Col>
               <Col span={12}>
-                <div><strong>完成时间:</strong> {selectedTask.completedAt || '-'}</div>
+                <div><strong>截止日期:</strong> {displayOrDash(selectedTask.dueDate)}</div>
+              </Col>
+            </Row>
+
+            <Row gutter={16} style={{ marginTop: '16px' }}>
+              <Col span={12}>
+                <div><strong>创建时间:</strong> {displayOrDash(selectedTask.createdAt)}</div>
+              </Col>
+              <Col span={12}>
+                <div><strong>完成时间:</strong> {displayOrDash(selectedTask.completedAt)}</div>
               </Col>
             </Row>
 
@@ -499,7 +547,7 @@ export default function StrategyList() {
                     <div><strong>影响力评分:</strong></div>
                     <Progress
                       percent={selectedTask.impact * 10}
-                      format={percent => `${(percent || 0) / 10}`}
+                      format={percent => formatRate((percent || 0) / 10, 1)}
                       strokeColor={selectedTask.impact > 7 ? '#52c41a' : selectedTask.impact > 5 ? '#faad14' : '#f5222d'}
                     />
                   </Col>
@@ -507,7 +555,7 @@ export default function StrategyList() {
                     <div><strong>紧急度评分:</strong></div>
                     <Progress
                       percent={selectedTask.urgency * 10}
-                      format={percent => `${(percent || 0) / 10}`}
+                      format={percent => formatRate((percent || 0) / 10, 1)}
                       strokeColor={selectedTask.urgency > 7 ? '#f5222d' : selectedTask.urgency > 5 ? '#faad14' : '#52c41a'}
                     />
                   </Col>
