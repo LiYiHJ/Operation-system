@@ -11,6 +11,23 @@ from ecom_v51.db.models import DimSku, ExecutionLog, StrategyTask, ReportSnapsho
 from ecom_v51.strategy import StrategyEngine
 from ecom_v51.models import SkuSnapshot
 from ecom_v51.war_room import WarRoomService
+from ecom_v51.services.integration_service import IntegrationService
+
+
+SOURCE_SCHEMA_VERSION = 'v1'
+
+
+def build_action_source(*, source_page: str, source_reason: str, source_module: str = 'analysis', extra: dict[str, object] | None = None) -> dict[str, object]:
+    payload = {
+        'version': SOURCE_SCHEMA_VERSION,
+        'sourcePage': source_page,
+        'sourceReason': source_reason,
+        'sourceModule': source_module,
+        'pushedAt': datetime.utcnow().isoformat(),
+    }
+    if extra:
+        payload.update(extra)
+    return payload
 
 
 SOURCE_SCHEMA_VERSION = 'v1'

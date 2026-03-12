@@ -80,7 +80,7 @@ def create_app(config_name='default'):
         return jsonify({
             'status': 'ok',
             'service': 'ecom_v51_api',
-            'version': '5.1.0'
+            'version': '1.0.0'
         })
     
     # 错误处理
@@ -101,7 +101,7 @@ app = create_app()
 
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("V5.1 Flask API (前后端分离)")
+    print("运营系统 Flask API (前后端分离)")
     print("="*70)
     print(f"API地址: http://localhost:5000/api")
     print(f"健康检查: http://localhost:5000/api/health")

@@ -65,13 +65,26 @@ const STANDARD_FIELDS = {
 export default function DataImportV2() {
   const [currentStep, setCurrentStep] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [importing, setImporting] = useState(false)
   const [savedTemplates, setSavedTemplates] = useState<any[]>([])
 
+  const normalizeRawFile = (uploadFile?: UploadFile): File | null => {
+    if (!uploadFile) return null
+    const raw = uploadFile.originFileObj
+    if (raw instanceof File) return raw
+    return null
+  }
+
+  const syncSelectedFile = (nextList: UploadFile[]) => {
+    setFileList(nextList)
+    setSelectedFile(normalizeRawFile(nextList[0]))
+  }
+
   // 处理文件上传
   const handleUpload = async () => {
-    if (fileList.length === 0 || !fileList[0].originFileObj) {
+    if (!selectedFile) {
       message.warning('请先选择文件')
       return
     }
@@ -80,7 +93,7 @@ export default function DataImportV2() {
     setCurrentStep(1)
 
     try {
-      const result = await importApi.uploadFile(fileList[0].originFileObj as File, 1)
+      const result = await importApi.uploadFile(selectedFile, 1)
       setImportResult(result)
       setCurrentStep(2)
       message.success('文件解析成功！')
@@ -217,10 +230,16 @@ export default function DataImportV2() {
             return false
           }
 
-          setFileList([file as any])
+          syncSelectedFile([file as UploadFile])
           return false
         }}
-        onRemove={() => setFileList([])}
+        onChange={({ fileList: nextList }) => {
+          syncSelectedFile(nextList)
+        }}
+        onRemove={() => {
+          syncSelectedFile([])
+          return true
+        }}
       >
         <p className="ant-upload-drag-icon">
           <FileExcelOutlined style={{ fontSize: '48px', color: '#52c41a' }} />
@@ -238,7 +257,7 @@ export default function DataImportV2() {
         size="large"
         icon={<UploadOutlined />}
         onClick={handleUpload}
-        disabled={fileList.length === 0}
+        disabled={!selectedFile}
         loading={importing}
       >
         开始解析文件
