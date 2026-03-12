@@ -22,42 +22,6 @@ from ecom_v51.db.session import get_session, get_engine
 class DashboardService:
     """Dashboard服务 - 经营开工台真数据聚合"""
 
-    @staticmethod
-    def _empty_overview(days: int) -> dict[str, object]:
-        today = date.today()
-        start_day = today - timedelta(days=max(days - 1, 0))
-        return {
-            'totalRevenue': 0.0,
-            'totalOrders': 0,
-            'avgOrderValue': 0.0,
-            'profitMargin': 0.0,
-            'totalProducts': 0,
-            'totalImpressions': 0,
-            'totalClicks': 0,
-            'avgCtr': 0.0,
-            'avgRating': 0.0,
-            'period': {'start': start_day.isoformat(), 'end': today.isoformat()},
-            'kpiDeltas': {'revenue': None, 'orders': None, 'avgOrderValue': None},
-            'topSkus': [],
-            'alerts': [],
-            'trends': {'dates': [], 'revenue': [], 'orders': []},
-            'openingWorkbench': {
-                'todaySummary': {
-                    'todayRevenue': 0.0,
-                    'todayOrders': 0,
-                    'todayProfitMargin': 0.0,
-                    'pendingAlerts': 0,
-                    'pendingStrategies': 0,
-                },
-                'mustHandleToday': [],
-                'recentChanges': {
-                    'recentImports': [],
-                    'recentStrategies': [],
-                    'recentExecution': [],
-                },
-            },
-        }
-
     def __init__(self, shop_id: int = 1):
         self.shop_id = shop_id
         engine = get_engine()
@@ -72,15 +36,6 @@ class DashboardService:
         return {int(row.id): str(row.sku) for row in rows}
 
     def overview(self, days: int = 7) -> dict[str, object]:
-        engine = get_engine()
-        existing = set(inspect(engine).get_table_names())
-        required_tables = {
-            'dim_date', 'dim_sku', 'fact_sku_daily', 'fact_profit_snapshot', 'fact_reviews_daily',
-            'alert_event', 'strategy_task', 'import_batch', 'report_snapshot', 'execution_log',
-        }
-        if not required_tables.issubset(existing):
-            return self._empty_overview(days)
-
         with get_session() as session:
             today = date.today()
             start_day = today - timedelta(days=max(days - 1, 0))
