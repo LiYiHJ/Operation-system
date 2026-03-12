@@ -429,16 +429,6 @@ export const reminderApi = {
   ack: (): Promise<any> => apiClient.post('/reminders/ack', {}),
 }
 
-export const integrationApi = {
-  getDataSource: (params?: { provider?: string; shopId?: number }): Promise<any> => apiClient.get('/integration/data-source', { params }),
-  saveDataSource: (data: any): Promise<any> => apiClient.post('/integration/data-source', data),
-  syncOnce: (data: any): Promise<any> => apiClient.post('/integration/sync-once', data),
-  getSyncLogs: (params?: { shopId?: number; limit?: number }): Promise<any> => apiClient.get('/integration/sync-logs', { params }),
-  getImportLogs: (params?: { shopId?: number; limit?: number }): Promise<any> => apiClient.get('/integration/import-logs', { params }),
-  pushSales: (data: any): Promise<any> => apiClient.post('/integration/push-sales', data),
-  getPushLogs: (params?: { shopId?: number; limit?: number }): Promise<any> => apiClient.get('/integration/push-logs', { params }),
-}
-
 // ========== Health Check ==========
 
 export const healthCheck = (): Promise<any> => {

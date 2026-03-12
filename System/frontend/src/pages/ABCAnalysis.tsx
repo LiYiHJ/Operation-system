@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Table, Tag, Card, Row, Col, Statistic, Button, Select, Space, List, message, Empty, Tooltip, Tabs } from 'antd'
+import { Table, Tag, Card, Row, Col, Statistic, Button, Select, Space, List, message, Empty } from 'antd'
 import { TrophyOutlined, SendOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -28,13 +28,13 @@ export default function ABCAnalysis() {
   const revenueBar = { xAxis: { type: 'category', data: ['A', 'B', 'C'] }, yAxis: { type: 'value' }, series: [{ type: 'bar', data: ['A', 'B', 'C'].map(k => ({ value: (data?.rows || []).filter((x: any) => x.abcClass === k).reduce((s: number, x: any) => s + x.revenue, 0), itemStyle: { color: abcColorMap[k] || abcColorMap.C } })) }] }
 
   const columns: any[] = [
-    { title: 'SKU', dataIndex: 'sku', width: 140, render: (v: string, r: any) => <Tag color={r.abcClass === 'A' ? 'red' : r.abcClass === 'B' ? 'gold' : 'green'}>{displayOrDash(v)}</Tag> },
+    { title: 'SKU', dataIndex: 'sku', render: (v: string, r: any) => <Tag color={r.abcClass === 'A' ? 'red' : r.abcClass === 'B' ? 'gold' : 'green'}>{displayOrDash(v)}</Tag> },
     { title: 'ABC', dataIndex: 'abcClass', width: 80 },
-    { title: '营收', dataIndex: 'revenue', width: 120, render: (v: number) => formatCurrency(v) },
-    { title: '订单', dataIndex: 'orders', width: 90, render: (v: number) => formatInteger(v) },
-    { title: '毛利率', dataIndex: 'margin', width: 100, render: (v: number) => formatPercent(v, 1, true) },
-    { title: '问题识别', dataIndex: 'issue', width: 220, ellipsis: true, render: (v: string) => <Tooltip title={displayOrDash(v)}>{displayOrDash(v)}</Tooltip> },
-    { title: '推荐动作', dataIndex: 'recommendation', width: 280, ellipsis: true, render: (v: string) => <Tooltip title={displayOrDash(v)}>{displayOrDash(v)}</Tooltip> },
+    { title: '营收', dataIndex: 'revenue', render: (v: number) => formatCurrency(v) },
+    { title: '订单', dataIndex: 'orders', render: (v: number) => formatInteger(v) },
+    { title: '毛利率', dataIndex: 'margin', render: (v: number) => formatPercent(v, 1, true) },
+    { title: '问题识别', dataIndex: 'issue', render: (v: string) => displayOrDash(v) },
+    { title: '推荐动作', dataIndex: 'recommendation', ellipsis: true, render: (v: string) => displayOrDash(v) },
     { title: '去向', key: 'flowStatus', render: (_: any, row: any) => <Tag color={flowStatus[row.sku] ? 'processing' : 'default'}>{flowStatus[row.sku] || '未推送'}</Tag> },
     { title: '操作', render: (_: any, row: any) => <Button icon={<SendOutlined />} onClick={() => pushMutation.mutate(row)}>推策略</Button> },
   ]

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Card, Row, Col, Statistic, Tabs, Tag, Table, Space, Select, Button, List, message, Drawer, Typography, Empty, Tooltip } from 'antd'
+import { Card, Row, Col, Statistic, Tabs, Tag, Table, Space, Select, Button, List, message, Drawer, Typography, Empty } from 'antd'
 import { DollarOutlined, WarningOutlined, CheckCircleOutlined, ThunderboltOutlined, SendOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -79,7 +79,7 @@ export default function PriceCompetitiveness() {
     { title: '自建促销净利率', dataIndex: 'promoMargin', key: 'promoMargin', width: 130, render: (v: number, r: any) => formatPercent(v ?? r.margin, 1, true) },
     { title: '订单', dataIndex: 'orders', key: 'orders', width: 80, render: (v: number) => formatInteger(v) },
     { title: 'ROAS', dataIndex: 'roas', key: 'roas', width: 90, render: (v: number) => formatRate(v, 2) },
-    { title: '推荐策略', dataIndex: 'recommendation', key: 'recommendation', width: 300, ellipsis: true, render: (v: string) => <Tooltip title={displayOrDash(v)}><Text strong>{displayOrDash(v)}</Text></Tooltip> },
+    { title: '推荐策略', dataIndex: 'recommendation', key: 'recommendation', ellipsis: true, render: (v: string) => <Text strong>{displayOrDash(v)}</Text> },
     { title: '风险等级', dataIndex: 'competitiveness', key: 'competitiveness', width: 90, render: (v: string) => <OpsRiskTag level={v === 'red' ? 'critical' : v === 'yellow' ? 'warning' : 'normal'} /> },
     { title: '动作去向', key: 'flowStatus', width: 120, render: (_: any, row: any) => <Tag color={flowStatus[row.sku] ? 'processing' : 'default'}>{flowStatus[row.sku] || '未推送'}</Tag> },
     {
@@ -154,7 +154,7 @@ export default function PriceCompetitiveness() {
             label: '批量推荐表（深度分析）',
             children: (
               <Card title="批量推荐表" extra={<Space><Select value={groupFilter} onChange={setGroupFilter} style={{ width: 220 }} options={[{ value: 'all', label: '全部分组' }, ...(data?.groupedStrategies || []).map((g: any) => ({ value: g.key, label: `${strategyGroupLabels[g.key] || g.label} (${formatInteger(g.count)})` }))]} /><Button icon={<ThunderboltOutlined />} onClick={() => navigate('/decision')}>去决策队列</Button><Button onClick={() => refetch()}>刷新</Button></Space>}>
-                <Table rowKey="sku" dataSource={rows} columns={columns} loading={isLoading} locale={{ emptyText: '暂无数据' }} scroll={{ x: 1500, y: 460 }} pagination={{ pageSize: 8 }} size="small" tableLayout="fixed" />
+                <Table rowKey="sku" dataSource={rows} columns={columns} loading={isLoading} locale={{ emptyText: '暂无数据' }} scroll={{ x: 1400, y: 420 }} pagination={{ pageSize: 8 }} size="small" />
               </Card>
             ),
           },

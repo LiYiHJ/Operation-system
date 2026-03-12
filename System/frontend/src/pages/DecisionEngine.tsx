@@ -510,7 +510,7 @@ export default function DecisionEngine() {
       <OpsPageHeader
         title="🧠 执行前确认控制台"
         subtitle="先看高优先动作与来源，再确认执行与回写。"
-        extra={<Space><Tag color="blue">运营决策</Tag><Tag color={healthScore >= 80 ? 'success' : healthScore >= 60 ? 'warning' : 'error'}>健康度: {healthScore}</Tag></Space>}
+        extra={<Space><Tag color="blue">V5.1</Tag><Tag color={healthScore >= 80 ? 'success' : healthScore >= 60 ? 'warning' : 'error'}>健康度: {healthScore}</Tag></Space>}
       />
       <OpsConclusion title="当前执行结论" desc={`当前待处理 ${filteredStrategies.filter((x: any) => x.status !== '已完成').length} 条，P0 ${p0Count} 条，建议先确认高风险来源动作。`} level={p0Count > 0 ? 'error' : 'info'} />
       <div style={{ height: 10 }} />
