@@ -6,6 +6,9 @@ from .profit_service import ProfitService
 from .report_service import ReportService
 from .settings_service import SettingsService
 from .strategy_service import StrategyTaskService
+from .analysis_service import AnalysisService
+from .auth_service import AuthService
+from .integration_service import IntegrationService
 
 __all__ = [
     "DashboardService",
@@ -15,4 +18,7 @@ __all__ = [
     "ReportService",
     "SettingsService",
     "StrategyTaskService",
+    "AnalysisService",
+    "AuthService",
+    "IntegrationService",
 ]

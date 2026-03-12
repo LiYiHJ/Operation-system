@@ -27,6 +27,16 @@ export interface DashboardMetrics {
     start: string
     end: string
   }
+  kpiDeltas?: {
+    revenue?: number | null
+    orders?: number | null
+    avgOrderValue?: number | null
+  }
+  openingWorkbench?: {
+    todaySummary?: Record<string, number>
+    mustHandleToday?: any[]
+    recentChanges?: Record<string, any[]>
+  }
   topSkus: TopSku[]
   alerts: Alert[]
   trends: TrendData
@@ -72,22 +82,49 @@ export interface ShopHealth {
 
 // ========== Import 相关类型 ==========
 
+export type ImportSessionStatus = 'success' | 'partial' | 'failed' | 'draft' | 'processing' | 'uploaded'
+
+export interface ImportDiagnosis {
+  suggestions: string[]
+  keyField: string | null
+  unmappedFields: string[]
+  status: 'success' | 'partial' | 'failed'
+}
+
 export interface ImportResult {
+  sessionId: number
   fileName: string
   fileSize: number
-  filePath: string
   sheetNames: string[]
   selectedSheet: string
   totalRows: number
   totalColumns: number
   headerRow: number
+  dataPreview: any[][]
   platform: string
   fieldMappings: FieldMapping[]
   mappedCount: number
   unmappedCount: number
   confidence: number
-  status: string
-  diagnosis?: any
+  status: ImportSessionStatus
+  diagnosis: ImportDiagnosis
+}
+
+export interface ConfirmImportRequest {
+  sessionId: number
+  shopId: number
+  manualOverrides: FieldMapping[]
+  operator?: string
+}
+
+export interface ConfirmImportResponse {
+  sessionId: number
+  batchId: number
+  importedRows: number
+  errorRows: number
+  status: 'success' | 'failed' | 'processing'
+  warnings: string[]
+  errors: string[]
 }
 
 export interface FieldMapping {

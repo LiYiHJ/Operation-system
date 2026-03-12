@@ -16,7 +16,8 @@ def get_overview():
     """
     try:
         service = DashboardService()
-        overview = service.overview()
+        days = int(request.args.get('days', 7))
+        overview = service.overview(days=days)
         return jsonify(overview)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -29,12 +30,13 @@ def get_metrics():
     """
     try:
         service = DashboardService()
-        # TODO: 从数据库查询真实指标
+        days = int(request.args.get('days', 7))
+        overview = service.overview(days=days)
         metrics = {
-            'totalRevenue': 150000,
-            'totalOrders': 1200,
-            'avgOrderValue': 125,
-            'profitMargin': 0.18,
+            'totalRevenue': overview['totalRevenue'],
+            'totalOrders': overview['totalOrders'],
+            'avgOrderValue': overview['avgOrderValue'],
+            'profitMargin': overview['profitMargin'],
         }
         return jsonify(metrics)
     except Exception as e:
