@@ -4,7 +4,6 @@ Flask API层 - 前后端分离架构
 """
 
 from flask import Flask, jsonify
-from flask_cors import CORS
 import os
 
 # 导入已有的session管理
@@ -25,6 +24,9 @@ from .routes.products import products_bp
 from .routes.profit import profit_bp
 from .routes.strategy import strategy_bp
 from .routes.import_route import import_bp
+from .routes.analysis import analysis_bp
+from .routes.auth import auth_bp
+from .routes.reminder import reminder_bp
 
 
 def create_app(config_name='default'):  
@@ -68,6 +70,9 @@ def create_app(config_name='default'):
     app.register_blueprint(profit_bp, url_prefix='/api/profit')
     app.register_blueprint(strategy_bp, url_prefix='/api/strategy')
     app.register_blueprint(import_bp, url_prefix='/api/import')
+    app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(reminder_bp, url_prefix='/api/reminders')
     
     # 健康检查
     @app.route('/api/health', methods=['GET'])
