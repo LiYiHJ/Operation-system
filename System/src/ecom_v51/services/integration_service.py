@@ -9,7 +9,17 @@ from urllib import request as urlrequest
 from urllib.error import URLError, HTTPError
 from sqlalchemy import inspect
 
-from ecom_v51.db.models import ExternalDataSourceConfig, ImportBatch, PushDeliveryLog, SyncRunLog
+from ecom_v51.db.models import (
+    DimDate,
+    DimSku,
+    ExternalDataSourceConfig,
+    FactAdsDaily,
+    FactOrdersDaily,
+    FactReviewsDaily,
+    ImportBatch,
+    PushDeliveryLog,
+    SyncRunLog,
+)
 from ecom_v51.db.session import get_engine, get_session
 from ecom_v51.services.import_service import ImportService
 
@@ -197,6 +207,91 @@ class IntegrationService:
             'updatedAt': datetime.utcnow().isoformat(),
         }
 
+
+
+    def _upsert_api_rows_to_facts(self, scope_results: dict[str, Any]) -> int:
+        """最小 API 闭环：将高价值字段写入事实层（review/rating/returns/cancel/ad_rate）"""
+        merged_rows: list[dict[str, Any]] = []
+        for payload in scope_results.values():
+            rows = payload.get('rows') if isinstance(payload, dict) else None
+            if isinstance(rows, list):
+                merged_rows.extend([x for x in rows if isinstance(x, dict)])
+        if not merged_rows:
+            return 0
+
+        updated = 0
+        with get_session() as session:
+            today = datetime.utcnow().date()
+            date_obj = session.query(DimDate).filter(DimDate.date_value == today).one_or_none()
+            if date_obj is None:
+                date_obj = DimDate(
+                    date_value=today,
+                    year=today.year,
+                    month=today.month,
+                    day=today.day,
+                    week_of_year=today.isocalendar().week,
+                )
+                session.add(date_obj)
+                session.flush()
+
+            for row in merged_rows:
+                sku_code = str(row.get('sku') or row.get('seller_sku') or row.get('offer_id') or '').strip()
+                if not sku_code:
+                    continue
+                sku = session.query(DimSku).filter(DimSku.shop_id == self.shop_id, DimSku.sku == sku_code).one_or_none()
+                if sku is None:
+                    continue
+
+                rating_value = row.get('rating_value', row.get('rating'))
+                review_count = row.get('review_count', row.get('reviews'))
+                items_returned = row.get('items_returned', row.get('returns'))
+                items_canceled = row.get('items_canceled', row.get('cancelled'))
+                ad_revenue_rate = row.get('ad_revenue_rate')
+                promo_days_count = row.get('promo_days_count')
+
+                reviews = session.query(FactReviewsDaily).filter(
+                    FactReviewsDaily.date_id == date_obj.id,
+                    FactReviewsDaily.shop_id == self.shop_id,
+                    FactReviewsDaily.sku_id == sku.id,
+                ).one_or_none()
+                if reviews is None:
+                    reviews = FactReviewsDaily(date_id=date_obj.id, shop_id=self.shop_id, sku_id=sku.id, batch_id=1)
+                    session.add(reviews)
+                if rating_value is not None:
+                    reviews.rating_avg = float(rating_value)
+                    reviews.quality_risk_score = max(0.0, 5.0 - float(rating_value))
+                if review_count is not None:
+                    reviews.new_reviews_count = int(review_count)
+
+                orders = session.query(FactOrdersDaily).filter(
+                    FactOrdersDaily.date_id == date_obj.id,
+                    FactOrdersDaily.shop_id == self.shop_id,
+                    FactOrdersDaily.sku_id == sku.id,
+                ).one_or_none()
+                if orders is None:
+                    orders = FactOrdersDaily(date_id=date_obj.id, shop_id=self.shop_id, sku_id=sku.id, batch_id=1)
+                    session.add(orders)
+                if items_returned is not None:
+                    orders.returned_qty = int(items_returned)
+                if items_canceled is not None:
+                    orders.cancelled_qty = int(items_canceled)
+
+                ads = session.query(FactAdsDaily).filter(
+                    FactAdsDaily.date_id == date_obj.id,
+                    FactAdsDaily.shop_id == self.shop_id,
+                    FactAdsDaily.sku_id == sku.id,
+                ).one_or_none()
+                if ads is None:
+                    ads = FactAdsDaily(date_id=date_obj.id, shop_id=self.shop_id, sku_id=sku.id, campaign_id=None, batch_id=1)
+                    session.add(ads)
+                if ad_revenue_rate is not None and float(ad_revenue_rate) > 0:
+                    ads.roas = float(ad_revenue_rate)
+                if promo_days_count is not None and int(promo_days_count) > 0 and ads.ad_orders <= 0:
+                    ads.ad_orders = int(promo_days_count)
+
+                updated += 1
+        return updated
+
     def run_sync_once(self, provider: str = 'ozon', trigger_mode: str = 'manual', scopes: list[str] | None = None) -> dict[str, Any]:
         started = datetime.utcnow()
         scope_keys = scopes or [x['key'] for x in DOMAIN_SCOPES]
@@ -227,6 +322,8 @@ class IntegrationService:
                 if isinstance(rows, list):
                     pulled_rows += len(rows)
 
+            api_fact_updates = self._upsert_api_rows_to_facts(scope_results)
+
             source_file = self._latest_source_file()
             imported_rows = 0
             batch_id = None
@@ -250,7 +347,7 @@ class IntegrationService:
                 run.finished_at = datetime.utcnow()
                 run.imported_rows = imported_rows
                 run.batch_id = batch_id
-                run.message = f"api_rows={pulled_rows} imported={imported_rows} scopes={','.join(scope_keys)}"
+                run.message = f"api_rows={pulled_rows} api_fact_updates={api_fact_updates} imported={imported_rows} scopes={','.join(scope_keys)}"
 
                 row = session.query(ExternalDataSourceConfig).filter(
                     ExternalDataSourceConfig.shop_id == self.shop_id,
@@ -273,6 +370,7 @@ class IntegrationService:
                 'scopes': scope_keys,
                 'apiRows': pulled_rows,
                 'importedRows': imported_rows,
+                'apiFactUpdates': api_fact_updates,
                 'batchId': batch_id,
                 'autofill': autofill,
             }
