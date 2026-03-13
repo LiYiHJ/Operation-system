@@ -12,6 +12,7 @@ import pandas as pd
 from dataclasses import dataclass, field
 from datetime import datetime
 import json
+import re
 
 from ecom_v51.models import ImportBatchDiagnosis, ProfitInput
 from ecom_v51.ingestion import ImportDiagnoser
@@ -27,6 +28,10 @@ from ecom_v51.db.models import (
     ImportErrorLog,
     MappingFeedback,
     FactSkuDaily,
+    FactOrdersDaily,
+    FactReviewsDaily,
+    FactAdsDaily,
+    FactInventoryDaily,
     FactProfitSnapshot,
 )
 from ecom_v51.profit_solver import ProfitSolver
@@ -155,10 +160,16 @@ class DataCleaner:
         if isinstance(value, (int, float)):
             return float(value)
         
-        # 移除空格、逗号、货币符号
-        value_str = str(value)
-        value_str = value_str.replace(' ', '').replace(',', '').replace('¥', '').replace('₽', '').replace('$', '')
+        # 移除空格、货币符号，兼容俄文小数逗号与破折号
+        value_str = str(value).strip().replace('−', '-').replace('–', '-').replace('—', '-')
+        if value_str in {'', '-', '—', '–'}:
+            return None
+        value_str = value_str.replace(' ', '').replace('¥', '').replace('₽', '').replace('$', '')
         value_str = value_str.replace('%', '').replace('руб.', '').replace('CNY', '').replace('RUB', '')
+        if ',' in value_str and '.' not in value_str:
+            value_str = value_str.replace(',', '.')
+        else:
+            value_str = value_str.replace(',', '')
         
         try:
             return float(value_str)
@@ -237,12 +248,70 @@ class ImportService:
     
     def __init__(self):
         self.batches = []  # 新增这一行
+        self._root_dir = Path(__file__).resolve().parents[3]
+        self._field_aliases = self._load_json_yaml(self._root_dir / 'config' / 'field_aliases_zh_ru_en.yaml', default={'fields': []})
+        self._report_templates = self._load_json_yaml(self._root_dir / 'config' / 'report_templates.yaml', default={'templates': []})
+        self._alias_lookup = self._build_alias_lookup(self._field_aliases)
         self.diagnoser = ImportDiagnoser()
         self.cleaner = DataCleaner()
         self.validator = DataValidator()
         self.mapping = FieldMapping()
         self.intelligent_mapper = IntelligentFieldMapper()  # 🆕 智能映射器
         self.profit_solver = ProfitSolver()
+
+    @staticmethod
+    def _load_json_yaml(path: Path, default: dict) -> dict:
+        if not path.exists():
+            return default
+        try:
+            with path.open('r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data if isinstance(data, dict) else default
+        except Exception:
+            return default
+
+    @staticmethod
+    def _normalize_header(value: str) -> str:
+        return re.sub(r'\s+', ' ', str(value or '').strip().lower())
+
+    def _build_alias_lookup(self, aliases_cfg: dict) -> dict[str, str]:
+        lookup: dict[str, str] = {}
+        for field in aliases_cfg.get('fields', []):
+            canonical = str(field.get('canonical') or '').strip()
+            if not canonical:
+                continue
+            for lang in ['zh', 'ru', 'en', 'platform']:
+                for alias in field.get('aliases', {}).get(lang, []):
+                    key = self._normalize_header(str(alias))
+                    if key:
+                        lookup[key] = canonical
+            lookup[self._normalize_header(canonical)] = canonical
+        return lookup
+
+    def _detect_report_template(self, file_name: str, columns: list[str]) -> str:
+        norm_name = self._normalize_header(file_name)
+        norm_columns = {self._normalize_header(col) for col in columns}
+        best_code = 'generic'
+        best_score = -1
+        for tpl in self._report_templates.get('templates', []):
+            score = 0
+            score += sum(1 for k in [self._normalize_header(x) for x in tpl.get('file_name_keywords', [])] if k and k in norm_name)
+            score += sum(1 for k in [self._normalize_header(x) for x in tpl.get('header_keywords', [])] if k and k in norm_columns)
+            score += 2 * sum(1 for k in [self._normalize_header(x) for x in tpl.get('field_signatures', [])] if k and k in norm_columns)
+            if score > best_score:
+                best_score = score
+                best_code = str(tpl.get('code') or 'generic')
+        return best_code
+
+    @staticmethod
+    def _is_summary_text(text: str) -> bool:
+        value = str(text or '').strip().lower()
+        return value in {'总计', '合计', '总计和平均值', 'итого', 'итого и среднее', 'summary', 'total', 'grand total'}
+
+    def _drop_summary_rows(self, df: pd.DataFrame) -> pd.DataFrame:
+        if 'sku' not in df.columns:
+            return df
+        return df.loc[~df['sku'].astype(str).apply(self._is_summary_text)].copy()
     
     def _detect_excel_header_row(self, file_path: str, max_scan_rows: int = 30) -> int:
         """尝试检测 Excel 真正表头行（兼容 Ozon 导出前置说明行）"""
@@ -282,9 +351,15 @@ class ImportService:
             if path.suffix in ['.xlsx', '.xls']:
                 if path.suffix == '.xlsx':
                     header_row = self._detect_excel_header_row(file_path)
-                    df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
+                    try:
+                        df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
+                    except Exception as ex:
+                        return None, f"读取 XLSX 失败：文件可能损坏、加密或样式异常，请另存为标准 .xlsx 后重试。原始错误：{ex}"
                 else:
-                    df = pd.read_excel(file_path, engine='xlrd')
+                    try:
+                        df = pd.read_excel(file_path, engine='xlrd')
+                    except Exception as ex:
+                        return None, f"读取 XLS 失败：请另存为 .xlsx 或 .csv 后重试。原始错误：{ex}"
             elif path.suffix == '.csv':
                 # 尝试不同编码
                 for encoding in ['utf-8', 'utf-8-sig', 'gbk', 'cp1251']:
@@ -312,7 +387,14 @@ class ImportService:
         # 🆕 使用智能映射器
         try:
             mapped_df, mapping_info = self.intelligent_mapper.auto_map_columns(df)
-            
+            alias_map = {}
+            for col in mapped_df.columns:
+                canonical = self._alias_lookup.get(self._normalize_header(col))
+                if canonical:
+                    alias_map[col] = canonical
+            if alias_map:
+                mapped_df = mapped_df.rename(columns=alias_map)
+
             # 检查是否有 SKU 字段
             if 'sku' not in mapped_df.columns:
                 # 尝试智能识别 SKU 字段
@@ -331,6 +413,10 @@ class ImportService:
             # 降级到旧的静态映射
             column_mapping = {}
             for col in df.columns:
+                canonical = self._alias_lookup.get(self._normalize_header(col))
+                if canonical:
+                    column_mapping[col] = canonical
+                    continue
                 # 尝试Ozon俄语映射
                 if col in self.mapping.ozon_mapping:
                     column_mapping[col] = self.mapping.ozon_mapping[col]
@@ -559,13 +645,15 @@ class ImportService:
             'add_to_cart': 'add_to_cart',
         }
         for col in df.columns.astype(str):
-            norm_col = col.lower().strip()
+            norm_col = self._normalize_header(col)
             std_field = None
             confidence = 0.0
             reasons: list[str] = []
 
             # 先用显式映射，避免智能映射误判
-            std_field = self.mapping.ozon_mapping.get(col) or self.mapping.ozon_mapping.get(col.strip())
+            std_field = self._alias_lookup.get(norm_col)
+            if not std_field:
+                std_field = self.mapping.ozon_mapping.get(col) or self.mapping.ozon_mapping.get(col.strip())
             if not std_field:
                 std_field = extra_map.get(norm_col)
             if std_field:
@@ -600,6 +688,7 @@ class ImportService:
             )
 
         preview_rows = df.head(10).fillna('').values.tolist()
+        template_code = self._detect_report_template(Path(file_path).name, df.columns.astype(str).tolist())
 
         with get_session() as session:
             platform_code = diagnosis.platform if diagnosis.platform != 'unknown' else 'ozon'
@@ -625,12 +714,13 @@ class ImportService:
                 'totalRows': len(df),
                 'totalColumns': len(df.columns),
                 'headerRow': (diagnosis.detected_header_row or 0) + 1,
-                'platform': diagnosis.platform,
+                'platform': platform_code,
                 'diagnosis': {
                     'suggestions': diagnosis.suggestions,
                     'keyField': diagnosis.key_field,
                     'unmappedFields': diagnosis.unmapped_fields,
                     'status': diagnosis.status,
+                    'templateCode': template_code,
                 },
             }
             batch_file = ImportBatchFile(
@@ -658,13 +748,15 @@ class ImportService:
                 'mappedCount': len([x for x in field_mappings if x['standardField']]),
                 'unmappedCount': len([x for x in field_mappings if not x['standardField']]),
                 'confidence': round(sum(x['confidence'] for x in field_mappings) / max(len(field_mappings), 1), 3),
-                'platform': diagnosis.platform,
+                'platform': platform_code,
                 'status': diagnosis.status,
+                'templateCode': template_code,
                 'diagnosis': {
                     'suggestions': diagnosis.suggestions,
                     'keyField': diagnosis.key_field,
                     'unmappedFields': diagnosis.unmapped_fields,
                     'status': diagnosis.status,
+                    'templateCode': template_code,
                 },
             }
 
@@ -698,6 +790,7 @@ class ImportService:
             df = df.rename(columns=rename_map)
             df = df.loc[:, ~df.columns.duplicated()]
             df = self.clean_data(df)
+            df = self._drop_summary_rows(df)
             valid_df, errors = self.validate_data(df)
             valid_df, duplicate_count = self.remove_duplicates(valid_df)
 
@@ -831,6 +924,13 @@ class ImportService:
         return value
 
     def _upsert_daily_facts(self, session, batch_id: int, shop_id: int, sku_id: int, date_id: int, row: dict) -> None:
+        def pick(*keys, default=None):
+            for key in keys:
+                value = self._scalar(row.get(key))
+                if value is not None and value != '':
+                    return value
+            return default
+
         fact = (
             session.query(FactSkuDaily)
             .filter(
@@ -849,20 +949,28 @@ class ImportService:
             )
             session.add(fact)
 
-        fact.impressions_total = int(self._scalar(row.get('impressions')) or 0)
-        fact.card_visits = int(self._scalar(row.get('card_visits')) or self._scalar(row.get('visits')) or 0)
-        fact.add_to_cart_total = int(self._scalar(row.get('add_to_cart')) or 0)
-        fact.orders_count = int(self._scalar(row.get('orders')) or 0)
-        fact.cancelled_count = int(self._scalar(row.get('cancelled_count')) or 0)
-        fact.returned_count = int(self._scalar(row.get('returns')) or 0)
-        fact.revenue_ordered = float(self._scalar(row.get('revenue')) or 0)
-        fact.revenue_delivered = float(self._scalar(row.get('revenue')) or 0)
+        impressions_total = int(pick('impressions_total', 'impressions', default=0) or 0)
+        card_visits = int(pick('product_card_visits', 'card_visits', 'visits', default=0) or 0)
+        add_to_cart_total = int(pick('add_to_cart_total', 'add_to_cart', default=0) or 0)
+        items_ordered = int(pick('items_ordered', 'orders', default=0) or 0)
+        items_canceled = int(pick('items_canceled', 'cancelled_count', default=0) or 0)
+        items_returned = int(pick('items_returned', 'returns', default=0) or 0)
+        order_amount = float(pick('order_amount', 'revenue', default=0) or 0)
+
+        fact.impressions_total = impressions_total
+        fact.card_visits = card_visits
+        fact.add_to_cart_total = add_to_cart_total
+        fact.orders_count = items_ordered
+        fact.cancelled_count = items_canceled
+        fact.returned_count = items_returned
+        fact.revenue_ordered = order_amount
+        fact.revenue_delivered = float(pick('delivered_amount', default=order_amount) or order_amount)
         fact.batch_id = batch_id
 
-        sale_price = float(self._scalar(row.get('sale_price')) or self._scalar(row.get('list_price')) or 0)
-        list_price = float(self._scalar(row.get('list_price')) or sale_price)
-        fixed_cost_total = float(self._scalar(row.get('fixed_cost_total')) or self._scalar(row.get('cost_price')) or 0)
-        variable_rate_total = float(self._scalar(row.get('variable_rate_total')) or self._scalar(row.get('commission_rate')) or 0.2)
+        sale_price = float(pick('sale_price', default=pick('avg_sale_price', 'list_price', default=0)) or 0)
+        list_price = float(pick('list_price', default=sale_price) or sale_price)
+        fixed_cost_total = float(pick('fixed_cost_total', 'cost_price', default=0) or 0)
+        variable_rate_total = float(pick('variable_rate_total', 'commission_rate', default=0.2) or 0.2)
         profit = self.profit_solver.solve_current(
             ProfitInput(
                 sale_price=sale_price,
@@ -913,3 +1021,81 @@ class ImportService:
         profit_fact.break_even_price = profit.break_even_price
         profit_fact.break_even_discount_ratio = profit.break_even_discount_ratio
         profit_fact.batch_id = batch_id
+
+        orders_fact = (
+            session.query(FactOrdersDaily)
+            .filter(
+                FactOrdersDaily.date_id == date_id,
+                FactOrdersDaily.shop_id == shop_id,
+                FactOrdersDaily.sku_id == sku_id,
+            )
+            .one_or_none()
+        )
+        if orders_fact is None:
+            orders_fact = FactOrdersDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
+            session.add(orders_fact)
+        orders_fact.ordered_qty = items_ordered
+        orders_fact.delivered_qty = int(pick('items_delivered', default=items_ordered - items_canceled - items_returned) or 0)
+        orders_fact.cancelled_qty = items_canceled
+        orders_fact.returned_qty = items_returned
+        orders_fact.ordered_amount = order_amount
+        orders_fact.delivered_amount = float(pick('delivered_amount', default=order_amount) or order_amount)
+        orders_fact.batch_id = batch_id
+
+        reviews_fact = (
+            session.query(FactReviewsDaily)
+            .filter(
+                FactReviewsDaily.date_id == date_id,
+                FactReviewsDaily.shop_id == shop_id,
+                FactReviewsDaily.sku_id == sku_id,
+            )
+            .one_or_none()
+        )
+        if reviews_fact is None:
+            reviews_fact = FactReviewsDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
+            session.add(reviews_fact)
+        reviews_fact.rating_avg = float(pick('rating_value', 'rating', default=0) or 0)
+        reviews_fact.new_reviews_count = int(pick('review_count', 'reviews', default=0) or 0)
+        reviews_fact.negative_reviews_count = int(pick('negative_review_count', default=0) or 0)
+        reviews_fact.quality_risk_score = float(max(0.0, 5.0 - reviews_fact.rating_avg))
+        reviews_fact.batch_id = batch_id
+
+        ads_fact = (
+            session.query(FactAdsDaily)
+            .filter(
+                FactAdsDaily.date_id == date_id,
+                FactAdsDaily.shop_id == shop_id,
+                FactAdsDaily.sku_id == sku_id,
+            )
+            .one_or_none()
+        )
+        if ads_fact is None:
+            ads_fact = FactAdsDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, campaign_id=None, batch_id=batch_id)
+            session.add(ads_fact)
+        ads_fact.ad_spend = float(pick('ad_spend', default=0) or 0)
+        ads_fact.ad_orders = int(pick('ad_orders', default=0) or 0)
+        ads_fact.ad_revenue = float(pick('ad_revenue', default=order_amount) or 0)
+        ads_fact.ad_clicks = int(pick('ad_clicks', default=card_visits) or 0)
+        ads_fact.cpc = ads_fact.ad_spend / ads_fact.ad_clicks if ads_fact.ad_clicks else 0.0
+        ads_fact.roas = ads_fact.ad_revenue / ads_fact.ad_spend if ads_fact.ad_spend else float(pick('ad_revenue_rate', default=0) or 0)
+        ads_fact.batch_id = batch_id
+
+        inventory_fact = (
+            session.query(FactInventoryDaily)
+            .filter(
+                FactInventoryDaily.date_id == date_id,
+                FactInventoryDaily.shop_id == shop_id,
+                FactInventoryDaily.sku_id == sku_id,
+            )
+            .one_or_none()
+        )
+        if inventory_fact is None:
+            inventory_fact = FactInventoryDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
+            session.add(inventory_fact)
+        inventory_fact.stock_total = int(pick('stock_total', 'stock', default=0) or 0)
+        inventory_fact.stock_fbo = int(pick('stock_fbo', default=inventory_fact.stock_total) or 0)
+        inventory_fact.stock_fbs = int(pick('stock_fbs', default=0) or 0)
+        inventory_fact.days_of_supply = float(
+            pick('days_of_supply', default=(inventory_fact.stock_total / items_ordered if items_ordered else 0.0)) or 0.0
+        )
+        inventory_fact.batch_id = batch_id
