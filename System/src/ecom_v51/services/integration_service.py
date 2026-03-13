@@ -246,6 +246,8 @@ class IntegrationService:
                 review_count = row.get('review_count', row.get('reviews'))
                 items_returned = row.get('items_returned', row.get('returns'))
                 items_canceled = row.get('items_canceled', row.get('cancelled'))
+                items_ordered = row.get('items_ordered', row.get('orders'))
+                order_amount = row.get('order_amount', row.get('revenue'))
                 ad_revenue_rate = row.get('ad_revenue_rate')
                 promo_days_count = row.get('promo_days_count')
 
@@ -271,6 +273,10 @@ class IntegrationService:
                 if orders is None:
                     orders = FactOrdersDaily(date_id=date_obj.id, shop_id=self.shop_id, sku_id=sku.id, batch_id=1)
                     session.add(orders)
+                if items_ordered is not None:
+                    orders.ordered_qty = int(items_ordered)
+                if order_amount is not None:
+                    orders.ordered_amount = float(order_amount)
                 if items_returned is not None:
                     orders.returned_qty = int(items_returned)
                 if items_canceled is not None:
