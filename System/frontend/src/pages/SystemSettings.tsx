@@ -25,19 +25,19 @@ export default function SystemSettings() {
 
   const checkPermissionMutation = useMutation({
     mutationFn: () => integrationApi.checkPermission({ provider: 'ozon', shopId: 1 }),
-    onSuccess: (res: any) => message.success(`权限检查完成：read=${res.readTokenReady ? 'ok' : 'missing'} / action=${res.actionTokenReady ? 'ok' : 'missing'}`),
+    onSuccess: (res: any) => message.success(`权限检查完成：只读 Token=${res.readTokenReady ? '已就绪' : '缺失'} / 执行 Token=${res.actionTokenReady ? '已就绪' : '缺失'}`),
     onError: (e: any) => message.error(`权限检查失败: ${e.message}`),
   })
 
   const syncMutation = useMutation({
     mutationFn: () => integrationApi.syncOnce({ provider: 'ozon', shopId: 1, scopes: selectedScopes.length ? selectedScopes : undefined }),
-    onSuccess: (res: any) => { message.success(`同步完成: ${res.status}`); refetchCfg(); refetchSyncLogs(); refetchImportLogs() },
+    onSuccess: (res: any) => { message.success(`同步完成：${res.status === 'success' ? '成功' : res.status === 'failed' ? '失败' : res.status}`); refetchCfg(); refetchSyncLogs(); refetchImportLogs() },
     onError: (e: any) => message.error(`同步失败: ${e.message}`),
   })
 
   const pushMutation = useMutation({
     mutationFn: (payload: any) => integrationApi.pushSales(payload),
-    onSuccess: (res: any) => { message.success(`推送结果: ${res.status}`); refetchPushLogs() },
+    onSuccess: (res: any) => { message.success(`推送结果：${res.status === 'success' ? '成功' : res.status === 'failed' ? '失败' : res.status}`); refetchPushLogs() },
     onError: (e: any) => message.error(`推送失败: ${e.message}`),
   })
 
@@ -56,7 +56,7 @@ export default function SystemSettings() {
 
   const syncColumns = [
     { title: '时间', dataIndex: 'startedAt', width: 190 },
-    { title: '状态', dataIndex: 'status', width: 90, render: (v: string) => <Tag color={v === 'success' ? 'green' : v === 'running' ? 'blue' : 'red'}>{v}</Tag> },
+    { title: '状态', dataIndex: 'status', width: 90, render: (v: string) => <Tag color={v === 'success' ? 'green' : v === 'running' ? 'blue' : 'red'}>{v === 'success' ? '成功' : v === 'running' ? '进行中' : v === 'failed' ? '失败' : v}</Tag> },
     { title: '导入行数', dataIndex: 'importedRows', width: 90 },
     { title: '批次', dataIndex: 'batchId', width: 80 },
     { title: '信息', dataIndex: 'message', ellipsis: true },
@@ -64,7 +64,7 @@ export default function SystemSettings() {
 
   const importColumns = [
     { title: '批次', dataIndex: 'batchId', width: 80 },
-    { title: '状态', dataIndex: 'status', width: 100, render: (v: string) => <Tag color={v === 'success' ? 'green' : v === 'failed' ? 'red' : 'blue'}>{v}</Tag> },
+    { title: '状态', dataIndex: 'status', width: 100, render: (v: string) => <Tag color={v === 'success' ? 'green' : v === 'failed' ? 'red' : 'blue'}>{v === 'success' ? '成功' : v === 'failed' ? '失败' : v === 'running' ? '进行中' : v}</Tag> },
     { title: '成功', dataIndex: 'successCount', width: 90 },
     { title: '失败', dataIndex: 'errorCount', width: 90 },
     { title: '开始时间', dataIndex: 'startedAt', width: 190 },
@@ -73,7 +73,7 @@ export default function SystemSettings() {
 
   const pushColumns = [
     { title: '推送ID', dataIndex: 'pushId', width: 90 },
-    { title: '状态', dataIndex: 'status', width: 90, render: (v: string) => <Tag color={v === 'success' ? 'green' : 'red'}>{v}</Tag> },
+    { title: '状态', dataIndex: 'status', width: 90, render: (v: string) => <Tag color={v === 'success' ? 'green' : 'red'}>{v === 'success' ? '成功' : v === 'failed' ? '失败' : v}</Tag> },
     { title: 'HTTP', dataIndex: 'httpStatus', width: 90 },
     { title: '任务ID', dataIndex: 'strategyTaskId', width: 100 },
     { title: '执行ID', dataIndex: 'executionLogId', width: 110 },
@@ -84,7 +84,7 @@ export default function SystemSettings() {
   const domainColumns = [
     { title: '业务域', dataIndex: 'label', width: 220 },
     { title: '权限项', dataIndex: 'permissions', render: (v: string[]) => (v || []).slice(0, 3).join(' / ') + ((v || []).length > 3 ? ' ...' : '') },
-    { title: 'scopeKey', dataIndex: 'key', width: 180 },
+    { title: '作用域 Key', dataIndex: 'key', width: 180 },
   ]
 
   return (
@@ -122,10 +122,10 @@ export default function SystemSettings() {
                       <Col xs={24} lg={8}><Form.Item label="启用数据源" name="enabled" valuePropName="checked"><Switch /></Form.Item></Col>
                       <Col xs={24} lg={8}><Form.Item label="自动拉取" name="autoSyncEnabled" valuePropName="checked"><Switch /></Form.Item></Col>
                       <Col xs={24} lg={8}><Form.Item label="同步频率" name="syncFrequency"><Select options={[{ value: 'manual', label: '手动' }, { value: 'hourly', label: '每小时' }, { value: 'daily', label: '每日' }]} /></Form.Item></Col>
-                      <Col xs={24} lg={8}><Form.Item label="Client ID" name="clientId"><Input placeholder="ozon client id" /></Form.Item></Col>
-                      <Col xs={24} lg={8}><Form.Item label="Seller ID" name="sellerId"><Input placeholder="seller id" /></Form.Item></Col>
-                      <Col xs={24} lg={12}><Form.Item label="只读采集 Token" name="readToken"><Input.Password placeholder="read-only token" /></Form.Item></Col>
-                      <Col xs={24} lg={12}><Form.Item label="动作执行 Token" name="actionToken"><Input.Password placeholder="action token" /></Form.Item></Col>
+                      <Col xs={24} lg={8}><Form.Item label="Client ID" name="clientId"><Input placeholder="请输入 Ozon Client ID" /></Form.Item></Col>
+                      <Col xs={24} lg={8}><Form.Item label="Seller ID" name="sellerId"><Input placeholder="请输入 Seller ID" /></Form.Item></Col>
+                      <Col xs={24} lg={12}><Form.Item label="只读采集 Token" name="readToken"><Input.Password placeholder="请输入只读 Token" /></Form.Item></Col>
+                      <Col xs={24} lg={12}><Form.Item label="动作执行 Token" name="actionToken"><Input.Password placeholder="请输入执行 Token" /></Form.Item></Col>
                       <Col xs={24} lg={8}><Form.Item label="使用Mock Ozon（联调）" name="useMockOzon" valuePropName="checked"><Switch /></Form.Item></Col>
                       <Col xs={24} lg={16}><Form.Item label="销售后台推送URL" name="salesPushUrl"><Input /></Form.Item></Col>
                     </Row>
@@ -174,7 +174,7 @@ export default function SystemSettings() {
                   <Form
                     form={pushForm}
                     layout="vertical"
-                    initialValues={{ sku: 'SKU-DEMO-001', actionType: 'pricing', actionBefore: 'price=99', actionAfter: 'price=109', sourcePage: 'decision', sourceReason: 'manual_push_test', operator: 'operator' }}
+                    initialValues={{ sku: 'SKU-DEMO-001', actionType: 'pricing', actionBefore: 'price=99', actionAfter: 'price=109', sourcePage: 'decision', sourceReason: '手工推送联调', operator: 'operator' }}
                     onFinish={(v) => pushMutation.mutate({
                       shopId: 1,
                       payload: {

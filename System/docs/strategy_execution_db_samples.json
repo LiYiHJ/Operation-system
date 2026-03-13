@@ -1,0 +1,263 @@
+{
+  "counts": {
+    "strategy_task": 8,
+    "execution_log": 3,
+    "push_delivery_log": 7,
+    "report_snapshot": 6
+  },
+  "latestTraceId": "decision-20260313092031-08222dff",
+  "samples": {
+    "strategy_task": [
+      {
+        "id": 8,
+        "shop_id": 1,
+        "sku_id": null,
+        "strategy_type": "pricing",
+        "priority": "P1",
+        "status": "pending",
+        "owner": "analysis_ui",
+        "recommended_action": "请在策略清单确认后执行",
+        "created_at": "2026-03-13 09:20:32"
+      },
+      {
+        "id": 7,
+        "shop_id": 1,
+        "sku_id": null,
+        "strategy_type": "pricing",
+        "priority": "P1",
+        "status": "pending",
+        "owner": "compat_api",
+        "recommended_action": "兼容动作",
+        "created_at": "2026-03-13 09:20:32"
+      },
+      {
+        "id": 6,
+        "shop_id": 1,
+        "sku_id": null,
+        "strategy_type": "pricing",
+        "priority": "P1",
+        "status": "in_progress",
+        "owner": "qa_chain",
+        "recommended_action": "提升售价3%",
+        "created_at": "2026-03-13 09:02:41"
+      },
+      {
+        "id": 5,
+        "shop_id": 1,
+        "sku_id": null,
+        "strategy_type": "pricing",
+        "priority": "P0",
+        "status": "completed",
+        "owner": "qa_chain",
+        "recommended_action": "降价5%并观察3天ROAS",
+        "created_at": "2026-03-13 09:02:41"
+      },
+      {
+        "id": 4,
+        "shop_id": 1,
+        "sku_id": null,
+        "strategy_type": "pricing",
+        "priority": "P1",
+        "status": "in_progress",
+        "owner": "qa_chain",
+        "recommended_action": "提升售价3%",
+        "created_at": "2026-03-13 09:00:44"
+      }
+    ],
+    "execution_log": [
+      {
+        "id": 3,
+        "strategy_task_id": 1,
+        "status_before": "in_progress",
+        "status_after": "completed",
+        "operator": "decision_ui",
+        "result_summary": "已执行：降价5%并观察3天ROAS | 推送:success",
+        "extra_json": "{\"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313091040-20a9c096\", \"idempotencyKey\": \"task-1-1773393040\", \"pushResult\": {\"pushId\": 5, \"status\": \"success\", \"httpStatus\": 200, \"targetUrl\": \"http://127.0.0.1:5000/api/integration/mock/sales-backend\", \"response\": {\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionType\": \"pricing\", \"confirmedAt\": \"2026-03-13T09:10:40.279506\", \"idempotencyKey\": \"task-1-1773393040\", \"operator\": \"decision_ui\", \"sku\": \"-\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313091040-20a9c096\"}, \"status\": \"accepted\"}, \"error\": null, \"retryable\": false, \"traceId\": \"decision-20260313091040-20a9c096\", \"idempotencyKey\": \"task-1-1773393040\", \"pushedAt\": \"2026-03-13T09:10:40.378584\"}}",
+        "confirmed_at": "2026-03-13 09:10:40.279506"
+      },
+      {
+        "id": 2,
+        "strategy_task_id": 5,
+        "status_before": "pending",
+        "status_after": "completed",
+        "operator": "qa_chain",
+        "result_summary": "已执行：降价5%并观察3天ROAS | 推送:success",
+        "extra_json": "{\"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-5-1773392562\", \"pushResult\": {\"pushId\": 2, \"status\": \"success\", \"httpStatus\": 200, \"targetUrl\": \"http://127.0.0.1:5000/api/integration/mock/sales-backend\", \"response\": {\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionType\": \"pricing\", \"confirmedAt\": \"2026-03-13T09:02:42.042109\", \"idempotencyKey\": \"task-5-1773392562\", \"operator\": \"qa_chain\", \"sku\": \"-\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313090242-daed1bce\"}, \"status\": \"accepted\"}, \"error\": null, \"retryable\": false, \"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-5-1773392562\", \"pushedAt\": \"2026-03-13T09:02:42.735232\"}}",
+        "confirmed_at": "2026-03-13 09:02:42.042109"
+      },
+      {
+        "id": 1,
+        "strategy_task_id": 3,
+        "status_before": "pending",
+        "status_after": "completed",
+        "operator": "qa_chain",
+        "result_summary": "已执行：降价5%并观察3天ROAS | 推送:success",
+        "extra_json": "{\"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-3-1773392562\", \"pushResult\": {\"pushId\": 1, \"status\": \"success\", \"httpStatus\": 200, \"targetUrl\": \"http://127.0.0.1:5000/api/integration/mock/sales-backend\", \"response\": {\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionType\": \"pricing\", \"confirmedAt\": \"2026-03-13T09:02:42.042109\", \"idempotencyKey\": \"task-3-1773392562\", \"operator\": \"qa_chain\", \"sku\": \"-\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313090242-daed1bce\"}, \"status\": \"accepted\"}, \"error\": null, \"retryable\": false, \"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-3-1773392562\", \"pushedAt\": \"2026-03-13T09:02:42.339350\"}}",
+        "confirmed_at": "2026-03-13 09:02:42.042109"
+      }
+    ],
+    "push_delivery_log": [
+      {
+        "id": 7,
+        "strategy_task_id": null,
+        "execution_log_id": null,
+        "status": "success",
+        "http_status": 200,
+        "error_message": null,
+        "payload_json": "{\"actionAfter\": \"set 100\", \"actionType\": \"pricing\", \"forceFail\": true, \"idempotencyKey\": \"manual-fail\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"set 100\", \"actionType\": \"pricing\", \"forceFail\": true, \"idempotencyKey\": \"manual-fail\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:20:32.170377"
+      },
+      {
+        "id": 6,
+        "strategy_task_id": null,
+        "execution_log_id": null,
+        "status": "success",
+        "http_status": 200,
+        "error_message": null,
+        "payload_json": "{\"actionAfter\": \"set 99\", \"actionType\": \"pricing\", \"idempotencyKey\": \"manual-success\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"set 99\", \"actionType\": \"pricing\", \"idempotencyKey\": \"manual-success\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:20:32.048036"
+      },
+      {
+        "id": 5,
+        "strategy_task_id": 1,
+        "execution_log_id": 3,
+        "status": "success",
+        "http_status": 200,
+        "error_message": null,
+        "payload_json": "{\"traceId\": \"decision-20260313091040-20a9c096\", \"idempotencyKey\": \"task-1-1773393040\", \"sku\": \"-\", \"actionType\": \"pricing\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"operator\": \"decision_ui\", \"confirmedAt\": \"2026-03-13T09:10:40.279506\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionType\": \"pricing\", \"confirmedAt\": \"2026-03-13T09:10:40.279506\", \"idempotencyKey\": \"task-1-1773393040\", \"operator\": \"decision_ui\", \"sku\": \"-\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313091040-20a9c096\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:10:40.378584"
+      },
+      {
+        "id": 4,
+        "strategy_task_id": 5,
+        "execution_log_id": null,
+        "status": "success",
+        "http_status": 200,
+        "error_message": null,
+        "payload_json": "{\"traceId\": \"manual-ok-trace\", \"idempotencyKey\": \"manual-ok-1\", \"operator\": \"qa_chain\", \"sku\": \"SKU-THERMO-01\", \"actionType\": \"pricing\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionType\": \"pricing\", \"idempotencyKey\": \"manual-ok-1\", \"operator\": \"qa_chain\", \"sku\": \"SKU-THERMO-01\", \"traceId\": \"manual-ok-trace\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:02:43.219392"
+      },
+      {
+        "id": 3,
+        "strategy_task_id": 5,
+        "execution_log_id": null,
+        "status": "failed",
+        "http_status": null,
+        "error_message": "<urlopen error [Errno 111] Connection refused>",
+        "payload_json": "{\"traceId\": \"manual-fail-trace\", \"idempotencyKey\": \"manual-fail-1\", \"operator\": \"qa_chain\", \"sku\": \"SKU-THERMO-01\", \"actionType\": \"pricing\"}",
+        "response_json": "{}",
+        "pushed_at": "2026-03-13 09:02:43.122906"
+      },
+      {
+        "id": 2,
+        "strategy_task_id": 5,
+        "execution_log_id": 2,
+        "status": "success",
+        "http_status": 200,
+        "error_message": null,
+        "payload_json": "{\"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-5-1773392562\", \"sku\": \"-\", \"actionType\": \"pricing\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"operator\": \"qa_chain\", \"confirmedAt\": \"2026-03-13T09:02:42.042109\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionType\": \"pricing\", \"confirmedAt\": \"2026-03-13T09:02:42.042109\", \"idempotencyKey\": \"task-5-1773392562\", \"operator\": \"qa_chain\", \"sku\": \"-\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313090242-daed1bce\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:02:42.735232"
+      },
+      {
+        "id": 1,
+        "strategy_task_id": 3,
+        "execution_log_id": 1,
+        "status": "success",
+        "http_status": 200,
+        "error_message": null,
+        "payload_json": "{\"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-3-1773392562\", \"sku\": \"-\", \"actionType\": \"pricing\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"operator\": \"qa_chain\", \"confirmedAt\": \"2026-03-13T09:02:42.042109\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"actionBefore\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"actionType\": \"pricing\", \"confirmedAt\": \"2026-03-13T09:02:42.042109\", \"idempotencyKey\": \"task-3-1773392562\", \"operator\": \"qa_chain\", \"sku\": \"-\", \"sourcePage\": \"price\", \"sourceReason\": \"\\u4ef7\\u683c\\u6307\\u6570RED\\u4e14\\u4ef7\\u5dee\\u504f\\u9ad8\", \"traceId\": \"decision-20260313090242-daed1bce\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:02:42.339350"
+      }
+    ],
+    "report_snapshot": [
+      {
+        "id": 6,
+        "shop_id": 1,
+        "report_type": "decision_confirm",
+        "report_date": "2026-03-13",
+        "content_json": "{\"traceId\": \"decision-20260313092031-08222dff\", \"operator\": \"qa_bot\", \"selected_task_ids\": [], \"count\": 0, \"confirmedAt\": \"2026-03-13T09:20:31.948640\"}",
+        "generated_at": "2026-03-13 09:20:31.948640"
+      },
+      {
+        "id": 5,
+        "shop_id": 1,
+        "report_type": "strategy_execution",
+        "report_date": "2026-03-13",
+        "content_json": "{\"traceId\": \"decision-20260313091040-20a9c096\", \"idempotencyKey\": \"task-1-1773393040\", \"taskId\": 1, \"operator\": \"decision_ui\", \"executedAt\": \"2026-03-13T09:10:40.279506\", \"beforeStatus\": \"in_progress\", \"afterStatus\": \"completed\", \"action\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"resultSummary\": \"\\u5df2\\u6267\\u884c\\uff1a\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS | \\u63a8\\u9001:success\", \"sourcePage\": \"price\", \"pushStatus\": \"success\", \"pushId\": 5}",
+        "generated_at": "2026-03-13 09:10:40.279506"
+      },
+      {
+        "id": 4,
+        "shop_id": 1,
+        "report_type": "decision_confirm",
+        "report_date": "2026-03-13",
+        "content_json": "{\"traceId\": \"decision-20260313091040-20a9c096\", \"operator\": \"decision_ui\", \"selected_task_ids\": [1], \"count\": 1, \"confirmedAt\": \"2026-03-13T09:10:40.279506\"}",
+        "generated_at": "2026-03-13 09:10:40.279506"
+      },
+      {
+        "id": 3,
+        "shop_id": 1,
+        "report_type": "strategy_execution",
+        "report_date": "2026-03-13",
+        "content_json": "{\"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-5-1773392562\", \"taskId\": 5, \"operator\": \"qa_chain\", \"executedAt\": \"2026-03-13T09:02:42.042109\", \"beforeStatus\": \"pending\", \"afterStatus\": \"completed\", \"action\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"resultSummary\": \"\\u5df2\\u6267\\u884c\\uff1a\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS | \\u63a8\\u9001:success\", \"sourcePage\": \"price\", \"pushStatus\": \"success\", \"pushId\": 2}",
+        "generated_at": "2026-03-13 09:02:42.042109"
+      },
+      {
+        "id": 2,
+        "shop_id": 1,
+        "report_type": "strategy_execution",
+        "report_date": "2026-03-13",
+        "content_json": "{\"traceId\": \"decision-20260313090242-daed1bce\", \"idempotencyKey\": \"task-3-1773392562\", \"taskId\": 3, \"operator\": \"qa_chain\", \"executedAt\": \"2026-03-13T09:02:42.042109\", \"beforeStatus\": \"pending\", \"afterStatus\": \"completed\", \"action\": \"\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS\", \"resultSummary\": \"\\u5df2\\u6267\\u884c\\uff1a\\u964d\\u4ef75%\\u5e76\\u89c2\\u5bdf3\\u5929ROAS | \\u63a8\\u9001:success\", \"sourcePage\": \"price\", \"pushStatus\": \"success\", \"pushId\": 1}",
+        "generated_at": "2026-03-13 09:02:42.042109"
+      },
+      {
+        "id": 1,
+        "shop_id": 1,
+        "report_type": "decision_confirm",
+        "report_date": "2026-03-13",
+        "content_json": "{\"traceId\": \"decision-20260313090242-daed1bce\", \"operator\": \"qa_chain\", \"selected_task_ids\": [5, 3], \"count\": 2, \"confirmedAt\": \"2026-03-13T09:02:42.042109\"}",
+        "generated_at": "2026-03-13 09:02:42.042109"
+      }
+    ]
+  },
+  "chain": {
+    "traceId": "decision-20260313092031-08222dff",
+    "push": [
+      {
+        "id": 7,
+        "strategy_task_id": null,
+        "execution_log_id": null,
+        "status": "success",
+        "http_status": 200,
+        "payload_json": "{\"actionAfter\": \"set 100\", \"actionType\": \"pricing\", \"forceFail\": true, \"idempotencyKey\": \"manual-fail\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"set 100\", \"actionType\": \"pricing\", \"forceFail\": true, \"idempotencyKey\": \"manual-fail\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:20:32.170377"
+      },
+      {
+        "id": 6,
+        "strategy_task_id": null,
+        "execution_log_id": null,
+        "status": "success",
+        "http_status": 200,
+        "payload_json": "{\"actionAfter\": \"set 99\", \"actionType\": \"pricing\", \"idempotencyKey\": \"manual-success\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}",
+        "response_json": "{\"message\": \"mock sales backend ok\", \"received\": {\"actionAfter\": \"set 99\", \"actionType\": \"pricing\", \"idempotencyKey\": \"manual-success\", \"operator\": \"qa_bot\", \"sku\": \"SKU-1\", \"traceId\": \"decision-20260313092031-08222dff\"}, \"status\": \"accepted\"}",
+        "pushed_at": "2026-03-13 09:20:32.048036"
+      }
+    ],
+    "execution": [],
+    "snapshot": [
+      {
+        "id": 6,
+        "report_type": "decision_confirm",
+        "content_json": "{\"traceId\": \"decision-20260313092031-08222dff\", \"operator\": \"qa_bot\", \"selected_task_ids\": [], \"count\": 0, \"confirmedAt\": \"2026-03-13T09:20:31.948640\"}",
+        "generated_at": "2026-03-13 09:20:31.948640"
+      }
+    ]
+  }
+}

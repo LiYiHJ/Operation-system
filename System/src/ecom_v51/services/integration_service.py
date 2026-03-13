@@ -16,6 +16,7 @@ from ecom_v51.db.models import (
     FactAdsDaily,
     FactOrdersDaily,
     FactReviewsDaily,
+    FactSkuExtDaily,
     ImportBatch,
     PushDeliveryLog,
     SyncRunLog,
@@ -59,16 +60,17 @@ DOMAIN_SCOPES: list[dict[str, Any]] = [
 
 
 class IntegrationService:
-    def __init__(self, shop_id: int = 1):
+    def __init__(self, shop_id: int = 1, ensure_tables: bool = True):
         self.shop_id = shop_id
-        self._ensure_tables()
+        if ensure_tables:
+            self._ensure_tables()
 
     @staticmethod
     def _ensure_tables() -> None:
         engine = get_engine()
         existing = set(inspect(engine).get_table_names())
         to_create = []
-        for m in [ExternalDataSourceConfig, SyncRunLog, PushDeliveryLog]:
+        for m in [ExternalDataSourceConfig, SyncRunLog, PushDeliveryLog, FactSkuExtDaily]:
             if m.__table__.name not in existing:
                 to_create.append(m.__table__)
         if to_create:
@@ -250,6 +252,9 @@ class IntegrationService:
                 order_amount = row.get('order_amount', row.get('revenue'))
                 ad_revenue_rate = row.get('ad_revenue_rate')
                 promo_days_count = row.get('promo_days_count')
+                discount_pct = row.get('discount_pct', row.get('discount'))
+                price_index_status = row.get('price_index_status', row.get('price_index'))
+                items_purchased = row.get('items_purchased', row.get('purchased'))
 
                 reviews = session.query(FactReviewsDaily).filter(
                     FactReviewsDaily.date_id == date_obj.id,
@@ -294,6 +299,23 @@ class IntegrationService:
                     ads.roas = float(ad_revenue_rate)
                 if promo_days_count is not None and int(promo_days_count) > 0 and ads.ad_orders <= 0:
                     ads.ad_orders = int(promo_days_count)
+
+                ext = session.query(FactSkuExtDaily).filter(
+                    FactSkuExtDaily.date_id == date_obj.id,
+                    FactSkuExtDaily.shop_id == self.shop_id,
+                    FactSkuExtDaily.sku_id == sku.id,
+                ).one_or_none()
+                if ext is None:
+                    ext = FactSkuExtDaily(date_id=date_obj.id, shop_id=self.shop_id, sku_id=sku.id, batch_id=1)
+                    session.add(ext)
+                if items_purchased is not None:
+                    ext.items_purchased = int(items_purchased)
+                if promo_days_count is not None:
+                    ext.promo_days_count = int(promo_days_count)
+                if discount_pct is not None:
+                    ext.discount_pct = float(discount_pct)
+                if price_index_status not in [None, '']:
+                    ext.price_index_status = str(price_index_status).strip()
 
                 updated += 1
         return updated
@@ -495,6 +517,8 @@ class IntegrationService:
             'response': response_json,
             'error': error_message,
             'retryable': status != 'success',
+            'traceId': payload.get('traceId'),
+            'idempotencyKey': payload.get('idempotencyKey'),
             'pushedAt': now.isoformat(),
         }
 
@@ -510,5 +534,9 @@ class IntegrationService:
                 'error': r.error_message,
                 'pushedAt': r.pushed_at.isoformat() if r.pushed_at else None,
                 'targetSystem': r.target_system,
+                'traceId': (r.payload_json or {}).get('traceId'),
+                'idempotencyKey': (r.payload_json or {}).get('idempotencyKey'),
+                'operator': (r.payload_json or {}).get('operator'),
+                'payload': r.payload_json,
                 'response': r.response_json,
             } for r in rows]

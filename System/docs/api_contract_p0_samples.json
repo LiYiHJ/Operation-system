@@ -1,0 +1,89 @@
+{
+  "/dashboard/top-skus": {
+    "data": []
+  },
+  "/dashboard/alerts": {
+    "data": [],
+    "summary": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0
+    }
+  },
+  "/dashboard/trends": {
+    "dates": [],
+    "orders": [],
+    "revenue": []
+  },
+  "/dashboard/shop-health": {
+    "data": [
+      {
+        "delayRate": 0.0,
+        "priceCompetitiveness": {
+          "green": 0,
+          "red": 0
+        },
+        "rating": 0.0,
+        "shopId": 1,
+        "shopName": "Default Shop",
+        "totalOrders": 0,
+        "totalProducts": 0
+      }
+    ]
+  },
+  "/analysis/price": {
+    "batchRecommendations": [],
+    "explanations": [
+      {
+        "content": "按价格差、利润率、订单和ROAS自动分组。",
+        "title": "分组说明"
+      },
+      {
+        "content": "高价低转化优先降价，低价低毛利优先提价。",
+        "title": "推荐逻辑"
+      },
+      {
+        "content": "可一键推送至策略清单并进入决策队列。",
+        "title": "动作流转"
+      }
+    ],
+    "groupedStrategies": [
+      {
+        "count": 0,
+        "key": "traffic",
+        "label": "引流组"
+      },
+      {
+        "count": 0,
+        "key": "standard_margin",
+        "label": "标准利润组"
+      },
+      {
+        "count": 0,
+        "key": "high_margin",
+        "label": "高利润组"
+      },
+      {
+        "count": 0,
+        "key": "clearance",
+        "label": "清仓组"
+      },
+      {
+        "count": 0,
+        "key": "campaign",
+        "label": "活动参与组"
+      }
+    ],
+    "issues": [],
+    "summary": {
+      "avgMargin": 0,
+      "avgPriceGap": 0,
+      "redZone": 0,
+      "totalSku": 0
+    }
+  },
+  "/ads/campaigns": {
+    "data": []
+  }
+}

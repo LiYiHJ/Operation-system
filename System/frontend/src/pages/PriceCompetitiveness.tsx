@@ -78,6 +78,10 @@ export default function PriceCompetitiveness() {
     { title: '平台活动净利率', dataIndex: 'margin', key: 'margin', width: 130, render: (v: number) => formatPercent(v, 1, true) },
     { title: '自建促销净利率', dataIndex: 'promoMargin', key: 'promoMargin', width: 130, render: (v: number, r: any) => formatPercent(v ?? r.margin, 1, true) },
     { title: '订单', dataIndex: 'orders', key: 'orders', width: 80, render: (v: number) => formatInteger(v) },
+    { title: '购买件数', dataIndex: 'itemsPurchased', key: 'itemsPurchased', width: 100, render: (v: number) => formatInteger(v) },
+    { title: '活动天数', dataIndex: 'promoDaysCount', key: 'promoDaysCount', width: 100, render: (v: number) => formatInteger(v) },
+    { title: '折扣率', dataIndex: 'discountPct', key: 'discountPct', width: 90, render: (v: number) => formatPercent(v, 1, true) },
+    { title: '价格指数状态', dataIndex: 'priceIndexStatus', key: 'priceIndexStatus', width: 120, render: (v: string) => displayOrDash(v) },
     { title: 'ROAS', dataIndex: 'roas', key: 'roas', width: 90, render: (v: number) => formatRate(v, 2) },
     { title: '推荐策略', dataIndex: 'recommendation', key: 'recommendation', width: 300, ellipsis: true, render: (v: string) => <Tooltip title={displayOrDash(v)}><Text strong>{displayOrDash(v)}</Text></Tooltip> },
     { title: '风险等级', dataIndex: 'competitiveness', key: 'competitiveness', width: 90, render: (v: string) => <OpsRiskTag level={v === 'red' ? 'critical' : v === 'yellow' ? 'warning' : 'normal'} /> },
@@ -154,7 +158,7 @@ export default function PriceCompetitiveness() {
             label: '批量推荐表（深度分析）',
             children: (
               <Card title="批量推荐表" extra={<Space><Select value={groupFilter} onChange={setGroupFilter} style={{ width: 220 }} options={[{ value: 'all', label: '全部分组' }, ...(data?.groupedStrategies || []).map((g: any) => ({ value: g.key, label: `${strategyGroupLabels[g.key] || g.label} (${formatInteger(g.count)})` }))]} /><Button icon={<ThunderboltOutlined />} onClick={() => navigate('/decision')}>去决策队列</Button><Button onClick={() => refetch()}>刷新</Button></Space>}>
-                <Table rowKey="sku" dataSource={rows} columns={columns} loading={isLoading} locale={{ emptyText: '暂无数据' }} scroll={{ x: 1500, y: 460 }} pagination={{ pageSize: 8 }} size="small" tableLayout="fixed" />
+                <Table rowKey="sku" dataSource={rows} columns={columns} loading={isLoading} locale={{ emptyText: '暂无数据' }} scroll={{ x: 1850, y: 460 }} pagination={{ pageSize: 8 }} size="small" tableLayout="fixed" />
               </Card>
             ),
           },

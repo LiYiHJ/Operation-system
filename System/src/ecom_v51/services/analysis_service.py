@@ -14,9 +14,10 @@ from ecom_v51.db.models import (
     FactProfitSnapshot,
     FactReviewsDaily,
     FactSkuDaily,
+    FactSkuExtDaily,
     StrategyTask,
 )
-from ecom_v51.db.session import get_session
+from ecom_v51.db.session import get_session, get_engine
 from ecom_v51.services.strategy_service import build_action_source
 
 
@@ -24,6 +25,11 @@ class AnalysisService:
     def __init__(self, shop_id: int = 1, days: int = 7) -> None:
         self.shop_id = shop_id
         self.days = max(days, 1)
+        self._ensure_extension_tables()
+
+    @staticmethod
+    def _ensure_extension_tables() -> None:
+        FactSkuExtDaily.metadata.create_all(bind=get_engine(), tables=[FactSkuExtDaily.__table__])
 
     def _date_window(self) -> tuple[date, date]:
         end = date.today()
@@ -118,30 +124,54 @@ class AnalysisService:
                     func.coalesce(func.avg(FactProfitSnapshot.net_margin), 0.0).label('margin'),
                     func.coalesce(func.sum(FactSkuDaily.orders_count), 0).label('orders'),
                     func.coalesce(func.avg(FactAdsDaily.roas), 0.0).label('roas'),
+                    func.coalesce(func.avg(FactSkuExtDaily.items_purchased), 0).label('items_purchased'),
+                    func.coalesce(func.avg(FactSkuExtDaily.promo_days_count), 0).label('promo_days_count'),
+                    func.coalesce(func.avg(FactSkuExtDaily.discount_pct), 0.0).label('discount_pct'),
+                    func.max(FactSkuExtDaily.price_index_status).label('price_index_status'),
                 )
                 .join(FactProfitSnapshot, FactProfitSnapshot.sku_id == DimSku.id)
                 .join(DimDate, FactProfitSnapshot.date_id == DimDate.id)
                 .outerjoin(FactSkuDaily, (FactSkuDaily.sku_id == DimSku.id) & (FactSkuDaily.date_id == FactProfitSnapshot.date_id))
                 .outerjoin(FactAdsDaily, (FactAdsDaily.sku_id == DimSku.id) & (FactAdsDaily.date_id == FactProfitSnapshot.date_id))
+                .outerjoin(FactSkuExtDaily, (FactSkuExtDaily.sku_id == DimSku.id) & (FactSkuExtDaily.date_id == FactProfitSnapshot.date_id))
                 .filter(FactProfitSnapshot.shop_id == self.shop_id, DimDate.date_value >= start, DimDate.date_value <= end)
                 .group_by(DimSku.id, DimSku.sku)
                 .order_by(func.avg(FactProfitSnapshot.net_margin).asc())
-                .limit(200)
                 .all()
             )
 
         strategy_groups = {
-            'traffic': {'label': '引流组', 'rule': lambda x: x['priceGap'] <= -20 and x['margin'] < 0.15},
-            'standard_margin': {'label': '标准利润组', 'rule': lambda x: -20 < x['priceGap'] < 20 and x['margin'] >= 0.1},
-            'high_margin': {'label': '高利润组', 'rule': lambda x: x['margin'] >= 0.25},
-            'clearance': {'label': '清仓组', 'rule': lambda x: x['orders'] < 5 and x['margin'] <= 0.1},
-            'campaign': {'label': '活动参与组', 'rule': lambda x: x['roas'] > 2.5 and x['orders'] > 10},
+            'traffic': {'label': '引流组', 'rule': lambda x: x['priceGap'] <= -20 and x['margin'] < 0.15 and x.get('priceIndexStatus') != 'RED'},
+            'standard_margin': {'label': '标准利润组', 'rule': lambda x: -20 < x['priceGap'] < 20 and x['margin'] >= 0.1 and x.get('promoDaysCount', 0) <= 3},
+            'high_margin': {'label': '高利润组', 'rule': lambda x: x['margin'] >= 0.25 and x.get('discountPct', 0) <= 0.1},
+            'clearance': {'label': '清仓组', 'rule': lambda x: x['orders'] < 5 and x['margin'] <= 0.1 and x.get('itemsPurchased', 0) <= 5},
+            'campaign': {'label': '活动参与组', 'rule': lambda x: x['roas'] > 2.5 and x['orders'] > 10 and x.get('promoDaysCount', 0) > 0},
         }
 
         items = []
         for r in rows:
             our = float(r.our_price or 0)
             market = float(r.market_price or 0)
+            margin = float(r.margin or 0)
+            orders = int(r.orders or 0)
+            roas = float(r.roas or 0)
+            items_purchased = int(r.items_purchased or 0)
+            promo_days = int(r.promo_days_count or 0)
+            discount_pct = float(r.discount_pct or 0)
+            price_status = str(r.price_index_status or '')
+
+            if all([
+                our == 0,
+                market == 0,
+                margin == 0,
+                orders == 0,
+                roas == 0,
+                promo_days == 0,
+                discount_pct == 0,
+                price_status == '',
+            ]):
+                continue
+
             price_gap = round(our - market, 2)
             comp = 'green' if price_gap <= 0 else ('yellow' if price_gap <= 20 else 'red')
             base = {
@@ -150,9 +180,13 @@ class AnalysisService:
                 'ourPrice': round(our, 2),
                 'marketPrice': round(market, 2),
                 'priceGap': price_gap,
-                'margin': float(r.margin or 0),
-                'orders': int(r.orders or 0),
-                'roas': float(r.roas or 0),
+                'margin': margin,
+                'orders': orders,
+                'roas': roas,
+                'itemsPurchased': items_purchased,
+                'promoDaysCount': promo_days,
+                'discountPct': discount_pct,
+                'priceIndexStatus': price_status,
                 'competitiveness': comp,
                 'view': view,
             }
@@ -160,6 +194,8 @@ class AnalysisService:
             base['group'] = group
             base['recommendation'] = self._price_recommendation(base, view)
             items.append(base)
+
+        items = items[:200]
 
         group_counts = defaultdict(int)
         for x in items:
@@ -172,6 +208,9 @@ class AnalysisService:
                 'redZone': len([x for x in items if x['competitiveness'] == 'red']),
                 'avgPriceGap': round(sum(x['priceGap'] for x in items) / len(items), 2) if items else 0,
                 'avgMargin': round(sum(x['margin'] for x in items) / len(items), 4) if items else 0,
+                'avgDiscountPct': round(sum(x.get('discountPct', 0) for x in items) / len(items), 4) if items else 0,
+                'avgPromoDays': round(sum(x.get('promoDaysCount', 0) for x in items) / len(items), 2) if items else 0,
+                'redPriceIndexCount': len([x for x in items if x.get('priceIndexStatus') == 'RED']),
             },
             'groupedStrategies': [{ 'key': k, 'label': v['label'], 'count': group_counts[k]} for k, v in strategy_groups.items()],
             'batchRecommendations': items,
@@ -187,10 +226,19 @@ class AnalysisService:
     def _price_recommendation(item: dict[str, object], view: str) -> str:
         price_gap = float(item['priceGap'])
         margin = float(item['margin'])
+        promo_days = int(item.get('promoDaysCount') or 0)
+        discount_pct = float(item.get('discountPct') or 0)
+        price_index_status = str(item.get('priceIndexStatus') or '')
         if view == 'campaign':
+            if promo_days > 0 and margin < 0.12:
+                return '活动期利润偏薄，建议抬价或缩短活动天数'
             return '活动价建议：以保转化为先，控制最低毛利底线'
         if view == 'promo':
+            if discount_pct > 0.15:
+                return '自促折扣过深，建议回调折扣并复核净利'
             return '自促建议：按库存与ROI设置阶梯折扣'
+        if price_index_status == 'RED' and price_gap > 0:
+            return '价格指数偏高且高于市场，建议优先降价修复竞争力'
         if price_gap > 20:
             return '高于市场价，建议降价5%-12%并复测转化'
         if price_gap < -20 and margin < 0.15:

@@ -146,6 +146,25 @@ class FactSkuDaily(Base, TimestampMixin):
     batch_id: Mapped[int] = mapped_column(ForeignKey("import_batch.id"), nullable=False)
 
 
+
+
+class FactSkuExtDaily(Base, TimestampMixin):
+    __tablename__ = "fact_sku_ext_daily"
+    __table_args__ = (
+        UniqueConstraint("date_id", "shop_id", "sku_id", name="uq_fact_sku_ext_daily_date_shop_sku"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    date_id: Mapped[int] = mapped_column(ForeignKey("dim_date.id"), nullable=False)
+    shop_id: Mapped[int] = mapped_column(ForeignKey("dim_shop.id"), nullable=False)
+    sku_id: Mapped[int] = mapped_column(ForeignKey("dim_sku.id"), nullable=False)
+    items_purchased: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    promo_days_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    discount_pct: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    price_index_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    batch_id: Mapped[int] = mapped_column(ForeignKey("import_batch.id"), nullable=False)
+
+
 class FactAdsDaily(Base, TimestampMixin):
     __tablename__ = "fact_ads_daily"
 

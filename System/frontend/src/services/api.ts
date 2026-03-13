@@ -184,6 +184,7 @@ export const importApi = {
 
 export const analysisApi = {
   /**
+   * @deprecated 旧契约，建议使用 thematicApi 相关专题接口
    * 单 SKU 分析
    */
   analyzeSku: (sku: string, params?: {
@@ -217,6 +218,7 @@ export const analysisApi = {
   },
 
   /**
+   * @deprecated 兼容旧路径，已由后端 /analysis/price 适配到 /analysis/price-cockpit
    * 价格分析
    */
   priceAnalysis: (params?: {
@@ -235,7 +237,7 @@ export const analysisApi = {
   },
 
   /**
-   * 利润计算
+   * @deprecated 旧 analysis/profit 已废弃，收口到 /profit/solve
    */
   calculateProfit: (data: {
     salePrice: number
@@ -243,7 +245,14 @@ export const analysisApi = {
     variableRateTotal: number
     fixedCostTotal: number
   }): Promise<ApiResponse<ProfitResult>> => {
-    return apiClient.post('/analysis/profit', data)
+    return apiClient.post('/profit/solve', {
+      mode: 'current',
+      targetValue: 0,
+      salePrice: data.salePrice,
+      listPrice: data.listPrice,
+      variableRateTotal: data.variableRateTotal,
+      fixedCostTotal: data.fixedCostTotal,
+    })
   },
 }
 
@@ -375,6 +384,7 @@ export const strategyApi = {
 }
 
 // ========== Ads API ==========
+// 兼容旧页面调用；新页面请优先使用 thematicApi.getAds + pushActionToStrategy
 
 export const adsApi = {
   /**

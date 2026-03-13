@@ -17,7 +17,7 @@ import './App.css'
 
 function ProtectedLayout() {
   const { user, loading } = useAuth()
-  if (loading) return <div style={{ padding: 24 }}>Loading...</div>
+  if (loading) return <div style={{ padding: 24 }}>加载中...</div>
   if (!user) return <Navigate to="/login" replace />
   return <Layout />
 }

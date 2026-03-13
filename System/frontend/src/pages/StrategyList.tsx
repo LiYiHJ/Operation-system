@@ -1,7 +1,7 @@
 import { Card, Row, Col, Table, Tag, Button, Select, Space, Statistic, Badge, Modal, Divider, Progress, Tooltip, message } from 'antd'
 import { CheckCircleOutlined, WarningOutlined, ClockCircleOutlined, BulbOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { strategyApi } from '../services/api'
 import type { StrategyTask } from '../types'
@@ -14,6 +14,17 @@ export default function StrategyList() {
   const [filterType, setFilterType] = useState<string>('all')
   const [selectedTask, setSelectedTask] = useState<StrategyTask | null>(null)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
+
+  const queryClient = useQueryClient()
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ taskId, status }: { taskId: number; status: string }) => strategyApi.updateTaskStatus(taskId, { status, assignedTo: 'strategy_ui' }),
+    onSuccess: () => {
+      message.success('状态已更新并写库')
+      queryClient.invalidateQueries({ queryKey: ['strategy-list'] })
+      queryClient.invalidateQueries({ queryKey: ['decision-preview'] })
+    },
+    onError: (e: any) => message.error(`状态更新失败: ${e.message}`),
+  })
 
   // 获取数据 - 调用真实后端API（失败时使用 mock 数据）
   const { data: taskList, isLoading } = useQuery<StrategyTask[]>({
@@ -287,7 +298,15 @@ export default function StrategyList() {
             <Button
               type="link"
               size="small"
-              onClick={() => message.info('开始处理')}
+              loading={updateStatusMutation.isPending}
+              onClick={() => {
+                const taskId = Number(record.id)
+                if (!Number.isFinite(taskId)) {
+                  message.warning('任务ID无效，无法更新状态')
+                  return
+                }
+                updateStatusMutation.mutate({ taskId, status: 'in_progress' })
+              }}
             >
               开始
             </Button>

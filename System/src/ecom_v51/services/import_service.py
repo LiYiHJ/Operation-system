@@ -17,7 +17,7 @@ import re
 from ecom_v51.models import ImportBatchDiagnosis, ProfitInput
 from ecom_v51.ingestion import ImportDiagnoser
 from ecom_v51.intelligent_field_mapper import IntelligentFieldMapper
-from ecom_v51.db.session import get_session
+from ecom_v51.db.session import get_session, get_engine
 from ecom_v51.db.models import (
     DimPlatform,
     DimShop,
@@ -28,6 +28,7 @@ from ecom_v51.db.models import (
     ImportErrorLog,
     MappingFeedback,
     FactSkuDaily,
+    FactSkuExtDaily,
     FactOrdersDaily,
     FactReviewsDaily,
     FactAdsDaily,
@@ -258,6 +259,13 @@ class ImportService:
         self.mapping = FieldMapping()
         self.intelligent_mapper = IntelligentFieldMapper()  # 🆕 智能映射器
         self.profit_solver = ProfitSolver()
+        self._last_read_context: dict = {'header_row': 0, 'source_type': 'unknown'}
+        self._last_normalize_stats: dict = {}
+        self._ensure_extension_tables()
+
+    @staticmethod
+    def _ensure_extension_tables() -> None:
+        FactSkuExtDaily.metadata.create_all(bind=get_engine(), tables=[FactSkuExtDaily.__table__])
 
     @staticmethod
     def _load_json_yaml(path: Path, default: dict) -> dict:
@@ -312,6 +320,156 @@ class ImportService:
         if 'sku' not in df.columns:
             return df
         return df.loc[~df['sku'].astype(str).apply(self._is_summary_text)].copy()
+
+    @staticmethod
+    def _to_clean_text(value) -> str:
+        if value is None or pd.isna(value):
+            return ''
+        return re.sub(r'\s+', ' ', str(value)).strip()
+
+    @staticmethod
+    def _is_placeholder_col(name: str) -> bool:
+        text = str(name or '').strip().lower()
+        return (not text) or text.startswith('unnamed:')
+
+    @staticmethod
+    def _looks_like_description_row(values: list[str]) -> bool:
+        non_empty = [v for v in values if v]
+        if not non_empty:
+            return False
+        long_text_count = sum(1 for v in non_empty if len(v) >= 35)
+        hint_count = sum(
+            1
+            for v in non_empty
+            if any(k in v.lower() for k in ['динамика', 'по сравнению', 'отношение', 'сколько раз', '根据', '说明'])
+        )
+        return long_text_count >= 5 or hint_count >= 3
+
+    @staticmethod
+    def _looks_like_summary_row(values: list[str]) -> bool:
+        normalized = [v.strip().lower() for v in values if v.strip()]
+        if not normalized:
+            return False
+        first = normalized[0]
+        summary_keywords = {'итого', 'итого и среднее', 'total', 'summary', '总计', '合计', '总计和平均值'}
+        if first in summary_keywords:
+            return True
+        return any(v in summary_keywords for v in normalized[:3])
+
+    @staticmethod
+    def _dedupe_columns(columns: list[str]) -> list[str]:
+        seen: dict[str, int] = {}
+        result: list[str] = []
+        for col in columns:
+            name = str(col).strip() or 'unnamed'
+            idx = seen.get(name, 0)
+            if idx == 0:
+                result.append(name)
+            else:
+                result.append(f"{name}_{idx}")
+            seen[name] = idx + 1
+        return result
+
+    def _normalize_report_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """parse 阶段报表规范化：多层表头展开、说明/汇总行剔除、Unnamed 处理"""
+        if df.empty:
+            self._last_normalize_stats = {
+                'originalColumns': 0,
+                'normalizedColumns': 0,
+                'droppedPlaceholderColumns': [],
+                'removedSummaryRows': 0,
+                'removedDescriptionRows': 0,
+            }
+            return df
+
+        original_columns = [self._to_clean_text(c) for c in df.columns]
+        normalized = df.copy()
+        normalized = normalized.dropna(axis=1, how='all')
+        normalized.columns = [self._to_clean_text(c) for c in normalized.columns]
+
+        placeholder_count = sum(1 for c in normalized.columns if self._is_placeholder_col(c))
+        has_placeholder = placeholder_count > 0
+
+        drop_rows = 0
+        description_rows_removed = 0
+        if has_placeholder and len(normalized) >= 1:
+            secondary = [self._to_clean_text(v) for v in normalized.iloc[0].tolist()]
+            tertiary = [self._to_clean_text(v) for v in normalized.iloc[1].tolist()] if len(normalized) > 1 else []
+
+            rebuilt_cols: list[str] = []
+            for idx, base in enumerate(normalized.columns):
+                base_text = '' if self._is_placeholder_col(base) else self._to_clean_text(base)
+                sec_text = secondary[idx] if idx < len(secondary) else ''
+
+                if sec_text and sec_text.lower() != 'динамика':
+                    if len(sec_text) > 60 or any(k in sec_text.lower() for k in ['по сравнению', 'отношение', 'сколько раз']):
+                        sec_text = ''
+
+                candidate = base_text
+                if sec_text:
+                    candidate = f"{base_text} {sec_text}".strip() if base_text else sec_text
+                if not candidate:
+                    candidate = f"col_{idx + 1}"
+                rebuilt_cols.append(candidate)
+
+            normalized.columns = self._dedupe_columns(rebuilt_cols)
+            drop_rows = 1
+            if tertiary and self._looks_like_description_row(tertiary):
+                drop_rows = 2
+            description_rows_removed = drop_rows
+
+        if drop_rows > 0:
+            normalized = normalized.iloc[drop_rows:].reset_index(drop=True)
+
+        unnamed_like = [c for c in normalized.columns if self._is_placeholder_col(c) or re.match(r'^col_\d+$', c)]
+        if unnamed_like:
+            normalized = normalized.drop(columns=unnamed_like, errors='ignore')
+
+        summary_rows_removed = 0
+        description_rows_removed_extra = 0
+        if not normalized.empty:
+            keep_mask = []
+            for _, row in normalized.iterrows():
+                row_text = [self._to_clean_text(v) for v in row.tolist()]
+                is_summary = self._looks_like_summary_row(row_text)
+                is_desc = self._looks_like_description_row(row_text)
+                if is_summary or is_desc:
+                    if is_summary:
+                        summary_rows_removed += 1
+                    else:
+                        description_rows_removed_extra += 1
+                    keep_mask.append(False)
+                else:
+                    keep_mask.append(True)
+            normalized = normalized.loc[keep_mask].reset_index(drop=True)
+
+        if not normalized.empty:
+            sku_columns = [
+                col for col in normalized.columns
+                if any(k in self._normalize_header(col) for k in ['sku', 'артикул', 'offer id', 'seller sku'])
+            ]
+            if sku_columns:
+                sku_col = sku_columns[0]
+                start_idx = None
+                for idx, val in enumerate(normalized[sku_col].astype(str).tolist()):
+                    cell = val.strip()
+                    if not cell or cell.lower() == 'nan':
+                        continue
+                    if re.match(r'^[A-Za-z0-9\-_/]{4,}$', cell):
+                        start_idx = idx
+                        break
+                if start_idx is not None and start_idx > 0:
+                    normalized = normalized.iloc[start_idx:].reset_index(drop=True)
+
+        normalized.columns = self._dedupe_columns([self._to_clean_text(c) for c in normalized.columns])
+        self._last_normalize_stats = {
+            'originalColumns': len(original_columns),
+            'normalizedColumns': len(normalized.columns),
+            'droppedPlaceholderColumns': sorted(set(unnamed_like)),
+            'removedSummaryRows': summary_rows_removed,
+            'removedDescriptionRows': description_rows_removed + description_rows_removed_extra,
+        }
+        return normalized
     
     def _detect_excel_header_row(self, file_path: str, max_scan_rows: int = 30) -> int:
         """尝试检测 Excel 真正表头行（兼容 Ozon 导出前置说明行）"""
@@ -343,6 +501,7 @@ class ImportService:
         返回：(DataFrame, 错误信息)
         """
         path = Path(file_path)
+        self._last_read_context = {'header_row': 0, 'source_type': path.suffix.lower()}
         
         if not path.exists():
             return None, f"文件不存在：{file_path}"
@@ -353,11 +512,13 @@ class ImportService:
                     header_row = self._detect_excel_header_row(file_path)
                     try:
                         df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
+                        self._last_read_context = {'header_row': header_row, 'source_type': 'xlsx'}
                     except Exception as ex:
                         return None, f"读取 XLSX 失败：文件可能损坏、加密或样式异常，请另存为标准 .xlsx 后重试。原始错误：{ex}"
                 else:
                     try:
                         df = pd.read_excel(file_path, engine='xlrd')
+                        self._last_read_context = {'header_row': 0, 'source_type': 'xls'}
                     except Exception as ex:
                         return None, f"读取 XLS 失败：请另存为 .xlsx 或 .csv 后重试。原始错误：{ex}"
             elif path.suffix == '.csv':
@@ -365,6 +526,7 @@ class ImportService:
                 for encoding in ['utf-8', 'utf-8-sig', 'gbk', 'cp1251']:
                     try:
                         df = pd.read_csv(file_path, encoding=encoding)
+                        self._last_read_context = {'header_row': 0, 'source_type': 'csv'}
                         break
                     except:
                         continue
@@ -373,6 +535,7 @@ class ImportService:
             else:
                 return None, f"不支持的文件格式：{path.suffix}"
             
+            df = self._normalize_report_dataframe(df)
             return df, None
             
         except Exception as e:
@@ -434,8 +597,16 @@ class ImportService:
         清洗数据
         """
         # 清洗数字列
-        numeric_columns = ['impressions', 'card_visits', 'add_to_cart', 'orders', 
-                          'revenue', 'ad_spend', 'ad_revenue', 'stock']
+        numeric_columns = [
+            'impressions', 'impressions_total', 'impressions_search_catalog',
+            'card_visits', 'product_card_visits',
+            'add_to_cart', 'add_to_cart_total',
+            'orders', 'items_ordered', 'items_delivered', 'items_purchased', 'items_canceled', 'items_returned',
+            'revenue', 'order_amount',
+            'ad_spend', 'ad_revenue',
+            'stock', 'stock_total', 'stock_fbo', 'stock_fbs',
+            'avg_sale_price',
+        ]
         
         for col in numeric_columns:
             if col in df.columns:
@@ -446,7 +617,7 @@ class ImportService:
             df['rating'] = df['rating'].apply(self.cleaner.clean_rating)
         
         # 清洗百分比
-        percentage_columns = ['return_rate', 'cancel_rate', 'variable_rate_total']
+        percentage_columns = ['return_rate', 'cancel_rate', 'variable_rate_total', 'add_to_cart_cvr_total', 'discount_pct']
         for col in percentage_columns:
             if col in df.columns:
                 df[col] = df[col].apply(self.cleaner.clean_percentage)
@@ -621,16 +792,6 @@ class ImportService:
             raise ValueError(error)
 
         mapped_df = self.map_columns(df.copy())
-        unmapped_fields = [col for col in df.columns if col not in mapped_df.columns]
-
-        diagnosis = self.diagnoser.diagnose(
-            file_name=Path(file_path).name,
-            preview_rows=df.head(20).fillna('').values.tolist(),
-            headers=df.columns.astype(str).tolist(),
-            mapped_fields=len(mapped_df.columns),
-            unmapped_fields=unmapped_fields,
-            row_error_count=0,
-        )
 
         field_mappings: list[dict] = []
         extra_map = {
@@ -643,25 +804,81 @@ class ImportService:
             'impressions': 'impressions',
             'add to cart': 'add_to_cart',
             'add_to_cart': 'add_to_cart',
+            'заказано на сумму': 'order_amount',
+            'заказано товаров': 'items_ordered',
+            'доставлено товаров': 'items_delivered',
+            'выкуплено товаров': 'items_purchased',
+            'отменено товаров (на дату отмены)': 'items_canceled',
+            'отменено товаров (на дату заказа)': 'items_canceled',
+            'возвращено товаров (на дату возврата)': 'items_returned',
+            'возвращено товаров (на дату заказа)': 'items_returned',
+            'общая дрр': 'ad_spend',
+            'остаток на конец периода': 'stock_total',
+            'категория 1 уровня': 'category',
+            'категория 2 уровня': 'category',
+            'категория 3 уровня': 'category',
+            'дней в акциях': 'promo_days_count',
+            'индекс цен': 'price_index_status',
+            'средняя цена': 'avg_sale_price',
+            'факторы продаж средняя цена': 'avg_sale_price',
+            'отзывы': 'review_count',
+            'рейтинг товара': 'rating_value',
+            'показы всего': 'impressions_total',
+            'показы в поиске и каталоге': 'impressions_search_catalog',
+            'посещения карточки товара': 'product_card_visits',
+            'добавления в корзину всего': 'add_to_cart_total',
+            'конверсия в корзину общая': 'add_to_cart_cvr_total',
         }
         for col in df.columns.astype(str):
             norm_col = self._normalize_header(col)
+            norm_variants = [norm_col]
+            norm_variants.append(re.sub(r'^(продажи|воронка продаж|факторы продаж)\s+', '', norm_col).strip())
             std_field = None
             confidence = 0.0
             reasons: list[str] = []
 
+            if norm_col.startswith('динамика'):
+                sample_values = df[col].dropna().head(5).astype(str).tolist() if col in df.columns else []
+                field_mappings.append(
+                    {
+                        'originalField': col,
+                        'standardField': None,
+                        'confidence': 0.0,
+                        'sampleValues': sample_values,
+                        'isManual': False,
+                        'reasons': ['dynamic_column_ignored'],
+                    }
+                )
+                continue
+
             # 先用显式映射，避免智能映射误判
-            std_field = self._alias_lookup.get(norm_col)
+            for variant in norm_variants:
+                std_field = self._alias_lookup.get(variant)
+                if std_field:
+                    break
             if not std_field:
                 std_field = self.mapping.ozon_mapping.get(col) or self.mapping.ozon_mapping.get(col.strip())
             if not std_field:
-                std_field = extra_map.get(norm_col)
+                for variant in norm_variants:
+                    std_field = extra_map.get(variant)
+                    if std_field:
+                        break
+            if not std_field:
+                for alias_key, canonical in self._alias_lookup.items():
+                    if len(alias_key) < 4:
+                        continue
+                    if any(alias_key in variant or variant in alias_key for variant in norm_variants):
+                        std_field = canonical
+                        confidence = 0.82
+                        reasons = ['alias_contains_match']
+                        break
             if std_field:
-                confidence = 0.95
-                reasons = ['explicit_mapping']
+                if confidence <= 0:
+                    confidence = 0.95
+                    reasons = ['explicit_mapping']
             else:
                 mapped_name, mapped_conf, mapped_reasons = self.intelligent_mapper.detect_field(col)
-                if mapped_name != 'unknown':
+                if mapped_name and mapped_name != 'unknown':
                     std_field = mapped_name
                     confidence = mapped_conf
                     reasons = mapped_reasons
@@ -687,7 +904,26 @@ class ImportService:
                 }
             )
 
+        unmapped_fields = [item['originalField'] for item in field_mappings if not item['standardField']]
+        ignored_fields = [item['originalField'] for item in field_mappings if 'dynamic_column_ignored' in (item.get('reasons') or [])]
+        candidate_fields = [item for item in field_mappings if item['originalField'] not in ignored_fields]
+        mapped_fields = [item for item in candidate_fields if item.get('standardField')]
+        mapped_count = len(mapped_fields)
+        unmapped_count = len(candidate_fields) - mapped_count
+        mapped_confidence = round(sum(item['confidence'] for item in mapped_fields) / max(mapped_count, 1), 3)
+        mapping_coverage = round(mapped_count / max(len(candidate_fields), 1), 3)
+
+        diagnosis = self.diagnoser.diagnose(
+            file_name=Path(file_path).name,
+            preview_rows=df.head(20).fillna('').values.tolist(),
+            headers=df.columns.astype(str).tolist(),
+            mapped_fields=mapped_count,
+            unmapped_fields=unmapped_fields,
+            row_error_count=0,
+        )
+
         preview_rows = df.head(10).fillna('').values.tolist()
+        actual_header_row = int(self._last_read_context.get('header_row', 0)) + 1
         template_code = self._detect_report_template(Path(file_path).name, df.columns.astype(str).tolist())
 
         with get_session() as session:
@@ -713,8 +949,21 @@ class ImportService:
                 'dataPreview': preview_rows,
                 'totalRows': len(df),
                 'totalColumns': len(df.columns),
-                'headerRow': (diagnosis.detected_header_row or 0) + 1,
+                'rawColumns': self._last_normalize_stats.get('originalColumns', len(df.columns)),
+                'headerRow': actual_header_row,
                 'platform': platform_code,
+                'stats': {
+                    'candidateColumns': len(candidate_fields),
+                    'ignoredColumns': len(ignored_fields),
+                    'ignoredFields': ignored_fields,
+                    'mappedConfidence': mapped_confidence,
+                    'mappingCoverage': mapping_coverage,
+                    'mappedCount': mapped_count,
+                    'unmappedCount': unmapped_count,
+                    'droppedPlaceholderColumns': self._last_normalize_stats.get('droppedPlaceholderColumns', []),
+                    'removedSummaryRows': self._last_normalize_stats.get('removedSummaryRows', 0),
+                    'removedDescriptionRows': self._last_normalize_stats.get('removedDescriptionRows', 0),
+                },
                 'diagnosis': {
                     'suggestions': diagnosis.suggestions,
                     'keyField': diagnosis.key_field,
@@ -726,7 +975,7 @@ class ImportService:
             batch_file = ImportBatchFile(
                 batch_id=batch.id,
                 file_name=Path(file_path).name,
-                detected_header_row=(diagnosis.detected_header_row or 0) + 1,
+                detected_header_row=actual_header_row,
                 detected_key_field=diagnosis.key_field,
                 mapped_fields_json=mapped_fields_json,
                 unmapped_fields_json=diagnosis.unmapped_fields,
@@ -742,12 +991,25 @@ class ImportService:
                 'selectedSheet': 'Sheet1',
                 'totalRows': len(df),
                 'totalColumns': len(df.columns),
-                'headerRow': (diagnosis.detected_header_row or 0) + 1,
+                'rawColumns': self._last_normalize_stats.get('originalColumns', len(df.columns)),
+                'headerRow': actual_header_row,
                 'dataPreview': preview_rows,
                 'fieldMappings': field_mappings,
-                'mappedCount': len([x for x in field_mappings if x['standardField']]),
-                'unmappedCount': len([x for x in field_mappings if not x['standardField']]),
-                'confidence': round(sum(x['confidence'] for x in field_mappings) / max(len(field_mappings), 1), 3),
+                'mappedCount': mapped_count,
+                'unmappedCount': unmapped_count,
+                'confidence': mapped_confidence,
+                'stats': {
+                    'candidateColumns': len(candidate_fields),
+                    'ignoredColumns': len(ignored_fields),
+                    'ignoredFields': ignored_fields,
+                    'mappedConfidence': mapped_confidence,
+                    'mappingCoverage': mapping_coverage,
+                    'mappedCount': mapped_count,
+                    'unmappedCount': unmapped_count,
+                    'droppedPlaceholderColumns': self._last_normalize_stats.get('droppedPlaceholderColumns', []),
+                    'removedSummaryRows': self._last_normalize_stats.get('removedSummaryRows', 0),
+                    'removedDescriptionRows': self._last_normalize_stats.get('removedDescriptionRows', 0),
+                },
                 'platform': platform_code,
                 'status': diagnosis.status,
                 'templateCode': template_code,
@@ -1021,6 +1283,25 @@ class ImportService:
         profit_fact.break_even_price = profit.break_even_price
         profit_fact.break_even_discount_ratio = profit.break_even_discount_ratio
         profit_fact.batch_id = batch_id
+
+        ext_fact = (
+            session.query(FactSkuExtDaily)
+            .filter(
+                FactSkuExtDaily.date_id == date_id,
+                FactSkuExtDaily.shop_id == shop_id,
+                FactSkuExtDaily.sku_id == sku_id,
+            )
+            .one_or_none()
+        )
+        if ext_fact is None:
+            ext_fact = FactSkuExtDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
+            session.add(ext_fact)
+        ext_fact.items_purchased = int(pick('items_purchased', default=items_ordered) or 0)
+        ext_fact.promo_days_count = int(pick('promo_days_count', default=0) or 0)
+        ext_fact.discount_pct = float(pick('discount_pct', default=0) or 0)
+        price_index_raw = pick('price_index_status', default=None)
+        ext_fact.price_index_status = str(price_index_raw).strip() if price_index_raw not in [None, ''] else None
+        ext_fact.batch_id = batch_id
 
         orders_fact = (
             session.query(FactOrdersDaily)

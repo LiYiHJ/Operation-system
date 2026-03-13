@@ -283,7 +283,13 @@ class IntelligentFieldMapper:
         if len(sample) == 0:
             return 0.0
 
-        valid_count = sum(1 for val in sample if validator(val))
+        valid_count = 0
+        for val in sample:
+            try:
+                if validator(val):
+                    valid_count += 1
+            except Exception:
+                continue
         return valid_count / len(sample)
 
     def auto_map_columns(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Tuple[str, float, List[str]]]]:
