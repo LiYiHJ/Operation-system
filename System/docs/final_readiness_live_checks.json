@@ -1,0 +1,286 @@
+{
+  "endpointChecks": [
+    {
+      "method": "GET",
+      "url": "/api/health",
+      "status": 200,
+      "keys": [
+        "service",
+        "status",
+        "version"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/dashboard/overview",
+      "status": 200,
+      "keys": [
+        "alerts",
+        "avgCtr",
+        "avgOrderValue",
+        "avgRating",
+        "kpiDeltas",
+        "openingWorkbench",
+        "period",
+        "profitMargin",
+        "topSkus",
+        "totalClicks"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/dashboard/top-skus",
+      "status": 200,
+      "keys": [
+        "data"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/analysis/abc",
+      "status": 200,
+      "keys": [
+        "issues",
+        "recommendedActions",
+        "rows",
+        "summary"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/analysis/funnel",
+      "status": 200,
+      "keys": [
+        "issues",
+        "recommendedActions",
+        "rows",
+        "summary"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/analysis/price-cockpit?shopId=1&days=7&view=daily",
+      "status": 200,
+      "keys": [
+        "batchRecommendations",
+        "explanations",
+        "groupedStrategies",
+        "issues",
+        "summary"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/analysis/price?shopId=1",
+      "status": 200,
+      "keys": [
+        "batchRecommendations",
+        "explanations",
+        "groupedStrategies",
+        "issues",
+        "summary"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/ads/campaigns",
+      "status": 200,
+      "keys": [
+        "data"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/reminders/list?shopId=1",
+      "status": 200,
+      "keys": [
+        "items",
+        "summary"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/strategy/list",
+      "status": 200,
+      "keys": [
+        "summary",
+        "tasks"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/strategy/decision/preview",
+      "status": 200,
+      "keys": [
+        "decisions",
+        "recommendations",
+        "scope",
+        "summary",
+        "total"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/integration/domains?shopId=1",
+      "status": 200,
+      "keys": [
+        "rows"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/integration/push-logs?shopId=1&limit=20",
+      "status": 200,
+      "keys": [
+        "rows"
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/integration/sync-logs?shopId=1&limit=20",
+      "status": 200,
+      "keys": [
+        "rows"
+      ]
+    }
+  ],
+  "mainDbCounts": {
+    "fact_sku_daily": 0,
+    "fact_orders_daily": 0,
+    "fact_reviews_daily": 0,
+    "fact_ads_daily": 0,
+    "fact_inventory_daily": 0,
+    "fact_profit_snapshot": 0,
+    "fact_sku_ext_daily": 0,
+    "strategy_task": 0,
+    "execution_log": 0,
+    "push_delivery_log": 0
+  },
+  "schemas": {
+    "fact_sku_daily": [
+      "id",
+      "date_id",
+      "shop_id",
+      "sku_id",
+      "impressions_total",
+      "impressions_search",
+      "card_visits",
+      "add_to_cart_total",
+      "orders_count",
+      "delivered_count",
+      "cancelled_count",
+      "returned_count",
+      "revenue_ordered",
+      "revenue_delivered",
+      "batch_id",
+      "created_at",
+      "updated_at"
+    ],
+    "fact_orders_daily": [
+      "id",
+      "date_id",
+      "shop_id",
+      "sku_id",
+      "ordered_qty",
+      "delivered_qty",
+      "cancelled_qty",
+      "returned_qty",
+      "ordered_amount",
+      "delivered_amount",
+      "batch_id",
+      "created_at",
+      "updated_at"
+    ],
+    "fact_reviews_daily": [
+      "id",
+      "date_id",
+      "shop_id",
+      "sku_id",
+      "rating_avg",
+      "new_reviews_count",
+      "negative_reviews_count",
+      "quality_risk_score",
+      "batch_id",
+      "created_at",
+      "updated_at"
+    ],
+    "fact_sku_ext_daily": [
+      "id",
+      "date_id",
+      "shop_id",
+      "sku_id",
+      "items_purchased",
+      "promo_days_count",
+      "discount_pct",
+      "price_index_status",
+      "batch_id",
+      "created_at",
+      "updated_at"
+    ],
+    "strategy_task": [
+      "id",
+      "shop_id",
+      "sku_id",
+      "category_id",
+      "strategy_type",
+      "priority",
+      "trigger_rule",
+      "issue_summary",
+      "recommended_action",
+      "risk_note",
+      "observation_metrics_json",
+      "status",
+      "owner",
+      "due_date",
+      "review_note",
+      "created_at",
+      "updated_at"
+    ],
+    "execution_log": [
+      "id",
+      "strategy_task_id",
+      "source_page",
+      "action_before",
+      "action_after",
+      "operator",
+      "confirmed_at",
+      "result_summary",
+      "status_before",
+      "status_after",
+      "extra_json",
+      "created_at",
+      "updated_at"
+    ],
+    "push_delivery_log": [
+      "id",
+      "strategy_task_id",
+      "execution_log_id",
+      "target_system",
+      "payload_json",
+      "response_json",
+      "status",
+      "http_status",
+      "error_message",
+      "pushed_at",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "highFieldPresence": {
+    "items_purchased": [
+      "fact_sku_ext_daily"
+    ],
+    "promo_days_count": [
+      "fact_sku_ext_daily"
+    ],
+    "price_index_status": [
+      "fact_sku_ext_daily"
+    ],
+    "discount_pct": [
+      "fact_sku_ext_daily"
+    ],
+    "rating_value": [],
+    "review_count": [],
+    "avg_sale_price": []
+  }
+}

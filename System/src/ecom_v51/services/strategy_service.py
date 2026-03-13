@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import date, datetime
 from typing import List, Dict, Any
 
@@ -211,11 +212,18 @@ class StrategyTaskService:
                     'taskId': task.id,
                     'priority': task.priority,
                     'strategyType': task.strategy_type,
+                    'status': task.status,
                     'issueSummary': task.issue_summary,
                     'sku': sku_map.get(int(task.sku_id), str(task.sku_id or '-')) if task.sku_id else '-',
                     'recommendedAction': task.recommended_action,
                     'expectedImpact': impact,
                     'confidence': 0.85 if task.priority in ['P0', 'P1'] else 0.7,
+                    'riskLevel': 'high' if task.priority == 'P0' else ('medium' if task.priority == 'P1' else 'low'),
+                    'evidence': {
+                        'triggerRule': task.trigger_rule,
+                        'observationMetrics': task.observation_metrics_json or [],
+                        'riskNote': task.risk_note,
+                    },
                     'sourcePage': source_info['sourcePage'],
                     'sourceReason': source_info['sourceReason'],
                     'lastDecisionAt': last_decision_at,
@@ -238,17 +246,23 @@ class StrategyTaskService:
             }
 
     def decision_confirm(self, selected_task_ids: list[int], operator: str = 'planner') -> dict[str, object]:
+        # 避免在事务中触发DDL导致sqlite锁冲突
+        IntegrationService(shop_id=1, ensure_tables=True)
+
+        now = datetime.utcnow()
+        trace_id = f"decision-{now.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
+        pending_pushes: list[dict[str, object]] = []
+
         with get_session() as session:
             tasks = session.query(StrategyTask).filter(StrategyTask.id.in_(selected_task_ids)).all()
-            now = datetime.utcnow()
-            results = []
+            sku_map = self._build_sku_map(session, tasks)
 
             for task in tasks:
                 source_info = self._source_from_task(task)
                 before_status = task.status
-                task.status = 'completed'
                 task.owner = operator
-                result_summary = f"已执行：{task.recommended_action[:80]}"
+                task.status = 'in_progress'
+                idempotency_key = f"task-{task.id}-{int(now.timestamp())}"
 
                 execution = ExecutionLog(
                     strategy_task_id=task.id,
@@ -257,54 +271,31 @@ class StrategyTaskService:
                     action_after=task.recommended_action,
                     operator=operator,
                     confirmed_at=now,
-                    result_summary=result_summary,
+                    result_summary='待推送执行',
                     status_before=before_status,
                     status_after=task.status,
                     extra_json={
                         'sourceReason': source_info['sourceReason'],
+                        'traceId': trace_id,
+                        'idempotencyKey': idempotency_key,
                     },
                 )
                 session.add(execution)
                 session.flush()
 
-                push_result = IntegrationService(shop_id=task.shop_id).push_to_sales_backend(
-                    strategy_task_id=task.id,
-                    execution_log_id=execution.id,
-                    payload={
-                        'sku': self._build_sku_map(session, [task]).get(int(task.sku_id), str(task.sku_id or '-')) if task.sku_id else '-',
-                        'actionType': task.strategy_type,
-                        'actionBefore': task.issue_summary,
-                        'actionAfter': task.recommended_action,
-                        'sourcePage': source_info['sourcePage'],
-                        'sourceReason': source_info['sourceReason'],
-                        'operator': operator,
-                        'confirmedAt': now.isoformat(),
-                    },
-                )
-                execution.result_summary = f"{result_summary} | 推送:{push_result.get('status')}"
-                execution.extra_json = {**(execution.extra_json or {}), 'pushResult': push_result}
-
-                execution_payload = {
+                pending_pushes.append({
                     'taskId': task.id,
-                    'operator': operator,
-                    'executedAt': now.isoformat(),
+                    'shopId': task.shop_id,
+                    'executionId': execution.id,
                     'beforeStatus': before_status,
-                    'afterStatus': task.status,
-                    'action': task.recommended_action,
-                    'resultSummary': execution.result_summary,
                     'sourcePage': source_info['sourcePage'],
-                    'pushStatus': push_result.get('status'),
-                    'pushId': push_result.get('pushId'),
-                }
-                session.add(ReportSnapshot(
-                    shop_id=task.shop_id,
-                    report_type='strategy_execution',
-                    report_date=date.today(),
-                    content_md=result_summary,
-                    content_json=execution_payload,
-                    generated_at=now,
-                ))
-                results.append(execution_payload)
+                    'sourceReason': source_info['sourceReason'],
+                    'action': task.recommended_action,
+                    'sku': sku_map.get(int(task.sku_id), str(task.sku_id or '-')) if task.sku_id else '-',
+                    'strategyType': task.strategy_type,
+                    'issueSummary': task.issue_summary,
+                    'idempotencyKey': idempotency_key,
+                })
 
             decision_snapshot = ReportSnapshot(
                 shop_id=tasks[0].shop_id if tasks else 1,
@@ -312,6 +303,7 @@ class StrategyTaskService:
                 report_date=date.today(),
                 content_md='Decision confirmed',
                 content_json={
+                    'traceId': trace_id,
                     'operator': operator,
                     'selected_task_ids': selected_task_ids,
                     'count': len(tasks),
@@ -321,13 +313,72 @@ class StrategyTaskService:
             )
             session.add(decision_snapshot)
             session.flush()
+            decision_snapshot_id = decision_snapshot.id
 
-            return {
-                'confirmedCount': len(tasks),
-                'status': 'success',
-                'reportSnapshotId': decision_snapshot.id,
-                'executionLogs': results,
-            }
+        results = []
+        for item in pending_pushes:
+            push_result = IntegrationService(shop_id=int(item['shopId']), ensure_tables=False).push_to_sales_backend(
+                strategy_task_id=int(item['taskId']),
+                execution_log_id=int(item['executionId']),
+                payload={
+                    'traceId': trace_id,
+                    'idempotencyKey': item['idempotencyKey'],
+                    'sku': item['sku'],
+                    'actionType': item['strategyType'],
+                    'actionBefore': item['issueSummary'],
+                    'actionAfter': item['action'],
+                    'sourcePage': item['sourcePage'],
+                    'sourceReason': item['sourceReason'],
+                    'operator': operator,
+                    'confirmedAt': now.isoformat(),
+                },
+            )
+            after_status = 'completed' if push_result.get('status') == 'success' else 'in_progress'
+            result_summary = f"已执行：{str(item['action'])[:80]} | 推送:{push_result.get('status')}"
+
+            with get_session() as session:
+                task = session.query(StrategyTask).filter(StrategyTask.id == int(item['taskId'])).one_or_none()
+                execution = session.query(ExecutionLog).filter(ExecutionLog.id == int(item['executionId'])).one_or_none()
+                if task:
+                    task.status = after_status
+                    task.owner = operator
+                if execution:
+                    execution.status_after = after_status
+                    execution.result_summary = result_summary
+                    execution.extra_json = {**(execution.extra_json or {}), 'pushResult': push_result}
+
+                execution_payload = {
+                    'traceId': trace_id,
+                    'idempotencyKey': item['idempotencyKey'],
+                    'taskId': item['taskId'],
+                    'operator': operator,
+                    'executedAt': now.isoformat(),
+                    'beforeStatus': item['beforeStatus'],
+                    'afterStatus': after_status,
+                    'action': item['action'],
+                    'resultSummary': result_summary,
+                    'sourcePage': item['sourcePage'],
+                    'pushStatus': push_result.get('status'),
+                    'pushId': push_result.get('pushId'),
+                }
+                session.add(ReportSnapshot(
+                    shop_id=int(item['shopId']),
+                    report_type='strategy_execution',
+                    report_date=date.today(),
+                    content_md=result_summary,
+                    content_json=execution_payload,
+                    generated_at=now,
+                ))
+
+            results.append(execution_payload)
+
+        return {
+            'traceId': trace_id,
+            'confirmedCount': len(pending_pushes),
+            'status': 'success',
+            'reportSnapshotId': decision_snapshot_id,
+            'executionLogs': results,
+        }
 
     @staticmethod
     def _build_recommendations(decisions: list[dict[str, object]], summary: dict[str, int]) -> list[dict[str, str]]:

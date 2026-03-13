@@ -99,6 +99,7 @@ export interface ImportResult {
   selectedSheet: string
   totalRows: number
   totalColumns: number
+  rawColumns?: number
   headerRow: number
   dataPreview: any[][]
   platform: string
@@ -106,6 +107,18 @@ export interface ImportResult {
   mappedCount: number
   unmappedCount: number
   confidence: number
+  stats?: {
+    candidateColumns: number
+    ignoredColumns: number
+    ignoredFields: string[]
+    mappedConfidence: number
+    mappingCoverage: number
+    mappedCount?: number
+    unmappedCount?: number
+    droppedPlaceholderColumns: string[]
+    removedSummaryRows: number
+    removedDescriptionRows: number
+  }
   status: ImportSessionStatus
   diagnosis: ImportDiagnosis
 }

@@ -42,7 +42,7 @@ import {
 } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import { strategyApi } from '../services/api'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { strategyTypeLabels, sourcePageLabels } from '../utils/labels'
 import { formatRate, formatInteger, displayOrDash } from '../utils/format'
 import { OpsConclusion, OpsPageHeader, OpsStatusTag } from '../components/ops/ProductSection'
@@ -72,7 +72,16 @@ export default function DecisionEngine() {
   // 自动执行进度
   const [autoExecuting, setAutoExecuting] = useState(false)
 
-  const { data: previewData } = useQuery({
+  const queryClient = useQueryClient()
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ taskId, status }: { taskId: number; status: string }) => strategyApi.updateTaskStatus(taskId, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['decision-preview'] })
+      queryClient.invalidateQueries({ queryKey: ['strategy-list'] })
+    },
+  })
+
+  const { data: previewData, refetch: refetchPreview } = useQuery({
     queryKey: ['decision-preview'],
     queryFn: () => strategyApi.decisionPreview('all'),
     staleTime: 60_000,
@@ -94,7 +103,7 @@ export default function DecisionEngine() {
       current_value: '-',
       suggestion: d.recommendedAction,
       impact: `预计影响分: ${d.expectedImpact}`,
-      status: '待处理',
+      status: d.status === 'completed' ? '已完成' : d.status === 'in_progress' ? '进行中' : '待处理',
       created_at: '',
       confidence: d.confidence,
       auto_executable: d.priority === 'P0',
@@ -178,7 +187,20 @@ export default function DecisionEngine() {
   }, [strategies])
 
   // ===== 交互功能 =====
-  const updateStrategyStatus = (id: string, newStatus: string) => {
+  const updateStrategyStatus = async (id: string, newStatus: string) => {
+    const target = strategies.find((s) => s.id === id)
+    const taskId = Number(target?.taskId)
+    const backendStatus = newStatus === '已完成' ? 'completed' : newStatus === '进行中' ? 'in_progress' : 'pending'
+
+    if (Number.isFinite(taskId)) {
+      try {
+        await updateStatusMutation.mutateAsync({ taskId, status: backendStatus })
+      } catch (error: any) {
+        message.error(`状态写库失败: ${error.message}`)
+        return
+      }
+    }
+
     setStrategies(strategies.map(s =>
       s.id === id ? { ...s, status: newStatus } : s
     ))
@@ -204,6 +226,7 @@ export default function DecisionEngine() {
         return { ...s, status: '已完成', lastDecisionAt: now, writebackStatus: '已回写', executionResult: log?.resultSummary || '执行完成' }
       }))
       message.success(`🎉 已提交 ${taskIds.length} 个动作并完成执行回写`)
+      refetchPreview()
     } catch (error: any) {
       message.error(`自动执行失败: ${error.message}`)
     } finally {

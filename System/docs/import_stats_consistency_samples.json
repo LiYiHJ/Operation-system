@@ -1,0 +1,22 @@
+[
+  {
+    "file": "20260308_142700_analytics_report_2026-03-06_03_58.xlsx",
+    "candidateColumns": 47,
+    "mappedCount": 26,
+    "unmappedCount": 21,
+    "mappingCoverage": 0.553,
+    "backendMappedCount": 26,
+    "backendUnmappedCount": 21,
+    "backendCoverage": 0.553
+  },
+  {
+    "file": "p4_demo_import.csv",
+    "candidateColumns": 17,
+    "mappedCount": 17,
+    "unmappedCount": 0,
+    "mappingCoverage": 1.0,
+    "backendMappedCount": 17,
+    "backendUnmappedCount": 0,
+    "backendCoverage": 1.0
+  }
+]

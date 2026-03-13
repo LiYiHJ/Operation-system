@@ -8,6 +8,9 @@ import type { UploadFile } from 'antd/es/upload/interface'
 import { importApi } from '../services/api'
 import type { ImportResult, FieldMapping, ConfirmImportResponse } from '../types'
 
+const isMappedField = (m: Pick<FieldMapping, 'standardField'>) => !!m.standardField && m.standardField !== 'unmapped'
+const isIgnoredField = (m: FieldMapping) => !!m.reasons?.includes('dynamic_column_ignored')
+
 // 标准字段定义（参考 C:\strategy-system）
 const STANDARD_FIELDS = {
   // 基础信息
@@ -18,26 +21,42 @@ const STANDARD_FIELDS = {
   // 销售数据
   orders: { name: '订单数', category: '销售', required: false },
   revenue: { name: '销售额', category: '销售', required: false },
+  order_amount: { name: '订单金额', category: '销售', required: false },
+  items_ordered: { name: '下单件数', category: '销售', required: false },
+  items_delivered: { name: '履约件数', category: '销售', required: false },
+  items_purchased: { name: '购买件数', category: '销售', required: false },
+  items_canceled: { name: '取消件数', category: '销售', required: false },
+  items_returned: { name: '退货件数', category: '销售', required: false },
   units: { name: '销量', category: '销售', required: false },
 
   // 流量数据
   impressions: { name: '展示量', category: '流量', required: false },
+  impressions_total: { name: '总曝光', category: '流量', required: false },
+  impressions_search_catalog: { name: '搜索/目录曝光', category: '流量', required: false },
   clicks: { name: '点击量', category: '流量', required: false },
   ctr: { name: '点击率', category: '流量', required: false },
   card_visits: { name: '商品页访问', category: '流量', required: false },
+  product_card_visits: { name: '商品卡访问', category: '流量', required: false },
 
   // 转化数据
   add_to_cart: { name: '加购数', category: '转化', required: false },
+  add_to_cart_total: { name: '总加购', category: '转化', required: false },
+  add_to_cart_cvr_total: { name: '总加购转化率', category: '转化', required: false },
   add_to_cart_rate: { name: '加购率', category: '转化', required: false },
   conversion_rate: { name: '转化率', category: '转化', required: false },
 
   // 价格数据
   sale_price: { name: '售价', category: '价格', required: false },
   list_price: { name: '原价', category: '价格', required: false },
+  avg_sale_price: { name: '平均销售价', category: '价格', required: false },
   market_price: { name: '市场价', category: '价格', required: false },
   discount: { name: '折扣', category: '价格', required: false },
+  discount_pct: { name: '折扣率', category: '价格', required: false },
+  price_index_status: { name: '价格指数状态', category: '价格', required: false },
+  promo_days_count: { name: '活动天数', category: '价格', required: false },
 
   // 库存数据
+  stock: { name: '库存', category: '库存', required: false },
   stock_total: { name: '总库存', category: '库存', required: false },
   stock_fbo: { name: 'FBO库存', category: '库存', required: false },
   stock_fbs: { name: 'FBS库存', category: '库存', required: false },
@@ -45,7 +64,9 @@ const STANDARD_FIELDS = {
 
   // 评价数据
   rating: { name: '评分', category: '评价', required: false },
+  rating_value: { name: '评分值', category: '评价', required: false },
   reviews_count: { name: '评价数', category: '评价', required: false },
+  review_count: { name: '评论数', category: '评价', required: false },
   return_rate: { name: '退货率', category: '评价', required: false },
   cancel_rate: { name: '取消率', category: '评价', required: false },
 
@@ -69,6 +90,31 @@ export default function DataImportV2() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [importing, setImporting] = useState(false)
   const [savedTemplates, setSavedTemplates] = useState<any[]>([])
+
+  const buildDisplayStats = (result: ImportResult) => {
+    const ignoredFields = new Set(result.stats?.ignoredFields || [])
+    const ignoredMappings = result.fieldMappings.filter((m) => isIgnoredField(m) || ignoredFields.has(m.originalField))
+    const candidateMappings = result.fieldMappings.filter((m) => !(isIgnoredField(m) || ignoredFields.has(m.originalField)))
+    const mappedCount = candidateMappings.filter(isMappedField).length
+    const unmappedCount = candidateMappings.length - mappedCount
+    const coverage = mappedCount / Math.max(candidateMappings.length, 1)
+    const mappedConfidence = mappedCount > 0
+      ? candidateMappings.filter(isMappedField).reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCount
+      : 0
+
+    return {
+      mappedCount,
+      unmappedCount,
+      candidateColumns: candidateMappings.length,
+      ignoredColumns: ignoredMappings.length,
+      mappingCoverage: Number(coverage.toFixed(3)),
+      mappedConfidence: Number(mappedConfidence.toFixed(3)),
+      rawColumns: result.rawColumns ?? result.totalColumns,
+      droppedPlaceholderColumns: result.stats?.droppedPlaceholderColumns ?? [],
+      removedSummaryRows: result.stats?.removedSummaryRows ?? 0,
+      removedDescriptionRows: result.stats?.removedDescriptionRows ?? 0,
+    }
+  }
 
   const normalizeRawFile = (uploadFile?: UploadFile): File | null => {
     if (!uploadFile) return null
@@ -117,11 +163,37 @@ export default function DataImportV2() {
       confidence: 1.0
     }
 
+    const ignoredFields = new Set(importResult.stats?.ignoredFields || [])
+    const candidateMappings = newMappings.filter((m) => !(isIgnoredField(m) || ignoredFields.has(m.originalField)))
+    const mappedCount = candidateMappings.filter(isMappedField).length
+    const unmappedCount = candidateMappings.length - mappedCount
+    const mappedConfidence = mappedCount > 0
+      ? Number((candidateMappings.filter(isMappedField).reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCount).toFixed(3))
+      : 0
+    const mappingCoverage = Number((mappedCount / Math.max(candidateMappings.length, 1)).toFixed(3))
+
     setImportResult({
       ...importResult,
       fieldMappings: newMappings,
-      mappedCount: newMappings.filter(m => !!m.standardField && m.standardField !== 'unmapped').length,
-      unmappedCount: newMappings.filter(m => !m.standardField || m.standardField === 'unmapped').length
+      mappedCount,
+      unmappedCount,
+      confidence: mappedConfidence,
+      stats: {
+        ...(importResult.stats || {
+          candidateColumns: candidateMappings.length,
+          ignoredColumns: newMappings.length - candidateMappings.length,
+          ignoredFields: Array.from(ignoredFields),
+          mappedConfidence: 0,
+          mappingCoverage: 0,
+          droppedPlaceholderColumns: [],
+          removedSummaryRows: 0,
+          removedDescriptionRows: 0,
+        }),
+        candidateColumns: candidateMappings.length,
+        ignoredColumns: newMappings.length - candidateMappings.length,
+        mappedConfidence,
+        mappingCoverage,
+      }
     })
 
     message.success('映射已更新')
@@ -277,6 +349,7 @@ export default function DataImportV2() {
   // 步骤2: 字段映射
   const renderMappingStep = () => {
     if (!importResult) return null
+    const stats = buildDisplayStats(importResult)
 
     const columns = [
       {
@@ -364,7 +437,9 @@ export default function DataImportV2() {
         render: (_: any, record: FieldMapping) => (
           record.isManual ? (
             <Tag color="blue">手动</Tag>
-          ) : record.standardField !== 'unmapped' ? (
+          ) : record.reasons?.includes('dynamic_column_ignored') ? (
+            <Tag color="default">动态列</Tag>
+          ) : isMappedField(record) ? (
             <Tag color="green">自动</Tag>
           ) : (
             <Tag color="orange">未映射</Tag>
@@ -380,8 +455,8 @@ export default function DataImportV2() {
           <Col span={6}>
             <Card>
               <Statistic
-                title="总字段数"
-                value={importResult.fieldMappings.length}
+                title="候选字段数"
+                value={stats.candidateColumns}
                 prefix={<DatabaseOutlined />}
               />
             </Card>
@@ -390,7 +465,7 @@ export default function DataImportV2() {
             <Card>
               <Statistic
                 title="已映射"
-                value={importResult.mappedCount}
+                value={stats.mappedCount}
                 valueStyle={{ color: '#52c41a' }}
                 prefix={<CheckCircleOutlined />}
               />
@@ -400,8 +475,8 @@ export default function DataImportV2() {
             <Card>
               <Statistic
                 title="未映射"
-                value={importResult.unmappedCount}
-                valueStyle={{ color: importResult.unmappedCount > 0 ? '#faad14' : '#52c41a' }}
+                value={stats.unmappedCount}
+                valueStyle={{ color: stats.unmappedCount > 0 ? '#faad14' : '#52c41a' }}
                 prefix={<WarningOutlined />}
               />
             </Card>
@@ -409,17 +484,25 @@ export default function DataImportV2() {
           <Col span={6}>
             <Card>
               <Statistic
-                title="整体置信度"
-                value={importResult.confidence * 100}
+                title="映射覆盖率"
+                value={stats.mappingCoverage * 100}
                 precision={1}
                 suffix="%"
                 valueStyle={{
-                  color: importResult.confidence > 0.7 ? '#52c41a' : importResult.confidence > 0.5 ? '#faad14' : '#f5222d'
+                  color: stats.mappingCoverage > 0.7 ? '#52c41a' : stats.mappingCoverage > 0.5 ? '#faad14' : '#f5222d'
                 }}
               />
             </Card>
           </Col>
         </Row>
+
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: '16px' }}
+          message="统计口径说明"
+          description={`文件字段 ${stats.rawColumns}；候选字段 ${stats.candidateColumns}（用于映射统计）；已映射 ${stats.mappedCount}；未映射 ${stats.unmappedCount}；忽略动态列 ${stats.ignoredColumns}；映射置信度 ${(stats.mappedConfidence * 100).toFixed(1)}%。`}
+        />
 
         {/* 文件信息 */}
         <Card style={{ marginBottom: '24px' }}>
@@ -429,14 +512,20 @@ export default function DataImportV2() {
               <Tag color="blue">{importResult.platform}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="数据行数">{importResult.totalRows.toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="字段数">{importResult.totalColumns}</Descriptions.Item>
+            <Descriptions.Item label="规范化后字段数">{importResult.totalColumns}</Descriptions.Item>
+            <Descriptions.Item label="原始字段数">{stats.rawColumns}</Descriptions.Item>
+            <Descriptions.Item label="剔除说明/汇总行">{stats.removedDescriptionRows + stats.removedSummaryRows}</Descriptions.Item>
+            <Descriptions.Item label="剔除占位列">{stats.droppedPlaceholderColumns.length}</Descriptions.Item>
             <Descriptions.Item label="表头行">第 {importResult.headerRow} 行</Descriptions.Item>
-            <Descriptions.Item label="Sheet" span={3}>
+            <Descriptions.Item label="Sheet" span={2}>
               {importResult.sheetNames.map(name => (
                 <Tag key={name} color={name === importResult.selectedSheet ? 'blue' : 'default'}>
                   {name}
                 </Tag>
               ))}
+            </Descriptions.Item>
+            <Descriptions.Item label="映射置信度（已映射字段）">
+              {(stats.mappedConfidence * 100).toFixed(1)}%
             </Descriptions.Item>
           </Descriptions>
         </Card>
@@ -490,9 +579,9 @@ export default function DataImportV2() {
             icon={<CheckCircleOutlined />}
             onClick={confirmImport}
             loading={importing}
-            disabled={importResult.mappedCount === 0}
+            disabled={stats.mappedCount === 0}
           >
-            确认导入 {importResult.mappedCount} 个字段
+            确认导入 {stats.mappedCount} 个字段
           </Button>
         </Space>
       </div>
