@@ -1,0 +1,53 @@
+{
+  "templates": [
+    {
+      "code": "ops_overview",
+      "name": "综合运营分析报表",
+      "file_name_keywords": ["综合运营", "运营分析", "operations"],
+      "header_keywords": ["总曝光", "订单金额", "转化率", "Revenue"],
+      "field_signatures": ["impressions_total", "order_amount", "cart_to_order_cvr"]
+    },
+    {
+      "code": "abc_sales",
+      "name": "ABC/销售结构报表",
+      "file_name_keywords": ["abc", "销售结构"],
+      "header_keywords": ["ABC分类", "订单金额占比"],
+      "field_signatures": ["abc_class", "order_amount_share", "avg_sale_price"]
+    },
+    {
+      "code": "funnel_traffic",
+      "name": "漏斗/流量转化报表",
+      "file_name_keywords": ["漏斗", "funnel", "traffic"],
+      "header_keywords": ["商品卡访问", "加购", "转化率"],
+      "field_signatures": ["product_card_visits", "add_to_cart_total", "order_to_purchase_cvr"]
+    },
+    {
+      "code": "ads_report",
+      "name": "广告报表",
+      "file_name_keywords": ["广告", "ads", "ppc"],
+      "header_keywords": ["广告收入占比", "PPC投放天数"],
+      "field_signatures": ["ad_revenue_rate", "ppc_days_count"]
+    },
+    {
+      "code": "price_promo",
+      "name": "价格/促销报表",
+      "file_name_keywords": ["价格", "促销", "price"],
+      "header_keywords": ["折扣率", "价格指数"],
+      "field_signatures": ["discount_pct", "price_index_status", "promo_days_count"]
+    },
+    {
+      "code": "inventory_fulfillment",
+      "name": "库存/履约报表",
+      "file_name_keywords": ["库存", "履约", "fulfillment"],
+      "header_keywords": ["下单件数", "履约件数", "退货件数"],
+      "field_signatures": ["items_ordered", "items_delivered", "items_returned"]
+    },
+    {
+      "code": "profit_cost",
+      "name": "利润/成本报表",
+      "file_name_keywords": ["利润", "成本", "profit"],
+      "header_keywords": ["成本", "净利", "净利率"],
+      "field_signatures": ["order_amount", "discount_pct", "ad_revenue_rate"]
+    }
+  ]
+}

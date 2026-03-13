@@ -12,6 +12,7 @@ import pandas as pd
 from dataclasses import dataclass, field
 from datetime import datetime
 import json
+import re
 
 from ecom_v51.models import ImportBatchDiagnosis, ProfitInput
 from ecom_v51.ingestion import ImportDiagnoser
@@ -155,10 +156,16 @@ class DataCleaner:
         if isinstance(value, (int, float)):
             return float(value)
         
-        # 移除空格、逗号、货币符号
-        value_str = str(value)
-        value_str = value_str.replace(' ', '').replace(',', '').replace('¥', '').replace('₽', '').replace('$', '')
+        # 移除空格、货币符号，兼容俄文小数逗号与破折号
+        value_str = str(value).strip().replace('−', '-').replace('–', '-').replace('—', '-')
+        if value_str in {'', '-', '—', '–'}:
+            return None
+        value_str = value_str.replace(' ', '').replace('¥', '').replace('₽', '').replace('$', '')
         value_str = value_str.replace('%', '').replace('руб.', '').replace('CNY', '').replace('RUB', '')
+        if ',' in value_str and '.' not in value_str:
+            value_str = value_str.replace(',', '.')
+        else:
+            value_str = value_str.replace(',', '')
         
         try:
             return float(value_str)
@@ -237,12 +244,70 @@ class ImportService:
     
     def __init__(self):
         self.batches = []  # 新增这一行
+        self._root_dir = Path(__file__).resolve().parents[3]
+        self._field_aliases = self._load_json_yaml(self._root_dir / 'config' / 'field_aliases_zh_ru_en.yaml', default={'fields': []})
+        self._report_templates = self._load_json_yaml(self._root_dir / 'config' / 'report_templates.yaml', default={'templates': []})
+        self._alias_lookup = self._build_alias_lookup(self._field_aliases)
         self.diagnoser = ImportDiagnoser()
         self.cleaner = DataCleaner()
         self.validator = DataValidator()
         self.mapping = FieldMapping()
         self.intelligent_mapper = IntelligentFieldMapper()  # 🆕 智能映射器
         self.profit_solver = ProfitSolver()
+
+    @staticmethod
+    def _load_json_yaml(path: Path, default: dict) -> dict:
+        if not path.exists():
+            return default
+        try:
+            with path.open('r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data if isinstance(data, dict) else default
+        except Exception:
+            return default
+
+    @staticmethod
+    def _normalize_header(value: str) -> str:
+        return re.sub(r'\s+', ' ', str(value or '').strip().lower())
+
+    def _build_alias_lookup(self, aliases_cfg: dict) -> dict[str, str]:
+        lookup: dict[str, str] = {}
+        for field in aliases_cfg.get('fields', []):
+            canonical = str(field.get('canonical') or '').strip()
+            if not canonical:
+                continue
+            for lang in ['zh', 'ru', 'en', 'platform']:
+                for alias in field.get('aliases', {}).get(lang, []):
+                    key = self._normalize_header(str(alias))
+                    if key:
+                        lookup[key] = canonical
+            lookup[self._normalize_header(canonical)] = canonical
+        return lookup
+
+    def _detect_report_template(self, file_name: str, columns: list[str]) -> str:
+        norm_name = self._normalize_header(file_name)
+        norm_columns = {self._normalize_header(col) for col in columns}
+        best_code = 'generic'
+        best_score = -1
+        for tpl in self._report_templates.get('templates', []):
+            score = 0
+            score += sum(1 for k in [self._normalize_header(x) for x in tpl.get('file_name_keywords', [])] if k and k in norm_name)
+            score += sum(1 for k in [self._normalize_header(x) for x in tpl.get('header_keywords', [])] if k and k in norm_columns)
+            score += 2 * sum(1 for k in [self._normalize_header(x) for x in tpl.get('field_signatures', [])] if k and k in norm_columns)
+            if score > best_score:
+                best_score = score
+                best_code = str(tpl.get('code') or 'generic')
+        return best_code
+
+    @staticmethod
+    def _is_summary_text(text: str) -> bool:
+        value = str(text or '').strip().lower()
+        return value in {'总计', '合计', '总计和平均值', 'итого', 'итого и среднее', 'summary', 'total', 'grand total'}
+
+    def _drop_summary_rows(self, df: pd.DataFrame) -> pd.DataFrame:
+        if 'sku' not in df.columns:
+            return df
+        return df.loc[~df['sku'].astype(str).apply(self._is_summary_text)].copy()
     
     def _detect_excel_header_row(self, file_path: str, max_scan_rows: int = 30) -> int:
         """尝试检测 Excel 真正表头行（兼容 Ozon 导出前置说明行）"""
@@ -282,9 +347,15 @@ class ImportService:
             if path.suffix in ['.xlsx', '.xls']:
                 if path.suffix == '.xlsx':
                     header_row = self._detect_excel_header_row(file_path)
-                    df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
+                    try:
+                        df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
+                    except Exception as ex:
+                        return None, f"读取 XLSX 失败：文件可能损坏、加密或样式异常，请另存为标准 .xlsx 后重试。原始错误：{ex}"
                 else:
-                    df = pd.read_excel(file_path, engine='xlrd')
+                    try:
+                        df = pd.read_excel(file_path, engine='xlrd')
+                    except Exception as ex:
+                        return None, f"读取 XLS 失败：请另存为 .xlsx 或 .csv 后重试。原始错误：{ex}"
             elif path.suffix == '.csv':
                 # 尝试不同编码
                 for encoding in ['utf-8', 'utf-8-sig', 'gbk', 'cp1251']:
@@ -312,7 +383,14 @@ class ImportService:
         # 🆕 使用智能映射器
         try:
             mapped_df, mapping_info = self.intelligent_mapper.auto_map_columns(df)
-            
+            alias_map = {}
+            for col in mapped_df.columns:
+                canonical = self._alias_lookup.get(self._normalize_header(col))
+                if canonical:
+                    alias_map[col] = canonical
+            if alias_map:
+                mapped_df = mapped_df.rename(columns=alias_map)
+
             # 检查是否有 SKU 字段
             if 'sku' not in mapped_df.columns:
                 # 尝试智能识别 SKU 字段
@@ -331,6 +409,10 @@ class ImportService:
             # 降级到旧的静态映射
             column_mapping = {}
             for col in df.columns:
+                canonical = self._alias_lookup.get(self._normalize_header(col))
+                if canonical:
+                    column_mapping[col] = canonical
+                    continue
                 # 尝试Ozon俄语映射
                 if col in self.mapping.ozon_mapping:
                     column_mapping[col] = self.mapping.ozon_mapping[col]
@@ -559,13 +641,15 @@ class ImportService:
             'add_to_cart': 'add_to_cart',
         }
         for col in df.columns.astype(str):
-            norm_col = col.lower().strip()
+            norm_col = self._normalize_header(col)
             std_field = None
             confidence = 0.0
             reasons: list[str] = []
 
             # 先用显式映射，避免智能映射误判
-            std_field = self.mapping.ozon_mapping.get(col) or self.mapping.ozon_mapping.get(col.strip())
+            std_field = self._alias_lookup.get(norm_col)
+            if not std_field:
+                std_field = self.mapping.ozon_mapping.get(col) or self.mapping.ozon_mapping.get(col.strip())
             if not std_field:
                 std_field = extra_map.get(norm_col)
             if std_field:
@@ -600,6 +684,7 @@ class ImportService:
             )
 
         preview_rows = df.head(10).fillna('').values.tolist()
+        template_code = self._detect_report_template(Path(file_path).name, df.columns.astype(str).tolist())
 
         with get_session() as session:
             platform_code = diagnosis.platform if diagnosis.platform != 'unknown' else 'ozon'
@@ -625,12 +710,13 @@ class ImportService:
                 'totalRows': len(df),
                 'totalColumns': len(df.columns),
                 'headerRow': (diagnosis.detected_header_row or 0) + 1,
-                'platform': diagnosis.platform,
+                'platform': platform_code,
                 'diagnosis': {
                     'suggestions': diagnosis.suggestions,
                     'keyField': diagnosis.key_field,
                     'unmappedFields': diagnosis.unmapped_fields,
                     'status': diagnosis.status,
+                    'templateCode': template_code,
                 },
             }
             batch_file = ImportBatchFile(
@@ -658,13 +744,15 @@ class ImportService:
                 'mappedCount': len([x for x in field_mappings if x['standardField']]),
                 'unmappedCount': len([x for x in field_mappings if not x['standardField']]),
                 'confidence': round(sum(x['confidence'] for x in field_mappings) / max(len(field_mappings), 1), 3),
-                'platform': diagnosis.platform,
+                'platform': platform_code,
                 'status': diagnosis.status,
+                'templateCode': template_code,
                 'diagnosis': {
                     'suggestions': diagnosis.suggestions,
                     'keyField': diagnosis.key_field,
                     'unmappedFields': diagnosis.unmapped_fields,
                     'status': diagnosis.status,
+                    'templateCode': template_code,
                 },
             }
 
@@ -698,6 +786,7 @@ class ImportService:
             df = df.rename(columns=rename_map)
             df = df.loc[:, ~df.columns.duplicated()]
             df = self.clean_data(df)
+            df = self._drop_summary_rows(df)
             valid_df, errors = self.validate_data(df)
             valid_df, duplicate_count = self.remove_duplicates(valid_df)
 

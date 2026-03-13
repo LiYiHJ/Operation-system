@@ -1,0 +1,42 @@
+{
+  "fields": [
+    {"canonical": "sku", "aliases": {"zh": ["SKU", "商品SKU", "商品编号"], "ru": ["Артикул", "Артикул товара", "Seller SKU"], "en": ["sku", "seller_sku", "offer_id"], "platform": ["Ozon SKU", "Offer ID"]}},
+    {"canonical": "abc_class", "aliases": {"zh": ["ABC分类", "ABC等级"], "ru": ["ABC-класс"], "en": ["abc_class", "abc class"], "platform": ["ABC"]}},
+    {"canonical": "order_amount", "aliases": {"zh": ["订单金额", "下单金额"], "ru": ["Сумма заказов"], "en": ["order_amount", "gmv"], "platform": ["Revenue"]}},
+    {"canonical": "order_amount_share", "aliases": {"zh": ["订单金额占比"], "ru": ["Доля суммы заказов"], "en": ["order_amount_share"], "platform": ["Revenue Share"]}},
+    {"canonical": "avg_sale_price", "aliases": {"zh": ["平均销售价"], "ru": ["Средняя цена продажи"], "en": ["avg_sale_price", "asp"], "platform": ["Average Sale Price"]}},
+
+    {"canonical": "impressions_total", "aliases": {"zh": ["总曝光", "曝光量"], "ru": ["Показы", "Показы всего"], "en": ["impressions_total", "impressions"], "platform": ["Impressions"]}},
+    {"canonical": "impressions_search_catalog", "aliases": {"zh": ["搜索/目录曝光"], "ru": ["Показы в поиске и каталоге"], "en": ["impressions_search_catalog"], "platform": ["Search/Catalog Impressions"]}},
+    {"canonical": "impression_to_click_cvr", "aliases": {"zh": ["曝光-点击转化率"], "ru": ["Конверсия показ в клик"], "en": ["impression_to_click_cvr", "ctr"], "platform": ["CTR"]}},
+    {"canonical": "search_catalog_position_avg", "aliases": {"zh": ["搜索目录平均位置"], "ru": ["Средняя позиция в поиске"], "en": ["search_catalog_position_avg"], "platform": ["Avg Position"]}},
+    {"canonical": "search_catalog_to_card_cvr", "aliases": {"zh": ["搜索目录-商品卡转化率"], "ru": ["Конверсия поиск в карточку"], "en": ["search_catalog_to_card_cvr"], "platform": ["Search to Card CVR"]}},
+
+    {"canonical": "product_card_visits", "aliases": {"zh": ["商品卡访问"], "ru": ["Переходы в карточку", "Посещения карточки"], "en": ["product_card_visits", "card_visits"], "platform": ["Card visits"]}},
+    {"canonical": "add_to_cart_from_search_catalog", "aliases": {"zh": ["搜索目录加购"], "ru": ["Добавления в корзину из поиска"], "en": ["add_to_cart_from_search_catalog"], "platform": ["Add to cart from search"]}},
+    {"canonical": "search_catalog_to_cart_cvr", "aliases": {"zh": ["搜索目录-加购转化率"], "ru": ["Конверсия поиск в корзину"], "en": ["search_catalog_to_cart_cvr"], "platform": ["Search to Cart CVR"]}},
+    {"canonical": "add_to_cart_from_card", "aliases": {"zh": ["商品卡加购"], "ru": ["Добавления в корзину из карточки"], "en": ["add_to_cart_from_card"], "platform": ["Add to cart from card"]}},
+    {"canonical": "card_to_cart_cvr", "aliases": {"zh": ["卡片-加购转化率"], "ru": ["Конверсия карточка в корзину"], "en": ["card_to_cart_cvr"], "platform": ["Card to Cart CVR"]}},
+    {"canonical": "add_to_cart_total", "aliases": {"zh": ["总加购"], "ru": ["Добавления в корзину"], "en": ["add_to_cart_total", "add_to_cart"], "platform": ["Add to Cart"]}},
+    {"canonical": "add_to_cart_cvr_total", "aliases": {"zh": ["总加购转化率"], "ru": ["Конверсия в корзину"], "en": ["add_to_cart_cvr_total"], "platform": ["ATC CVR"]}},
+    {"canonical": "cart_to_order_cvr", "aliases": {"zh": ["加购-下单转化率"], "ru": ["Конверсия корзина в заказ"], "en": ["cart_to_order_cvr"], "platform": ["Cart to Order CVR"]}},
+    {"canonical": "order_to_purchase_cvr", "aliases": {"zh": ["下单-购买转化率"], "ru": ["Конверсия заказ в выкуп"], "en": ["order_to_purchase_cvr"], "platform": ["Order to Purchase CVR"]}},
+
+    {"canonical": "items_ordered", "aliases": {"zh": ["下单件数"], "ru": ["Заказано шт"], "en": ["items_ordered"], "platform": ["Items ordered"]}},
+    {"canonical": "items_delivered", "aliases": {"zh": ["履约件数"], "ru": ["Доставлено шт"], "en": ["items_delivered"], "platform": ["Items delivered"]}},
+    {"canonical": "items_purchased", "aliases": {"zh": ["购买件数"], "ru": ["Выкуплено шт"], "en": ["items_purchased"], "platform": ["Items purchased"]}},
+    {"canonical": "items_canceled", "aliases": {"zh": ["取消件数"], "ru": ["Отменено шт"], "en": ["items_canceled"], "platform": ["Items canceled"]}},
+    {"canonical": "items_returned", "aliases": {"zh": ["退货件数"], "ru": ["Возвраты шт"], "en": ["items_returned", "returns"], "platform": ["Items returned"]}},
+
+    {"canonical": "discount_pct", "aliases": {"zh": ["折扣率", "折扣%"], "ru": ["Скидка %"], "en": ["discount_pct", "discount_rate"], "platform": ["Discount %"]}},
+    {"canonical": "price_index_status", "aliases": {"zh": ["价格指数状态"], "ru": ["Индекс цены"], "en": ["price_index_status"], "platform": ["Price Index"]}},
+    {"canonical": "promo_days_count", "aliases": {"zh": ["活动天数"], "ru": ["Дней в акции"], "en": ["promo_days_count"], "platform": ["Promo days"]}},
+
+    {"canonical": "ad_revenue_rate", "aliases": {"zh": ["广告收入占比", "广告回报率"], "ru": ["Доля рекламной выручки"], "en": ["ad_revenue_rate", "roas"], "platform": ["Ad revenue rate"]}},
+    {"canonical": "ppc_days_count", "aliases": {"zh": ["PPC投放天数"], "ru": ["Дней PPC"], "en": ["ppc_days_count"], "platform": ["PPC days"]}},
+
+    {"canonical": "review_count", "aliases": {"zh": ["评价数"], "ru": ["Отзывы"], "en": ["review_count", "reviews"], "platform": ["Reviews"]}},
+    {"canonical": "rating_value", "aliases": {"zh": ["评分"], "ru": ["Рейтинг"], "en": ["rating_value", "rating"], "platform": ["Rating"]}},
+    {"canonical": "recommendation_text", "aliases": {"zh": ["平台建议", "建议动作"], "ru": ["Рекомендация"], "en": ["recommendation_text", "recommendation"], "platform": ["Recommendation"]}}
+  ]
+}
