@@ -198,10 +198,8 @@ export const analysisApi = {
    * ABC 分析
    */
   abcAnalysis: (params?: {
-    shop_id?: number
-    start_date?: string
-    end_date?: string
-    category?: string
+    shopId?: number
+    days?: number
   }): Promise<ApiResponse<AbcAnalysis>> => {
     return apiClient.get('/analysis/abc', { params })
   },
@@ -210,9 +208,8 @@ export const analysisApi = {
    * 漏斗分析
    */
   funnelAnalysis: (params?: {
-    shop_id?: number
-    start_date?: string
-    end_date?: string
+    shopId?: number
+    days?: number
   }): Promise<ApiResponse<FunnelAnalysis>> => {
     return apiClient.get('/analysis/funnel', { params })
   },
@@ -222,7 +219,9 @@ export const analysisApi = {
    * 价格分析
    */
   priceAnalysis: (params?: {
-    shop_id?: number
+    shopId?: number
+    days?: number
+    view?: string
   }): Promise<ApiResponse<PriceAnalysis>> => {
     return apiClient.get('/analysis/price', { params })
   },
@@ -231,7 +230,8 @@ export const analysisApi = {
    * 库存分析
    */
   inventoryAnalysis: (params?: {
-    shop_id?: number
+    shopId?: number
+    days?: number
   }): Promise<ApiResponse<InventoryAnalysis>> => {
     return apiClient.get('/analysis/inventory', { params })
   },

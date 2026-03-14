@@ -208,6 +208,44 @@ export default function DecisionEngine() {
     setSelectedStrategy(null)
   }
 
+  const executeSingleStrategy = async (record: any) => {
+  const taskId = Number(record?.taskId)
+  if (!Number.isFinite(taskId)) {
+    message.error('缺少 taskId，无法执行')
+    return
+  }
+
+  try {
+    const resp: any = await strategyApi.decisionConfirm([taskId], 'decision_ui')
+    const payload = resp?.data || resp
+    const executionLogs = payload?.executionLogs || []
+    const now = new Date().toISOString()
+    const log = executionLogs.find((x: any) => x.taskId === taskId)
+
+    setStrategies(prev =>
+      prev.map((s: any) =>
+        s.taskId === taskId
+          ? {
+              ...s,
+              status: '已完成',
+              lastDecisionAt: now,
+              writebackStatus: '已回写',
+              executionResult: log?.resultSummary || '执行完成',
+            }
+          : s
+      )
+    )
+
+    message.success('已执行并完成回写')
+    refetchPreview()
+    setSelectedStrategy(null)
+  } catch (error: any) {
+    message.error(`执行失败: ${error.message}`)
+  }
+}
+
+
+  
   const autoExecuteAll = async () => {
     setAutoExecuting(true)
 
@@ -438,7 +476,7 @@ export default function DecisionEngine() {
                 type="link"
                 size="small"
                 icon={<ThunderboltOutlined />}
-                onClick={() => updateStrategyStatus(record.id, '已完成')}
+                onClick={() => executeSingleStrategy(record)}
               />
             </Tooltip>
           )}
@@ -864,7 +902,7 @@ export default function DecisionEngine() {
               icon={selectedStrategy.auto_executable ? <ThunderboltOutlined /> : <CheckCircleOutlined />}
               onClick={() => {
                 setStrategies(strategies.map(s => s.id === selectedStrategy.id ? { ...s, suggestion: editableSuggestion } : s))
-                updateStrategyStatus(selectedStrategy.id, '已完成')
+                executeSingleStrategy(selectedStrategy)
               }}
             >
               {selectedStrategy.auto_executable ? '自动执行' : '标记为已完成'}
