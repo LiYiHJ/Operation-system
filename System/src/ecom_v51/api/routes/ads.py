@@ -11,7 +11,10 @@ ads_bp = Blueprint('ads', __name__)
 def campaigns():
     """兼容旧前端路径，返回广告分析行作为campaign列表"""
     try:
-        service = AnalysisService(shop_id=int(request.args.get('shop_id', request.args.get('shopId', 1))), days=int(request.args.get('days', 7)))
+        service = AnalysisService(
+            shop_id=int(request.args.get('shop_id', request.args.get('shopId', 1))),
+            days=int(request.args.get('days', 7)),
+        )
         payload = service.ads_analysis()
         return jsonify({'data': payload.get('rows', [])})
     except Exception as e:

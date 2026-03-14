@@ -9,6 +9,7 @@
 
 import axios from 'axios'
 import type {
+  FieldRegistryResponse,
   ApiResponse,
   DashboardMetrics,
   TopSku,
@@ -178,6 +179,9 @@ export const importApi = {
   }>> => {
     return apiClient.get('/import/template')
   },
+  getFieldRegistry: (): Promise<FieldRegistryResponse> => {
+    return apiClient.get('/import/field-registry')
+  },
 }
 
 // ========== Analysis API ==========
@@ -188,7 +192,7 @@ export const analysisApi = {
    * 单 SKU 分析
    */
   analyzeSku: (sku: string, params?: {
-    shop_id?: number
+    shopId?: number
     date?: string
   }): Promise<ApiResponse<SkuAnalysis>> => {
     return apiClient.get(`/analysis/sku/${sku}`, { params })
