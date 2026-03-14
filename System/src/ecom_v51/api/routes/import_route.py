@@ -2,7 +2,7 @@
 数据导入API路由
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from pathlib import Path
@@ -32,7 +32,14 @@ def upload_file():
             return jsonify({'error': '未选择文件'}), 400
         
         # 保存文件
-        filename = secure_filename(file.filename)
+        raw_filename = file.filename or ''
+        filename = secure_filename(raw_filename)
+        raw_suffix = Path(raw_filename).suffix
+        if raw_suffix and '.' not in filename:
+            filename = f"{filename}.{raw_suffix.lstrip('.')}" if filename else f"upload{raw_suffix}"
+        if not filename:
+            suffix = raw_suffix or '.xlsx'
+            filename = f'upload{suffix}'
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename_with_ts = f"{timestamp}_{filename}"
         filepath = UPLOAD_FOLDER / filename_with_ts
@@ -66,3 +73,44 @@ def confirm_import():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@import_bp.route('/field-registry', methods=['GET'])
+def field_registry():
+    """统一字段注册表（前后端同源）"""
+    try:
+        return jsonify(import_service.get_field_registry())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@import_bp.route('/upload-server-file', methods=['POST'])
+def upload_server_file():
+    """浏览器环境无法直传本地真实文件时，使用服务器侧已有文件做同链路解析。"""
+    try:
+        data = request.get_json() or {}
+        file_path = str(data.get('filePath') or '').strip()
+        if not file_path:
+            return jsonify({'error': 'filePath is required'}), 400
+        shop_id = int(data.get('shop_id') or 1)
+        operator = data.get('operator') or 'frontend_user'
+        result = import_service.parse_import_file(file_path, shop_id=shop_id, operator=operator)
+        result['sourceMode'] = 'server_file'
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@import_bp.route('/test-fixture/<name>', methods=['GET'])
+def test_fixture(name: str):
+    """测试辅助：向浏览器提供受控真实样本文件，便于走正式 /upload 链路。"""
+    fixtures = {
+        'analytics_xlsx': Path(__file__).resolve().parents[4] / 'data' / 'analytics_report_2026-03-12_23_49.xlsx',
+        'cn_xlsx': Path(__file__).resolve().parents[4] / 'data' / '销售数据分析.xlsx',
+        'ru_bad_header_xlsx': Path(__file__).resolve().parents[4] / 'sample_data' / 'ozon_bad_header_or_missing_sku.xlsx',
+        'cn_csv': Path(__file__).resolve().parents[4] / 'sample_data' / 'p0_csv_scene_from_cn.csv',
+    }
+    fp = fixtures.get(name)
+    if not fp or not fp.exists():
+        return jsonify({'error': 'fixture not found'}), 404
+    return send_file(fp, as_attachment=True, download_name=fp.name)
