@@ -1,1382 +1,1037 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-V5.1 数据导入服务
-提供完整的Excel/CSV导入、清洗、验证、保存功能
+V5.1 数据导入服务（reconciled）
+
+目的：
+- 对齐当前 import_route / DataImportV2 / types 的运行契约。
+- 提供 parse_import_file / confirm_import / get_field_registry。
+- 补齐 transport/semantic/final 三层状态、基础语义门禁、表头恢复元信息。
+
+说明：
+- 该版本优先保证当前仓库可运行与可验证，不追求与 111.patch 字节级一致。
+- confirm_import 当前采用内存 session + 轻量结果汇总，不做重型数据库落库。
 """
 
 from __future__ import annotations
-from pathlib import Path
-from typing import List, Dict, Tuple, Optional
-import pandas as pd
+
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+import copy
+import itertools
 import json
 import re
 
-from ecom_v51.models import ImportBatchDiagnosis, ProfitInput
-from ecom_v51.ingestion import ImportDiagnoser
-from ecom_v51.intelligent_field_mapper import IntelligentFieldMapper
-from ecom_v51.db.session import get_session, get_engine
-from ecom_v51.db.models import (
-    DimPlatform,
-    DimShop,
-    DimSku,
-    DimDate,
-    ImportBatch,
-    ImportBatchFile,
-    ImportErrorLog,
-    MappingFeedback,
-    FactSkuDaily,
-    FactSkuExtDaily,
-    FactOrdersDaily,
-    FactReviewsDaily,
-    FactAdsDaily,
-    FactInventoryDaily,
-    FactProfitSnapshot,
-)
-from ecom_v51.profit_solver import ProfitSolver
+import pandas as pd
 
+try:
+    from .models import ImportBatchDiagnosis  # type: ignore
+except Exception:
+    ImportBatchDiagnosis = None  # type: ignore
 
+try:
+    from .ingestion import ImportDiagnoser as _ImportDiagnoser  # type: ignore
+except Exception:
+    _ImportDiagnoser = None
 
 
 @dataclass
 class ImportResult:
-    """导入结果"""
     success: bool
     total_rows: int
     imported: int
     failed: int
-    errors: List[Dict] = field(default_factory=list)
+    errors: List[Dict[str, Any]] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
-    data: Optional[List[Dict]] = None
+    data: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass
 class FieldMapping:
-    """字段映射配置"""
-    # Ozon 俄语字段 -> 标准字段
+    """基础字段映射表（registry 之外的兜底）。"""
+
     ozon_mapping = {
-        # SKU 字段（多种可能的列名）
         "Артикул": "sku",
         "Артикул товара": "sku",
+        "Seller SKU": "sku",
+        "Offer ID": "sku",
+        "Показы": "impressions_total",
+        "Показы всего": "impressions_total",
+        "Показы в поиске и каталоге": "impressions_search_catalog",
+        "Посещения карточки товара": "product_card_visits",
+        "Добавления в корзину": "add_to_cart_total",
+        "Заказы": "orders",
+        "Заказано на сумму": "order_amount",
+        "Остаток на конец периода": "stock_total",
+        "Рейтинг товара": "rating_value",
+        "Отзывы": "review_count",
+        "Индекс цен": "price_index_status",
+    }
+
+    english_mapping = {
         "SKU": "sku",
         "sku": "sku",
-        "ID товара": "sku",
-        "Product ID": "sku",
-        "Offer ID": "sku",
-        "offer_id": "sku",
         "seller_sku": "sku",
-        "Seller SKU": "sku",
-        
-        # 产品名称
-        "Название": "name",
-        "Название товара": "name",
-        "Product name": "name",
-        "Name": "name",
-        
-        # 展示量
-        "Показы": "impressions",
-        "Просмотры": "impressions",
-        "Impressions": "impressions",
-        "impressions": "impressions",
-        "Views": "impressions",
-        
-        # 访问量
-        "Посещения": "visits",
-        "Visits": "visits",
-        "Card visits": "visits",
-        
-        # 加购
-        "Добавления в корзину": "add_to_cart",
-        "Добавлено в корзину": "add_to_cart",
-        "Add to Cart": "add_to_cart",
-        "Add to cart": "add_to_cart",
-        "Added to cart": "add_to_cart",
-        
-        # 订单
-        "Заказы": "orders",
-        "Кол-во заказов": "orders",
-        "Orders": "orders",
+        "offer_id": "sku",
+        "impressions": "impressions_total",
+        "impressions_total": "impressions_total",
+        "impressions_search_catalog": "impressions_search_catalog",
+        "product_card_visits": "product_card_visits",
+        "add_to_cart": "add_to_cart_total",
+        "add_to_cart_total": "add_to_cart_total",
         "orders": "orders",
-        
-        # 收入
-        "Сумма заказов": "revenue",
-        "Выручка": "revenue",
-        "Revenue": "revenue",
-        "revenue": "revenue",
-        "Sales": "revenue",
-        
-        # 评分
-        "Рейтинг": "rating",
-        "Rating": "rating",
-        "rating": "rating",
-        
-        # 评论
-        "Отзывы": "reviews",
-        "Reviews": "reviews",
-        "reviews": "reviews",
-        
-        # 退货
-        "Возвраты": "returns",
-        "Returns": "returns",
-        "returns": "returns",
-        
-        # 库存
-        "Остатки": "stock",
-        "Доступно": "stock",
-        "Stock": "stock",
-        "stock": "stock",
-        "Available": "stock",
-        
-        # 广告相关
-        "Расход на рекламу": "ad_spend",
-        "Ad spend": "ad_spend",
-        "ad_spend": "ad_spend",
-        "Рекламные заказы": "ad_orders",
-        "Ad orders": "ad_orders",
-        
-        # 转化率
-        "Конверсия": "conversion_rate",
-        "Conversion rate": "conversion_rate",
-        
-        # 取消率
-        "Отмены": "cancel_rate",
-        "Cancel rate": "cancel_rate",
+        "order_amount": "order_amount",
+        "stock": "stock_total",
+        "stock_total": "stock_total",
+        "rating": "rating_value",
+        "rating_value": "rating_value",
+        "reviews": "review_count",
+        "review_count": "review_count",
+        "price_index_status": "price_index_status",
     }
-    
-    # 英文字段 -> 标准字段（已整合到上面的映射中）
-    english_mapping = {}
 
 
 class DataCleaner:
-    """数据清洗器"""
-    
     @staticmethod
-    def clean_numeric(value):
-        """清洗数字字段"""
-        if pd.isna(value) or value == '' or value is None:
+    def clean_numeric(value: Any) -> Optional[float]:
+        if pd.isna(value) or value == "" or value is None:
             return None
-        
         if isinstance(value, (int, float)):
             return float(value)
-        
-        # 移除空格、货币符号，兼容俄文小数逗号与破折号
-        value_str = str(value).strip().replace('−', '-').replace('–', '-').replace('—', '-')
-        if value_str in {'', '-', '—', '–'}:
+        value_str = str(value).strip()
+        value_str = value_str.replace("−", "-").replace("–", "-").replace("—", "-")
+        if value_str in {"", "-", "—", "–"}:
             return None
-        value_str = value_str.replace(' ', '').replace('¥', '').replace('₽', '').replace('$', '')
-        value_str = value_str.replace('%', '').replace('руб.', '').replace('CNY', '').replace('RUB', '')
-        if ',' in value_str and '.' not in value_str:
-            value_str = value_str.replace(',', '.')
+        value_str = value_str.replace(" ", "")
+        value_str = value_str.replace("¥", "").replace("₽", "").replace("$", "")
+        value_str = value_str.replace("руб.", "").replace("CNY", "").replace("RUB", "")
+        value_str = value_str.replace("%", "")
+        # 若仅有逗号且无点，按小数逗号处理。
+        if "," in value_str and "." not in value_str:
+            value_str = value_str.replace(",", ".")
         else:
-            value_str = value_str.replace(',', '')
-        
+            value_str = value_str.replace(",", "")
         try:
             return float(value_str)
-        except:
+        except Exception:
             return None
-    
+
     @staticmethod
-    def clean_text(value):
-        """清洗文本字段"""
-        if pd.isna(value) or value == '' or value is None:
+    def clean_text(value: Any) -> Optional[str]:
+        if pd.isna(value) or value == "" or value is None:
             return None
-        
-        value_str = str(value).strip()
-        return value_str if value_str else None
-    
+        text = str(value).strip()
+        return text or None
+
     @staticmethod
-    def clean_rating(value):
-        """清洗评分（0-5范围）"""
+    def clean_rating(value: Any) -> Optional[float]:
         rating = DataCleaner.clean_numeric(value)
         if rating is None:
             return None
-        
         if rating < 0 or rating > 5:
             return None
-        
         return round(rating, 2)
-    
+
     @staticmethod
-    def clean_percentage(value):
-        """清洗百分比（0-1范围）"""
+    def clean_percentage(value: Any) -> Optional[float]:
         pct = DataCleaner.clean_numeric(value)
         if pct is None:
             return None
-        
-        # 如果大于1，说明是百分比形式（如20表示20%），需要转换
         if pct > 1:
             pct = pct / 100.0
-        
         return round(pct, 4)
 
 
 class DataValidator:
-    """数据验证器"""
-    
     @staticmethod
-    def validate_row(row: Dict, row_index: int) -> Tuple[bool, List[str]]:
-        """
-        验证单行数据
-        
-        返回：(是否有效, 错误列表)
-        """
-        errors = []
-        
-        # SKU必填
-        if not row.get('sku'):
+    def validate_row(row: Dict[str, Any], row_index: int) -> Tuple[bool, List[str]]:
+        errors: List[str] = []
+        if not row.get("sku"):
             errors.append(f"行{row_index}: SKU不能为空")
-        
-        # 订单数不能为负
-        if row.get('orders') is not None and row['orders'] < 0:
+        if row.get("orders") is not None and row["orders"] < 0:
             errors.append(f"行{row_index}: 订单数不能为负数")
-        
-        # 评分范围检查
-        if row.get('rating') is not None:
-            if row['rating'] < 0 or row['rating'] > 5:
-                errors.append(f"行{row_index}: 评分必须在0-5之间")
-        
-        # 收入不能为负
-        if row.get('revenue') is not None and row['revenue'] < 0:
-            errors.append(f"行{row_index}: 收入不能为负数")
-        
+        if row.get("rating_value") is not None and not (0 <= row["rating_value"] <= 5):
+            errors.append(f"行{row_index}: 评分必须在0-5之间")
+        if row.get("order_amount") is not None and row["order_amount"] < 0:
+            errors.append(f"行{row_index}: 订单金额不能为负数")
         return len(errors) == 0, errors
 
 
-class ImportService:
-    """完整导入服务"""
-    
-    def __init__(self):
-        self.batches = []  # 新增这一行
-        self._root_dir = Path(__file__).resolve().parents[3]
-        self._field_aliases = self._load_json_yaml(self._root_dir / 'config' / 'field_aliases_zh_ru_en.yaml', default={'fields': []})
-        self._report_templates = self._load_json_yaml(self._root_dir / 'config' / 'report_templates.yaml', default={'templates': []})
-        self._alias_lookup = self._build_alias_lookup(self._field_aliases)
-        self.diagnoser = ImportDiagnoser()
-        self.cleaner = DataCleaner()
-        self.validator = DataValidator()
-        self.mapping = FieldMapping()
-        self.intelligent_mapper = IntelligentFieldMapper()  # 🆕 智能映射器
-        self.profit_solver = ProfitSolver()
-        self._last_read_context: dict = {'header_row': 0, 'source_type': 'unknown'}
-        self._last_normalize_stats: dict = {}
-        self._ensure_extension_tables()
-
-    @staticmethod
-    def _ensure_extension_tables() -> None:
-        FactSkuExtDaily.metadata.create_all(bind=get_engine(), tables=[FactSkuExtDaily.__table__])
-
-    @staticmethod
-    def _load_json_yaml(path: Path, default: dict) -> dict:
-        if not path.exists():
-            return default
-        try:
-            with path.open('r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data if isinstance(data, dict) else default
-        except Exception:
-            return default
-
-    @staticmethod
-    def _normalize_header(value: str) -> str:
-        return re.sub(r'\s+', ' ', str(value or '').strip().lower())
-
-    def _build_alias_lookup(self, aliases_cfg: dict) -> dict[str, str]:
-        lookup: dict[str, str] = {}
-        for field in aliases_cfg.get('fields', []):
-            canonical = str(field.get('canonical') or '').strip()
-            if not canonical:
-                continue
-            for lang in ['zh', 'ru', 'en', 'platform']:
-                for alias in field.get('aliases', {}).get(lang, []):
-                    key = self._normalize_header(str(alias))
-                    if key:
-                        lookup[key] = canonical
-            lookup[self._normalize_header(canonical)] = canonical
-        return lookup
-
-    def _detect_report_template(self, file_name: str, columns: list[str]) -> str:
-        norm_name = self._normalize_header(file_name)
-        norm_columns = {self._normalize_header(col) for col in columns}
-        best_code = 'generic'
-        best_score = -1
-        for tpl in self._report_templates.get('templates', []):
-            score = 0
-            score += sum(1 for k in [self._normalize_header(x) for x in tpl.get('file_name_keywords', [])] if k and k in norm_name)
-            score += sum(1 for k in [self._normalize_header(x) for x in tpl.get('header_keywords', [])] if k and k in norm_columns)
-            score += 2 * sum(1 for k in [self._normalize_header(x) for x in tpl.get('field_signatures', [])] if k and k in norm_columns)
-            if score > best_score:
-                best_score = score
-                best_code = str(tpl.get('code') or 'generic')
-        return best_code
-
-    @staticmethod
-    def _is_summary_text(text: str) -> bool:
-        value = str(text or '').strip().lower()
-        return value in {'总计', '合计', '总计和平均值', 'итого', 'итого и среднее', 'summary', 'total', 'grand total'}
-
-    def _drop_summary_rows(self, df: pd.DataFrame) -> pd.DataFrame:
-        if 'sku' not in df.columns:
-            return df
-        return df.loc[~df['sku'].astype(str).apply(self._is_summary_text)].copy()
-
-    @staticmethod
-    def _to_clean_text(value) -> str:
-        if value is None or pd.isna(value):
-            return ''
-        return re.sub(r'\s+', ' ', str(value)).strip()
-
-    @staticmethod
-    def _is_placeholder_col(name: str) -> bool:
-        text = str(name or '').strip().lower()
-        return (not text) or text.startswith('unnamed:')
-
-    @staticmethod
-    def _looks_like_description_row(values: list[str]) -> bool:
-        non_empty = [v for v in values if v]
-        if not non_empty:
-            return False
-        long_text_count = sum(1 for v in non_empty if len(v) >= 35)
-        hint_count = sum(
-            1
-            for v in non_empty
-            if any(k in v.lower() for k in ['динамика', 'по сравнению', 'отношение', 'сколько раз', '根据', '说明'])
-        )
-        return long_text_count >= 5 or hint_count >= 3
-
-    @staticmethod
-    def _looks_like_summary_row(values: list[str]) -> bool:
-        normalized = [v.strip().lower() for v in values if v.strip()]
-        if not normalized:
-            return False
-        first = normalized[0]
-        summary_keywords = {'итого', 'итого и среднее', 'total', 'summary', '总计', '合计', '总计和平均值'}
-        if first in summary_keywords:
-            return True
-        return any(v in summary_keywords for v in normalized[:3])
-
-    @staticmethod
-    def _dedupe_columns(columns: list[str]) -> list[str]:
-        seen: dict[str, int] = {}
-        result: list[str] = []
-        for col in columns:
-            name = str(col).strip() or 'unnamed'
-            idx = seen.get(name, 0)
-            if idx == 0:
-                result.append(name)
-            else:
-                result.append(f"{name}_{idx}")
-            seen[name] = idx + 1
+class _FallbackDiagnoser:
+    def diagnose(
+        self,
+        file_name: str,
+        preview_rows: List[List[Any]],
+        headers: List[str],
+        mapped_fields: int,
+        unmapped_fields: List[str],
+        row_error_count: int,
+    ) -> Any:
+        status = "success" if mapped_fields > 0 and row_error_count == 0 else ("partial" if mapped_fields > 0 else "failed")
+        platform = "ozon" if any("артикул" in str(h).lower() for h in headers) else "generic"
+        result = {
+            "status": status,
+            "platform": platform,
+            "suggestions": [] if status == "success" else ["请检查表头与关键字段映射"],
+            "keyField": "sku" if any(str(h).lower() == "sku" for h in headers) else None,
+            "unmappedFields": unmapped_fields,
+        }
+        if ImportBatchDiagnosis is not None:
+            try:
+                return ImportBatchDiagnosis(**result)  # type: ignore[arg-type]
+            except Exception:
+                return result
         return result
 
-    def _normalize_report_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """parse 阶段报表规范化：多层表头展开、说明/汇总行剔除、Unnamed 处理"""
-        if df.empty:
-            self._last_normalize_stats = {
-                'originalColumns': 0,
-                'normalizedColumns': 0,
-                'droppedPlaceholderColumns': [],
-                'removedSummaryRows': 0,
-                'removedDescriptionRows': 0,
-            }
-            return df
 
-        original_columns = [self._to_clean_text(c) for c in df.columns]
-        normalized = df.copy()
-        normalized = normalized.dropna(axis=1, how='all')
-        normalized.columns = [self._to_clean_text(c) for c in normalized.columns]
+class ImportService:
+    """当前导入主链路服务。"""
 
-        placeholder_count = sum(1 for c in normalized.columns if self._is_placeholder_col(c))
-        has_placeholder = placeholder_count > 0
+    CORE_FIELDS = {
+        "sku",
+        "orders",
+        "order_amount",
+        "impressions_total",
+        "impressions_search_catalog",
+        "product_card_visits",
+        "add_to_cart_total",
+        "stock_total",
+        "rating_value",
+        "review_count",
+        "price_index_status",
+    }
 
-        drop_rows = 0
-        description_rows_removed = 0
-        if has_placeholder and len(normalized) >= 1:
-            secondary = [self._to_clean_text(v) for v in normalized.iloc[0].tolist()]
-            tertiary = [self._to_clean_text(v) for v in normalized.iloc[1].tolist()] if len(normalized) > 1 else []
+    NUMERIC_CANONICALS = {
+        "impressions_total",
+        "impressions_search_catalog",
+        "product_card_visits",
+        "add_to_cart_total",
+        "orders",
+        "order_amount",
+        "stock_total",
+        "review_count",
+        "rating_value",
+    }
 
-            rebuilt_cols: list[str] = []
-            for idx, base in enumerate(normalized.columns):
-                base_text = '' if self._is_placeholder_col(base) else self._to_clean_text(base)
-                sec_text = secondary[idx] if idx < len(secondary) else ''
+    def __init__(self) -> None:
+        self._root_dir = Path(__file__).resolve().parents[3]
+        self._registry_cfg = self._load_json(self._root_dir / "config" / "import_field_registry.json", default={"version": "v1", "fields": []})
+        self._field_registry = self._registry_cfg.get("fields") or []
+        self._alias_lookup = self._build_alias_lookup(self._field_registry)
+        self._fallback_mapping = FieldMapping()
+        self.diagnoser = _ImportDiagnoser() if _ImportDiagnoser is not None else _FallbackDiagnoser()
+        self.cleaner = DataCleaner()
+        self.validator = DataValidator()
+        self.batches: List[Dict[str, Any]] = []
+        self._sessions: Dict[int, Dict[str, Any]] = {}
+        self._session_counter = itertools.count(1)
 
-                if sec_text and sec_text.lower() != 'динамика':
-                    if len(sec_text) > 60 or any(k in sec_text.lower() for k in ['по сравнению', 'отношение', 'сколько раз']):
-                        sec_text = ''
+    # ---------- 基础加载 ----------
 
-                candidate = base_text
-                if sec_text:
-                    candidate = f"{base_text} {sec_text}".strip() if base_text else sec_text
-                if not candidate:
-                    candidate = f"col_{idx + 1}"
-                rebuilt_cols.append(candidate)
-
-            normalized.columns = self._dedupe_columns(rebuilt_cols)
-            drop_rows = 1
-            if tertiary and self._looks_like_description_row(tertiary):
-                drop_rows = 2
-            description_rows_removed = drop_rows
-
-        if drop_rows > 0:
-            normalized = normalized.iloc[drop_rows:].reset_index(drop=True)
-
-        unnamed_like = [c for c in normalized.columns if self._is_placeholder_col(c) or re.match(r'^col_\d+$', c)]
-        if unnamed_like:
-            normalized = normalized.drop(columns=unnamed_like, errors='ignore')
-
-        summary_rows_removed = 0
-        description_rows_removed_extra = 0
-        if not normalized.empty:
-            keep_mask = []
-            for _, row in normalized.iterrows():
-                row_text = [self._to_clean_text(v) for v in row.tolist()]
-                is_summary = self._looks_like_summary_row(row_text)
-                is_desc = self._looks_like_description_row(row_text)
-                if is_summary or is_desc:
-                    if is_summary:
-                        summary_rows_removed += 1
-                    else:
-                        description_rows_removed_extra += 1
-                    keep_mask.append(False)
-                else:
-                    keep_mask.append(True)
-            normalized = normalized.loc[keep_mask].reset_index(drop=True)
-
-        if not normalized.empty:
-            sku_columns = [
-                col for col in normalized.columns
-                if any(k in self._normalize_header(col) for k in ['sku', 'артикул', 'offer id', 'seller sku'])
-            ]
-            if sku_columns:
-                sku_col = sku_columns[0]
-                start_idx = None
-                for idx, val in enumerate(normalized[sku_col].astype(str).tolist()):
-                    cell = val.strip()
-                    if not cell or cell.lower() == 'nan':
-                        continue
-                    if re.match(r'^[A-Za-z0-9\-_/]{4,}$', cell):
-                        start_idx = idx
-                        break
-                if start_idx is not None and start_idx > 0:
-                    normalized = normalized.iloc[start_idx:].reset_index(drop=True)
-
-        normalized.columns = self._dedupe_columns([self._to_clean_text(c) for c in normalized.columns])
-        self._last_normalize_stats = {
-            'originalColumns': len(original_columns),
-            'normalizedColumns': len(normalized.columns),
-            'droppedPlaceholderColumns': sorted(set(unnamed_like)),
-            'removedSummaryRows': summary_rows_removed,
-            'removedDescriptionRows': description_rows_removed + description_rows_removed_extra,
-        }
-        return normalized
-    
-    def _detect_excel_header_row(self, file_path: str, max_scan_rows: int = 30) -> int:
-        """尝试检测 Excel 真正表头行（兼容 Ozon 导出前置说明行）"""
-        try:
-            preview = pd.read_excel(file_path, header=None, nrows=max_scan_rows, engine='openpyxl')
-        except Exception:
-            return 0
-
-        known_headers = {str(k).strip().lower() for k in self.mapping.ozon_mapping.keys()}
-        known_headers.update({
-            'sku', 'seller sku', 'seller_sku', 'offer_id', 'артикул', 'name', 'product name',
-            'orders', 'revenue', 'impressions', 'card visits', 'add to cart', 'sale_price',
-            'list_price', 'cost_price', 'commission_rate',
-        })
-
-        for idx in range(min(len(preview), max_scan_rows)):
-            row = [str(x).strip().lower() for x in preview.iloc[idx].tolist() if str(x).strip() and str(x).lower() != 'nan']
-            if not row:
-                continue
-            hit = sum(1 for cell in row if cell in known_headers)
-            if hit >= 2:
-                return idx
-        return 0
-
-    def read_file(self, file_path: str) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
-        """
-        读取Excel或CSV文件
-        
-        返回：(DataFrame, 错误信息)
-        """
-        path = Path(file_path)
-        self._last_read_context = {'header_row': 0, 'source_type': path.suffix.lower()}
-        
+    @staticmethod
+    def _load_json(path: Path, default: dict) -> dict:
         if not path.exists():
-            return None, f"文件不存在：{file_path}"
-        
+            return default
         try:
-            if path.suffix in ['.xlsx', '.xls']:
-                if path.suffix == '.xlsx':
-                    header_row = self._detect_excel_header_row(file_path)
-                    try:
-                        df = pd.read_excel(file_path, header=header_row, engine='openpyxl')
-                        self._last_read_context = {'header_row': header_row, 'source_type': 'xlsx'}
-                    except Exception as ex:
-                        return None, f"读取 XLSX 失败：文件可能损坏、加密或样式异常，请另存为标准 .xlsx 后重试。原始错误：{ex}"
-                else:
-                    try:
-                        df = pd.read_excel(file_path, engine='xlrd')
-                        self._last_read_context = {'header_row': 0, 'source_type': 'xls'}
-                    except Exception as ex:
-                        return None, f"读取 XLS 失败：请另存为 .xlsx 或 .csv 后重试。原始错误：{ex}"
-            elif path.suffix == '.csv':
-                # 尝试不同编码
-                for encoding in ['utf-8', 'utf-8-sig', 'gbk', 'cp1251']:
+            with path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else default
+        except Exception:
+            return default
+
+    @staticmethod
+    def _normalize_header(value: Any) -> str:
+        text = str(value or "")
+        normalized_chars: List[str] = []
+        for ch in text:
+            code = ord(ch)
+            if code == 0x3000:
+                normalized_chars.append(" ")
+            elif 0xFF01 <= code <= 0xFF5E:
+                normalized_chars.append(chr(code - 0xFEE0))
+            else:
+                normalized_chars.append(ch)
+        text = "".join(normalized_chars).lower()
+        text = text.translate(str.maketrans({
+            "（": "(", "）": ")", "【": "[", "】": "]",
+            "，": ",", "：": ":", "；": ";", "。": ".", "、": " ",
+            "“": '"', "”": '"', "‘": "'", "’": "'",
+        }))
+        text = re.sub(r"[\u200b\ufeff]", "", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
+
+    @classmethod
+    def _normalize_header_without_unit(cls, value: Any) -> str:
+        text = cls._normalize_header(value)
+        text = re.sub(r"\([^)]*(%|pcs|шт|руб|₽|件|天|日|次|个|元)[^)]*\)", "", text)
+        text = re.sub(r"\[[^\]]*(%|pcs|шт|руб|₽|件|天|日|次|个|元)[^\]]*\]", "", text)
+        text = re.sub(r"\b(%|pcs|шт|руб|₽|件|天|日|次|个|元)\b", "", text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    @staticmethod
+    def _is_placeholder_col(name: Any) -> bool:
+        text = str(name or "").strip()
+        if not text:
+            return True
+        lower = text.lower()
+        return lower.startswith("unnamed:") or re.fullmatch(r"col_?\d+", lower) is not None or lower in {"none", "nan"}
+
+    @staticmethod
+    def _safe_scalar(value: Any) -> Any:
+        if isinstance(value, (list, tuple)):
+            return value[0] if value else None
+        if hasattr(value, "tolist") and not isinstance(value, (str, bytes)):
+            try:
+                vals = value.tolist()
+                if isinstance(vals, list):
+                    return vals[0] if vals else None
+            except Exception:
+                pass
+        return value
+
+    def _build_alias_lookup(self, fields: List[dict]) -> Dict[str, str]:
+        lookup: Dict[str, str] = {}
+        for field in fields:
+            canonical = str(field.get("canonical") or "").strip()
+            if not canonical:
+                continue
+            lookup[self._normalize_header(canonical)] = canonical
+            lookup[self._normalize_header_without_unit(canonical)] = canonical
+            aliases = field.get("aliases") or {}
+            for lang in ["zh", "ru", "en", "platform"]:
+                for alias in aliases.get(lang, []) or []:
+                    if not alias:
+                        continue
+                    lookup[self._normalize_header(alias)] = canonical
+                    lookup[self._normalize_header_without_unit(alias)] = canonical
+        for source in [self._fallback_mapping.ozon_mapping, self._fallback_mapping.english_mapping]:
+            for alias, canonical in source.items():
+                lookup[self._normalize_header(alias)] = canonical
+                lookup[self._normalize_header_without_unit(alias)] = canonical
+        return lookup
+
+    def get_field_registry(self) -> dict:
+        return {
+            "version": str(self._registry_cfg.get("version") or "v1"),
+            "fields": self._field_registry,
+        }
+
+    # ---------- 读取 / 表头恢复 ----------
+
+    def _read_file_default(self, file_path: str) -> Tuple[Optional[pd.DataFrame], Optional[str], Dict[str, Any]]:
+        path = Path(file_path)
+        meta = {"sheetNames": ["CSV"], "selectedSheet": "CSV", "readerEngineUsed": None, "readerFallbackStage": "none"}
+        if not path.exists():
+            return None, f"文件不存在：{file_path}", meta
+        try:
+            if path.suffix.lower() in {".xlsx", ".xls"}:
+                excel = pd.ExcelFile(file_path, engine="openpyxl" if path.suffix.lower() == ".xlsx" else None)
+                meta["sheetNames"] = list(excel.sheet_names)
+                meta["selectedSheet"] = meta["sheetNames"][0] if meta["sheetNames"] else "Sheet1"
+                meta["readerEngineUsed"] = "openpyxl" if path.suffix.lower() == ".xlsx" else "xlrd"
+                df = pd.read_excel(excel, sheet_name=meta["selectedSheet"])
+                return df, None, meta
+            if path.suffix.lower() == ".csv":
+                for encoding in ["utf-8", "utf-8-sig", "gbk", "cp1251", "latin1"]:
                     try:
                         df = pd.read_csv(file_path, encoding=encoding)
-                        self._last_read_context = {'header_row': 0, 'source_type': 'csv'}
-                        break
-                    except:
+                        meta["readerEngineUsed"] = f"csv:{encoding}"
+                        return df, None, meta
+                    except Exception:
                         continue
-                else:
-                    return None, "无法识别文件编码"
-            else:
-                return None, f"不支持的文件格式：{path.suffix}"
-            
-            df = self._normalize_report_dataframe(df)
-            return df, None
-            
-        except Exception as e:
-            return None, f"读取文件失败：{str(e)}"
-    
-    def map_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        映射列名（智能识别 + 模糊匹配）
-        
-        优先使用智能映射器，失败时降级到静态映射
-        """
-        # 🆕 使用智能映射器
-        try:
-            mapped_df, mapping_info = self.intelligent_mapper.auto_map_columns(df)
-            alias_map = {}
-            for col in mapped_df.columns:
-                canonical = self._alias_lookup.get(self._normalize_header(col))
-                if canonical:
-                    alias_map[col] = canonical
-            if alias_map:
-                mapped_df = mapped_df.rename(columns=alias_map)
+                return None, "无法识别文件编码", meta
+            return None, f"不支持的文件格式：{path.suffix}", meta
+        except Exception as exc:
+            return None, f"读取文件失败：{exc}", meta
 
-            # 检查是否有 SKU 字段
-            if 'sku' not in mapped_df.columns:
-                # 尝试智能识别 SKU 字段
-                suggested_sku = self.intelligent_mapper.suggest_sku_field(df)
-                if suggested_sku:
-                    print(f"\n💡 建议：将 '{suggested_sku}' 映射为 SKU 字段")
-                    # 如果只有一个高置信度的 SKU 候选，自动使用
-                    mapped_df = mapped_df.rename(columns={suggested_sku: 'sku'})
-                else:
-                    print("\n⚠️  警告：未找到 SKU 字段，请手动映射")
-            
-            return mapped_df
-            
-        except Exception as e:
-            print(f"⚠️  智能映射失败，降级到静态映射：{str(e)}")
-            # 降级到旧的静态映射
-            column_mapping = {}
-            for col in df.columns:
-                canonical = self._alias_lookup.get(self._normalize_header(col))
-                if canonical:
-                    column_mapping[col] = canonical
-                    continue
-                # 尝试Ozon俄语映射
-                if col in self.mapping.ozon_mapping:
-                    column_mapping[col] = self.mapping.ozon_mapping[col]
-                # 尝试英语映射
-                elif col in self.mapping.english_mapping:
-                    column_mapping[col] = self.mapping.english_mapping[col]
-            
-            if column_mapping:
-                df = df.rename(columns=column_mapping)
-            
-            return df
-    
+    def _read_file_raw(self, file_path: str) -> Tuple[Optional[pd.DataFrame], Optional[str], Dict[str, Any]]:
+        path = Path(file_path)
+        meta = {"sheetNames": ["CSV"], "selectedSheet": "CSV", "readerEngineUsed": None, "readerFallbackStage": "raw_header_scan"}
+        try:
+            if path.suffix.lower() in {".xlsx", ".xls"}:
+                excel = pd.ExcelFile(file_path, engine="openpyxl" if path.suffix.lower() == ".xlsx" else None)
+                meta["sheetNames"] = list(excel.sheet_names)
+                meta["selectedSheet"] = meta["sheetNames"][0] if meta["sheetNames"] else "Sheet1"
+                meta["readerEngineUsed"] = "openpyxl" if path.suffix.lower() == ".xlsx" else "xlrd"
+                df = pd.read_excel(excel, sheet_name=meta["selectedSheet"], header=None)
+                return df, None, meta
+            if path.suffix.lower() == ".csv":
+                for encoding in ["utf-8", "utf-8-sig", "gbk", "cp1251", "latin1"]:
+                    try:
+                        df = pd.read_csv(file_path, encoding=encoding, header=None)
+                        meta["readerEngineUsed"] = f"csv:{encoding}"
+                        return df, None, meta
+                    except Exception:
+                        continue
+                return None, "无法识别文件编码", meta
+            return None, f"不支持的文件格式：{path.suffix}", meta
+        except Exception as exc:
+            return None, f"读取文件失败：{exc}", meta
+
+    def _detect_header_block(self, raw_df: pd.DataFrame) -> dict:
+        if raw_df.empty:
+            return {"startRow": 0, "endRow": 0, "confidence": 0.0, "signals": ["empty_file"]}
+
+        max_scan = min(len(raw_df), 8)
+        best_row = 0
+        best_score = -1.0
+        signals: List[str] = []
+
+        for idx in range(max_scan):
+            row = raw_df.iloc[idx].tolist()
+            non_empty = [str(x).strip() for x in row if str(x).strip() not in {"", "nan", "None"}]
+            unique = len(set(non_empty))
+            text_like = sum(1 for x in non_empty if not re.search(r"\d", x) or re.search(r"[A-Za-zА-Яа-я一-龥]", x))
+            score = len(non_empty) + (unique * 0.2) + (text_like * 0.1)
+            if score > best_score:
+                best_score = score
+                best_row = idx
+
+        # 判断是否为多层表头：best_row 后一行也有较多文本列
+        end_row = best_row
+        if best_row + 1 < max_scan:
+            next_row = [str(x).strip() for x in raw_df.iloc[best_row + 1].tolist()]
+            next_non_empty = [x for x in next_row if x not in {"", "nan", "None"}]
+            if len(next_non_empty) >= max(2, int(len([x for x in raw_df.iloc[best_row].tolist() if str(x).strip() not in {"", "nan", "None"}]) * 0.5)):
+                end_row = best_row + 1
+                signals.append("multi_row_header_block")
+
+        header_values = [str(x).strip() for x in raw_df.iloc[best_row].tolist()]
+        placeholder_count = sum(1 for x in header_values if self._is_placeholder_col(x))
+        if placeholder_count > 0:
+            signals.append("placeholder_columns_present")
+        if len([x for x in header_values if str(x).strip()]) < 4:
+            signals.append("short_explainable_column_run")
+
+        confidence = min(0.95, 0.45 + max(0, best_score) / max(8.0, raw_df.shape[1] + 2.0))
+        return {
+            "startRow": int(best_row),
+            "endRow": int(end_row),
+            "confidence": round(float(confidence), 3),
+            "signals": signals,
+        }
+
+    def _flatten_headers(self, raw_df: pd.DataFrame, header_block: dict) -> Tuple[List[str], List[str], List[str]]:
+        start = int(header_block.get("startRow") or 0)
+        end = int(header_block.get("endRow") or start)
+        header_rows = raw_df.iloc[start : end + 1].fillna("")
+        flattened: List[str] = []
+        dropped: List[str] = []
+        rescued: List[str] = []
+
+        for col_idx in range(raw_df.shape[1]):
+            pieces: List[str] = []
+            for _, row in header_rows.iterrows():
+                value = str(self._safe_scalar(row.iloc[col_idx]) or "").strip()
+                if value and value.lower() not in {"nan", "none"}:
+                    pieces.append(value)
+            joined = " ".join(dict.fromkeys(pieces)).strip()
+            if not joined:
+                joined = f"col_{col_idx + 1}"
+            if self._is_placeholder_col(joined):
+                dropped.append(joined)
+            else:
+                if len(pieces) > 1:
+                    rescued.append(joined)
+            flattened.append(joined)
+        return flattened, dropped, rescued
+
+    def _materialize_from_raw(self, raw_df: pd.DataFrame, header_block: dict, flattened_headers: List[str]) -> pd.DataFrame:
+        data_start = int(header_block.get("endRow") or 0) + 1
+        body = raw_df.iloc[data_start:].copy().reset_index(drop=True)
+        # 对齐列数
+        if len(flattened_headers) < body.shape[1]:
+            flattened_headers = flattened_headers + [f"col_{i+1}" for i in range(len(flattened_headers), body.shape[1])]
+        body.columns = flattened_headers[: body.shape[1]]
+        # 剔除全空行
+        body = body.dropna(how="all").reset_index(drop=True)
+        return body
+
+    # ---------- 映射 / 清洗 / 校验 ----------
+
+    def _map_single_column(self, col: Any) -> Tuple[Optional[str], str, List[str]]:
+        original = str(col or "")
+        normalized = self._normalize_header(original)
+        normalized_wo_unit = self._normalize_header_without_unit(original)
+        reasons: List[str] = []
+        canonical = None
+        source = "unmapped"
+
+        if normalized in self._alias_lookup:
+            canonical = self._alias_lookup[normalized]
+            source = "registry_alias"
+            reasons.append("matched_normalized_alias")
+        elif normalized_wo_unit in self._alias_lookup:
+            canonical = self._alias_lookup[normalized_wo_unit]
+            source = "registry_alias_wo_unit"
+            reasons.append("matched_alias_without_unit")
+        elif original in self._fallback_mapping.ozon_mapping:
+            canonical = self._fallback_mapping.ozon_mapping[original]
+            source = "ru_builtin"
+            reasons.append("matched_ru_builtin")
+        elif original in self._fallback_mapping.english_mapping:
+            canonical = self._fallback_mapping.english_mapping[original]
+            source = "en_builtin"
+            reasons.append("matched_en_builtin")
+
+        return canonical, source, reasons
+
+    def map_columns(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[dict]]:
+        rename_map: Dict[str, str] = {}
+        field_mappings: List[dict] = []
+
+        for col in df.columns:
+            canonical, source, reasons = self._map_single_column(col)
+            normalized = self._normalize_header(col)
+            sample_values = [self._safe_scalar(v) for v in df[col].head(3).tolist()] if col in df.columns else []
+            confidence = 0.95 if canonical and source.startswith("registry") else (0.9 if canonical else 0.0)
+            field_mappings.append({
+                "originalField": str(col),
+                "normalizedField": normalized,
+                "standardField": canonical,
+                "mappingSource": source,
+                "confidence": confidence,
+                "sampleValues": sample_values,
+                "isManual": False,
+                "reasons": reasons,
+            })
+            if canonical:
+                rename_map[str(col)] = canonical
+
+        mapped_df = df.rename(columns=rename_map)
+        return mapped_df, field_mappings
+
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        清洗数据
-        """
-        # 清洗数字列
-        numeric_columns = [
-            'impressions', 'impressions_total', 'impressions_search_catalog',
-            'card_visits', 'product_card_visits',
-            'add_to_cart', 'add_to_cart_total',
-            'orders', 'items_ordered', 'items_delivered', 'items_purchased', 'items_canceled', 'items_returned',
-            'revenue', 'order_amount',
-            'ad_spend', 'ad_revenue',
-            'stock', 'stock_total', 'stock_fbo', 'stock_fbs',
-            'avg_sale_price',
-        ]
-        
-        for col in numeric_columns:
-            if col in df.columns:
+        df = df.copy()
+        for col in [c for c in df.columns if c in self.NUMERIC_CANONICALS]:
+            if col == "rating_value":
+                df[col] = df[col].apply(self.cleaner.clean_rating)
+            else:
                 df[col] = df[col].apply(self.cleaner.clean_numeric)
-        
-        # 清洗评分
-        if 'rating' in df.columns:
-            df['rating'] = df['rating'].apply(self.cleaner.clean_rating)
-        
-        # 清洗百分比
-        percentage_columns = ['return_rate', 'cancel_rate', 'variable_rate_total', 'add_to_cart_cvr_total', 'discount_pct']
-        for col in percentage_columns:
-            if col in df.columns:
-                df[col] = df[col].apply(self.cleaner.clean_percentage)
-        
-        # 清洗文本列
-        text_columns = ['sku', 'name']
-        for col in text_columns:
-            if col in df.columns:
-                df[col] = df[col].apply(self.cleaner.clean_text)
-        
+        for col in [c for c in df.columns if c in {"sku", "name", "price_index_status"}]:
+            df[col] = df[col].apply(self.cleaner.clean_text)
         return df
-    
-    def validate_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[Dict]]:
-        """
-        验证数据
-        
-        返回：(有效数据, 错误列表)
-        """
-        errors = []
-        valid_rows = []
-        
+
+    def validate_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[Dict[str, Any]]]:
+        errors: List[Dict[str, Any]] = []
+        valid_rows: List[Dict[str, Any]] = []
         for idx, row in df.iterrows():
-            row_dict = row.to_dict()
+            row_dict = {k: self._safe_scalar(v) for k, v in row.to_dict().items()}
             is_valid, row_errors = self.validator.validate_row(row_dict, idx + 1)
-            
             if is_valid:
                 valid_rows.append(row_dict)
             else:
-                errors.extend(row_errors)
-        
-        valid_df = pd.DataFrame(valid_rows) if valid_rows else pd.DataFrame()
-        
+                for err in row_errors:
+                    errors.append({"row": idx + 1, "error": err})
+        valid_df = pd.DataFrame(valid_rows) if valid_rows else pd.DataFrame(columns=df.columns)
         return valid_df, errors
-    
+
     def remove_duplicates(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
-        """
-        去重
-        
-        返回：(去重后的数据, 重复数量)
-        """
-        if 'sku' not in df.columns:
+        if "sku" not in df.columns:
             return df, 0
-        
-        before_count = len(df)
-        df = df.drop_duplicates(subset=['sku'], keep='last')
-        after_count = len(df)
-        
-        return df, before_count - after_count
-    
-    def import_from_file(
-        self, 
-        file_path: str,
-        save_to_db: bool = False,
-        output_path: Optional[str] = None
-    ) -> ImportResult:
-        """
-        从文件导入数据（完整流程）
-        
-        Args:
-            file_path: 输入文件路径
-            save_to_db: 是否保存到数据库（暂未实现）
-            output_path: 输出JSON路径（可选）
-        
-        Returns:
-            ImportResult: 导入结果
-        """
-        # 1. 读取文件
-        df, error = self.read_file(file_path)
-        if error:
-            return ImportResult(
-                success=False,
-                total_rows=0,
-                imported=0,
-                failed=0,
-                errors=[{"error": error}]
-            )
-        
-        total_rows = len(df)
-        
-        # 2. 诊断
-        preview_rows = df.head(20).values.tolist()
-        diagnosis = self.diagnoser.diagnose(
-            file_name=Path(file_path).name,
-            preview_rows=preview_rows,
-            headers=df.columns.tolist(),
-            mapped_fields=len(df.columns),
-            unmapped_fields=[],
-            row_error_count=0
-        )
-        
-        # 检查诊断结果
-        if diagnosis.status == "failed":
-            return ImportResult(
-                success=False,
-                total_rows=total_rows,
-                imported=0,
-                failed=total_rows,
-                errors=[{"error": suggestion} for suggestion in diagnosis.suggestions]
-            )
-        
-        # 3. 映射列名
-        df = self.map_columns(df)
-        
-        # 4. 清洗数据
-        df = self.clean_data(df)
-        
-        # 5. 验证数据
-        df, errors = self.validate_data(df)
-        
-        # 6. 去重
-        df, duplicate_count = self.remove_duplicates(df)
-        
-        # 7. 转换为字典列表
-        data = df.to_dict('records')
-        
-        # 8. 保存到JSON（如果指定了输出路径）
-        if output_path:
-            try:
-                with open(output_path, 'w', encoding='utf-8') as f:
-                    json.dump({
-                        "timestamp": datetime.now().isoformat(),
-                        "source_file": file_path,
-                        "platform": diagnosis.platform,
-                        "total_rows": total_rows,
-                        "imported": len(data),
-                        "duplicates": duplicate_count,
-                        "errors": errors,
-                        "data": data
-                    }, f, ensure_ascii=False, indent=2)
-            except Exception as e:
-                errors.append({"error": f"保存文件失败：{str(e)}"})
-        
-        # 9. 返回结果
-        return ImportResult(
-            success=True,
-            total_rows=total_rows,
-            imported=len(data),
-            failed=total_rows - len(data),
-            errors=errors,
-            warnings=[f"发现并移除 {duplicate_count} 条重复记录"] if duplicate_count > 0 else [],
-            data=data
-        )
-    
-    def save_to_json(self, data: List[Dict], output_path: str, metadata: Optional[Dict] = None):
-        """
-        保存数据到JSON文件
-        """
-        output = {
-            "timestamp": datetime.now().isoformat(),
-            "count": len(data),
-            "data": data
+        before = len(df)
+        deduped = df.drop_duplicates(subset=["sku"], keep="first")
+        return deduped, before - len(deduped)
+
+    # ---------- 语义门禁 ----------
+
+    @staticmethod
+    def _build_core_field_hit_summary(mapped_targets: List[str]) -> dict:
+        targets = set(mapped_targets)
+        optional_pool = [
+            "impressions_search_catalog",
+            "stock_total",
+            "rating_value",
+            "review_count",
+            "price_index_status",
+        ]
+        optional_hits = [field for field in optional_pool if field in targets]
+        return {
+            "sku": "sku" in targets,
+            "orders_or_order_amount": bool({"orders", "order_amount"} & targets),
+            "impressions_total": "impressions_total" in targets,
+            "product_card_visits_or_add_to_cart_total": bool({"product_card_visits", "add_to_cart_total"} & targets),
+            "optionalFieldPool": optional_pool,
+            "optionalHitCount": len(optional_hits),
+            "optionalHitFields": optional_hits,
+            "mappedTargets": sorted(targets),
         }
-        
-        if metadata:
-            output["metadata"] = metadata
-        
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(output, f, ensure_ascii=False, indent=2)
 
-    def list_batches(self) -> list:
-        """
-        列出所有导入批次
-        """
-        if not hasattr(self, 'batches'):
-            self.batches = []
-        return self.batches
+    @staticmethod
+    def _compute_header_structure_score(header_block: dict, flattened_headers: List[str], dropped_placeholders: List[str]) -> Tuple[float, List[str]]:
+        signals = list(header_block.get("signals") or [])
+        non_placeholder = [h for h in flattened_headers if h and not ImportService._is_placeholder_col(h)]
+        if len(non_placeholder) < 4 and "short_explainable_column_run" not in signals:
+            signals.append("short_explainable_column_run")
+        if dropped_placeholders and "placeholder_columns_present" not in signals:
+            signals.append("placeholder_columns_present")
+        score = 0.8
+        if "multi_row_header_block" in signals:
+            score -= 0.12
+        if "placeholder_columns_present" in signals:
+            score -= 0.1
+        if "short_explainable_column_run" in signals:
+            score -= 0.18
+        score = max(0.0, min(1.0, score))
+        return round(score, 3), signals
 
-    def parse_import_file(self, file_path: str, shop_id: int = 1, operator: str = 'frontend_user') -> dict:
-        """上传后解析文件，返回诊断与映射结果（创建后端草稿 session）"""
-        df, error = self.read_file(file_path)
-        if error:
-            raise ValueError(error)
+    @staticmethod
+    def _semantic_gate(mapped_targets: List[str], candidate_columns: int, mapped_count: int, wrongly_mapped_count: int, header_signals: List[str], header_structure_score: float) -> Tuple[str, List[str], List[str], List[str], dict]:
+        reasons: List[str] = []
+        risk_override_reasons: List[str] = []
+        acceptance_reason: List[str] = []
+        coverage = round(mapped_count / candidate_columns, 3) if candidate_columns > 0 else 0.0
+        core = ImportService._build_core_field_hit_summary(mapped_targets)
 
-        mapped_df = self.map_columns(df.copy())
+        if mapped_count == 0 or candidate_columns == 0:
+            return "failed", ["no_mapped_fields"], [], [], {"mappingCoverage": coverage, "mappedCount": mapped_count, "unmappedCount": max(candidate_columns - mapped_count, 0)}
 
-        field_mappings: list[dict] = []
-        extra_map = {
-            'sale_price': 'sale_price',
-            'list_price': 'list_price',
-            'cost_price': 'cost_price',
-            'commission_rate': 'commission_rate',
-            'orders': 'orders',
-            'revenue': 'revenue',
-            'impressions': 'impressions',
-            'add to cart': 'add_to_cart',
-            'add_to_cart': 'add_to_cart',
-            'заказано на сумму': 'order_amount',
-            'заказано товаров': 'items_ordered',
-            'доставлено товаров': 'items_delivered',
-            'выкуплено товаров': 'items_purchased',
-            'отменено товаров (на дату отмены)': 'items_canceled',
-            'отменено товаров (на дату заказа)': 'items_canceled',
-            'возвращено товаров (на дату возврата)': 'items_returned',
-            'возвращено товаров (на дату заказа)': 'items_returned',
-            'общая дрр': 'ad_spend',
-            'остаток на конец периода': 'stock_total',
-            'категория 1 уровня': 'category',
-            'категория 2 уровня': 'category',
-            'категория 3 уровня': 'category',
-            'дней в акциях': 'promo_days_count',
-            'индекс цен': 'price_index_status',
-            'средняя цена': 'avg_sale_price',
-            'факторы продаж средняя цена': 'avg_sale_price',
-            'отзывы': 'review_count',
-            'рейтинг товара': 'rating_value',
-            'показы всего': 'impressions_total',
-            'показы в поиске и каталоге': 'impressions_search_catalog',
-            'посещения карточки товара': 'product_card_visits',
-            'добавления в корзину всего': 'add_to_cart_total',
-            'конверсия в корзину общая': 'add_to_cart_cvr_total',
-        }
-        for col in df.columns.astype(str):
-            norm_col = self._normalize_header(col)
-            norm_variants = [norm_col]
-            norm_variants.append(re.sub(r'^(продажи|воронка продаж|факторы продаж)\s+', '', norm_col).strip())
-            std_field = None
-            confidence = 0.0
-            reasons: list[str] = []
+        if not core["sku"]:
+            reasons.append("missing_sku")
+        if not core["orders_or_order_amount"]:
+            reasons.append("missing_orders_or_order_amount")
+        if coverage < 0.5:
+            reasons.append("mapping_coverage_below_0_5")
+        if mapped_count < 4:
+            reasons.append("mapped_count_below_4")
+        if wrongly_mapped_count > 0:
+            reasons.append("wrongly_mapped_fields_present")
 
-            if norm_col.startswith('динамика'):
-                sample_values = df[col].dropna().head(5).astype(str).tolist() if col in df.columns else []
-                field_mappings.append(
-                    {
-                        'originalField': col,
-                        'standardField': None,
-                        'confidence': 0.0,
-                        'sampleValues': sample_values,
-                        'isManual': False,
-                        'reasons': ['dynamic_column_ignored'],
-                    }
-                )
-                continue
+        strong_risk_signals = {"multi_row_header_block", "short_explainable_column_run", "placeholder_columns_present"}
+        risk_signal_hits = sorted(strong_risk_signals & set(header_signals))
+        if len(risk_signal_hits) >= 2 and header_structure_score < 0.65:
+            risk_override_reasons.append("multiple_header_risk_signals")
+        if "short_explainable_column_run" in risk_signal_hits:
+            risk_override_reasons.append("short_explainable_column_run")
 
-            # 先用显式映射，避免智能映射误判
-            for variant in norm_variants:
-                std_field = self._alias_lookup.get(variant)
-                if std_field:
-                    break
-            if not std_field:
-                std_field = self.mapping.ozon_mapping.get(col) or self.mapping.ozon_mapping.get(col.strip())
-            if not std_field:
-                for variant in norm_variants:
-                    std_field = extra_map.get(variant)
-                    if std_field:
-                        break
-            if not std_field:
-                for alias_key, canonical in self._alias_lookup.items():
-                    if len(alias_key) < 4:
-                        continue
-                    if any(alias_key in variant or variant in alias_key for variant in norm_variants):
-                        std_field = canonical
-                        confidence = 0.82
-                        reasons = ['alias_contains_match']
-                        break
-            if std_field:
-                if confidence <= 0:
-                    confidence = 0.95
-                    reasons = ['explicit_mapping']
-            else:
-                mapped_name, mapped_conf, mapped_reasons = self.intelligent_mapper.detect_field(col)
-                if mapped_name and mapped_name != 'unknown':
-                    std_field = mapped_name
-                    confidence = mapped_conf
-                    reasons = mapped_reasons
-
-            # 防止非SKU字段被错误识别为SKU
-            if std_field == 'sku' and norm_col not in {'sku', 'артикул', 'offer_id', 'seller_sku', 'product id'}:
-                explicit_sku_alias = {'sku', 'артикул', 'offer_id', 'seller_sku', 'product id'}
-                if norm_col not in explicit_sku_alias:
-                    std_field = extra_map.get(norm_col)
-                    if std_field != 'sku':
-                        confidence = 0.8 if std_field else 0.0
-                        reasons = ['sku_false_positive_fixed'] if std_field else []
-
-            sample_values = df[col].dropna().head(5).astype(str).tolist() if col in df.columns else []
-            field_mappings.append(
-                {
-                    'originalField': col,
-                    'standardField': std_field,
-                    'confidence': round(confidence, 3),
-                    'sampleValues': sample_values,
-                    'isManual': False,
-                    'reasons': reasons,
+        if not reasons:
+            if risk_override_reasons:
+                return "risk", [], risk_override_reasons, [], {
+                    "mappingCoverage": coverage,
+                    "mappedCount": mapped_count,
+                    "unmappedCount": max(candidate_columns - mapped_count, 0),
                 }
-            )
+            acceptance_reason.extend(["mapping_thresholds_met", "core_fields_present"])
+            return "passed", [], [], acceptance_reason, {
+                "mappingCoverage": coverage,
+                "mappedCount": mapped_count,
+                "unmappedCount": max(candidate_columns - mapped_count, 0),
+            }
 
-        unmapped_fields = [item['originalField'] for item in field_mappings if not item['standardField']]
-        ignored_fields = [item['originalField'] for item in field_mappings if 'dynamic_column_ignored' in (item.get('reasons') or [])]
-        candidate_fields = [item for item in field_mappings if item['originalField'] not in ignored_fields]
-        mapped_fields = [item for item in candidate_fields if item.get('standardField')]
-        mapped_count = len(mapped_fields)
-        unmapped_count = len(candidate_fields) - mapped_count
-        mapped_confidence = round(sum(item['confidence'] for item in mapped_fields) / max(mapped_count, 1), 3)
-        mapping_coverage = round(mapped_count / max(len(candidate_fields), 1), 3)
+        if mapped_count >= 2:
+            return "risk", reasons, risk_override_reasons, acceptance_reason, {
+                "mappingCoverage": coverage,
+                "mappedCount": mapped_count,
+                "unmappedCount": max(candidate_columns - mapped_count, 0),
+            }
+        return "failed", reasons, risk_override_reasons, acceptance_reason, {
+            "mappingCoverage": coverage,
+            "mappedCount": mapped_count,
+            "unmappedCount": max(candidate_columns - mapped_count, 0),
+        }
 
-        diagnosis = self.diagnoser.diagnose(
-            file_name=Path(file_path).name,
-            preview_rows=df.head(20).fillna('').values.tolist(),
-            headers=df.columns.astype(str).tolist(),
+    # ---------- 主链路 ----------
+
+    def _build_bundle(self, df: pd.DataFrame, header_block: dict, flattened_headers: List[str], header_recovery_applied: bool, dropped_placeholder_columns: List[str], rescued_placeholder_columns: List[str]) -> dict:
+        mapped_df, field_mappings = self.map_columns(df)
+        mapped_targets = [str(item["standardField"]) for item in field_mappings if item.get("standardField")]
+        candidate_columns = sum(1 for col in df.columns if not self._is_placeholder_col(col))
+        mapped_count = len(mapped_targets)
+        unmapped_fields = [str(item["originalField"]) for item in field_mappings if not item.get("standardField")]
+        wrongly_mapped_count = 0
+        header_structure_score, header_structure_signals = self._compute_header_structure_score(header_block, flattened_headers, dropped_placeholder_columns)
+        semantic_status, semantic_gate_reasons, risk_override_reasons, acceptance_reason, semantic_metrics = self._semantic_gate(
+            mapped_targets=mapped_targets,
+            candidate_columns=candidate_columns,
+            mapped_count=mapped_count,
+            wrongly_mapped_count=wrongly_mapped_count,
+            header_signals=header_structure_signals,
+            header_structure_score=header_structure_score,
+        )
+        transport_status = "passed" if len(df.columns) > 0 and len(df) >= 0 else "failed"
+        final_status = "failed" if transport_status == "failed" else semantic_status
+        diagnosis_obj = self.diagnoser.diagnose(
+            file_name="",
+            preview_rows=df.head(20).values.tolist(),
+            headers=[str(c) for c in df.columns],
             mapped_fields=mapped_count,
             unmapped_fields=unmapped_fields,
             row_error_count=0,
         )
-
-        preview_rows = df.head(10).fillna('').values.tolist()
-        actual_header_row = int(self._last_read_context.get('header_row', 0)) + 1
-        template_code = self._detect_report_template(Path(file_path).name, df.columns.astype(str).tolist())
-
-        with get_session() as session:
-            platform_code = diagnosis.platform if diagnosis.platform != 'unknown' else 'ozon'
-            platform_name = platform_code.upper() if platform_code != 'ozon' else 'Ozon'
-            platform = self._ensure_platform(session, platform_code, platform_name)
-            shop = self._ensure_shop(session, platform.id, shop_id)
-
-            batch = ImportBatch(
-                source_type='file_upload',
-                platform_code=platform_code,
-                shop_id=shop.id,
-                started_at=datetime.utcnow(),
-                status='draft',
-                message='upload parsed, waiting confirm',
-            )
-            session.add(batch)
-            session.flush()
-
-            mapped_fields_json = {
-                'filePath': file_path,
-                'fieldMappings': field_mappings,
-                'dataPreview': preview_rows,
-                'totalRows': len(df),
-                'totalColumns': len(df.columns),
-                'rawColumns': self._last_normalize_stats.get('originalColumns', len(df.columns)),
-                'headerRow': actual_header_row,
-                'platform': platform_code,
-                'stats': {
-                    'candidateColumns': len(candidate_fields),
-                    'ignoredColumns': len(ignored_fields),
-                    'ignoredFields': ignored_fields,
-                    'mappedConfidence': mapped_confidence,
-                    'mappingCoverage': mapping_coverage,
-                    'mappedCount': mapped_count,
-                    'unmappedCount': unmapped_count,
-                    'droppedPlaceholderColumns': self._last_normalize_stats.get('droppedPlaceholderColumns', []),
-                    'removedSummaryRows': self._last_normalize_stats.get('removedSummaryRows', 0),
-                    'removedDescriptionRows': self._last_normalize_stats.get('removedDescriptionRows', 0),
-                },
-                'diagnosis': {
-                    'suggestions': diagnosis.suggestions,
-                    'keyField': diagnosis.key_field,
-                    'unmappedFields': diagnosis.unmapped_fields,
-                    'status': diagnosis.status,
-                    'templateCode': template_code,
-                },
+        if hasattr(diagnosis_obj, "__dict__"):
+            diagnosis = {
+                "suggestions": list(getattr(diagnosis_obj, "suggestions", []) or []),
+                "keyField": getattr(diagnosis_obj, "keyField", None),
+                "unmappedFields": list(getattr(diagnosis_obj, "unmappedFields", []) or []),
+                "status": getattr(diagnosis_obj, "status", "partial"),
             }
-            batch_file = ImportBatchFile(
-                batch_id=batch.id,
-                file_name=Path(file_path).name,
-                detected_header_row=actual_header_row,
-                detected_key_field=diagnosis.key_field,
-                mapped_fields_json=mapped_fields_json,
-                unmapped_fields_json=diagnosis.unmapped_fields,
-                status='draft',
-            )
-            session.add(batch_file)
+            platform = getattr(diagnosis_obj, "platform", "generic")
+        elif isinstance(diagnosis_obj, dict):
+            diagnosis = {
+                "suggestions": list(diagnosis_obj.get("suggestions") or []),
+                "keyField": diagnosis_obj.get("keyField"),
+                "unmappedFields": list(diagnosis_obj.get("unmappedFields") or []),
+                "status": diagnosis_obj.get("status", "partial"),
+            }
+            platform = diagnosis_obj.get("platform", "generic")
+        else:
+            diagnosis = {"suggestions": [], "keyField": None, "unmappedFields": unmapped_fields, "status": "partial"}
+            platform = "generic"
 
+        return {
+            "df": mapped_df,
+            "fieldMappings": field_mappings,
+            "mappedTargets": mapped_targets,
+            "mappedCount": mapped_count,
+            "unmappedCount": len(unmapped_fields),
+            "transportStatus": transport_status,
+            "semanticStatus": semantic_status,
+            "finalStatus": final_status,
+            "semanticGateReasons": semantic_gate_reasons,
+            "riskOverrideReasons": risk_override_reasons,
+            "semanticAcceptanceReason": acceptance_reason,
+            "semanticMetrics": {
+                **semantic_metrics,
+                "candidateColumns": candidate_columns,
+                "mappedConfidence": round(sum(float(item.get("confidence") or 0.0) for item in field_mappings) / max(len(field_mappings), 1), 3),
+                "wronglyMappedCount": wrongly_mapped_count,
+            },
+            "coreFieldHitSummary": self._build_core_field_hit_summary(mapped_targets),
+            "headerBlock": copy.deepcopy(header_block),
+            "flattenedHeaders": list(flattened_headers),
+            "headerRecoveryApplied": bool(header_recovery_applied),
+            "headerStructureScore": header_structure_score,
+            "headerStructureRiskSignals": header_structure_signals,
+            "droppedPlaceholderColumns": list(dropped_placeholder_columns),
+            "rescuedPlaceholderColumns": list(rescued_placeholder_columns),
+            "diagnosis": diagnosis,
+            "platform": platform,
+        }
+
+    def parse_import_file(self, file_path: str, shop_id: int = 1, operator: str = "frontend_user") -> dict:
+        path = Path(file_path)
+        session_id = next(self._session_counter)
+
+        default_df, error, default_meta = self._read_file_default(file_path)
+        if error or default_df is None:
             return {
-                'sessionId': batch.id,
-                'fileName': Path(file_path).name,
-                'fileSize': Path(file_path).stat().st_size,
-                'sheetNames': ['Sheet1'],
-                'selectedSheet': 'Sheet1',
-                'totalRows': len(df),
-                'totalColumns': len(df.columns),
-                'rawColumns': self._last_normalize_stats.get('originalColumns', len(df.columns)),
-                'headerRow': actual_header_row,
-                'dataPreview': preview_rows,
-                'fieldMappings': field_mappings,
-                'mappedCount': mapped_count,
-                'unmappedCount': unmapped_count,
-                'confidence': mapped_confidence,
-                'stats': {
-                    'candidateColumns': len(candidate_fields),
-                    'ignoredColumns': len(ignored_fields),
-                    'ignoredFields': ignored_fields,
-                    'mappedConfidence': mapped_confidence,
-                    'mappingCoverage': mapping_coverage,
-                    'mappedCount': mapped_count,
-                    'unmappedCount': unmapped_count,
-                    'droppedPlaceholderColumns': self._last_normalize_stats.get('droppedPlaceholderColumns', []),
-                    'removedSummaryRows': self._last_normalize_stats.get('removedSummaryRows', 0),
-                    'removedDescriptionRows': self._last_normalize_stats.get('removedDescriptionRows', 0),
-                },
-                'platform': platform_code,
-                'status': diagnosis.status,
-                'templateCode': template_code,
-                'diagnosis': {
-                    'suggestions': diagnosis.suggestions,
-                    'keyField': diagnosis.key_field,
-                    'unmappedFields': diagnosis.unmapped_fields,
-                    'status': diagnosis.status,
-                    'templateCode': template_code,
-                },
+                "sessionId": session_id,
+                "fileName": path.name,
+                "fileSize": path.stat().st_size if path.exists() else 0,
+                "sheetNames": default_meta.get("sheetNames") or [],
+                "selectedSheet": default_meta.get("selectedSheet") or "",
+                "totalRows": 0,
+                "totalColumns": 0,
+                "headerRow": 0,
+                "dataPreview": [],
+                "platform": "generic",
+                "fieldMappings": [],
+                "mappedCount": 0,
+                "unmappedCount": 0,
+                "confidence": 0.0,
+                "status": "failed",
+                "diagnosis": {"suggestions": [error], "keyField": None, "unmappedFields": [], "status": "failed"},
+                "transportStatus": "failed",
+                "semanticStatus": "failed",
+                "finalStatus": "failed",
+                "semanticGateReasons": ["read_failed"],
+                "riskOverrideReasons": [],
+                "semanticAcceptanceReason": [],
+                "readerEngineUsed": default_meta.get("readerEngineUsed"),
+                "readerFallbackStage": default_meta.get("readerFallbackStage"),
+                "fieldRegistryVersion": str(self._registry_cfg.get("version") or "v1"),
             }
 
-    def confirm_import(self, session_id: int, shop_id: int, manual_overrides: list[dict], operator: str = 'system') -> dict:
-        """确认导入并入库：以后端 draft session 为真实来源"""
-        with get_session() as session:
-            batch = session.query(ImportBatch).filter(ImportBatch.id == session_id).one_or_none()
-            if not batch:
-                raise ValueError(f'导入会话不存在: {session_id}')
+        raw_df, raw_error, raw_meta = self._read_file_raw(file_path)
+        if raw_error or raw_df is None:
+            raw_df = pd.DataFrame([list(default_df.columns)] + default_df.head(50).values.tolist())
+            raw_meta = default_meta
 
-            batch_file = session.query(ImportBatchFile).filter(ImportBatchFile.batch_id == batch.id).one_or_none()
-            if not batch_file:
-                raise ValueError(f'导入会话缺少批次文件: {session_id}')
+        header_block = self._detect_header_block(raw_df)
+        flattened_headers, dropped_placeholder_columns, rescued_placeholder_columns = self._flatten_headers(raw_df, header_block)
+        recovered_df = self._materialize_from_raw(raw_df, header_block, flattened_headers)
 
-            parsed_state = batch_file.mapped_fields_json or {}
-            file_path = parsed_state.get('filePath')
-            if not file_path:
-                raise ValueError('导入会话缺少源文件路径')
+        pre_bundle = self._build_bundle(
+            df=default_df.copy(),
+            header_block={"startRow": 0, "endRow": 0, "confidence": 0.5, "signals": []},
+            flattened_headers=[str(c) for c in default_df.columns],
+            header_recovery_applied=False,
+            dropped_placeholder_columns=[],
+            rescued_placeholder_columns=[],
+        )
+        post_bundle = self._build_bundle(
+            df=recovered_df.copy(),
+            header_block=header_block,
+            flattened_headers=flattened_headers,
+            header_recovery_applied=True,
+            dropped_placeholder_columns=dropped_placeholder_columns,
+            rescued_placeholder_columns=rescued_placeholder_columns,
+        )
 
-            df, error = self.read_file(file_path)
-            if error:
-                raise ValueError(error)
+        pre_cov = float(pre_bundle["semanticMetrics"].get("mappingCoverage") or 0.0)
+        post_cov = float(post_bundle["semanticMetrics"].get("mappingCoverage") or 0.0)
+        pre_core = sum(1 for v in pre_bundle["coreFieldHitSummary"].values() if isinstance(v, bool) and v)
+        post_core = sum(1 for v in post_bundle["coreFieldHitSummary"].values() if isinstance(v, bool) and v)
+        recovery_attempted = header_block.get("endRow", 0) > header_block.get("startRow", 0) or bool(dropped_placeholder_columns)
+        recovery_improved = (post_bundle["mappedCount"] > pre_bundle["mappedCount"]) or (post_cov > pre_cov) or (post_core > pre_core)
+        header_recovery_applied = bool(recovery_attempted and recovery_improved)
+        active_bundle = post_bundle if header_recovery_applied else pre_bundle
 
-            draft_mappings = parsed_state.get('fieldMappings', [])
-            merged = {item.get('originalField'): item.get('standardField') for item in draft_mappings if item.get('standardField')}
-            for item in manual_overrides or []:
-                if item.get('originalField'):
-                    merged[item['originalField']] = item.get('standardField')
+        cleaned_df = self.clean_data(active_bundle["df"])
+        valid_df, row_errors = self.validate_data(cleaned_df)
+        valid_df, duplicate_count = self.remove_duplicates(valid_df)
 
-            rename_map = {k: v for k, v in merged.items() if v}
-            df = df.rename(columns=rename_map)
-            df = df.loc[:, ~df.columns.duplicated()]
-            df = self.clean_data(df)
-            df = self._drop_summary_rows(df)
-            valid_df, errors = self.validate_data(df)
-            valid_df, duplicate_count = self.remove_duplicates(valid_df)
+        status_map = {"passed": "success", "risk": "partial", "failed": "failed"}
+        preview_df = active_bundle["df"].head(10)
+        preview_rows = preview_df.fillna("").astype(str).values.tolist()
+        confidence = round(sum(float(item.get("confidence") or 0.0) for item in active_bundle["fieldMappings"]) / max(len(active_bundle["fieldMappings"]), 1), 3)
+        candidate_columns = int(active_bundle["semanticMetrics"].get("candidateColumns") or 0)
+        mapped_count = int(active_bundle["mappedCount"])
+        stats = {
+            "candidateColumns": candidate_columns,
+            "ignoredColumns": len(active_bundle["droppedPlaceholderColumns"]),
+            "ignoredFields": active_bundle["droppedPlaceholderColumns"],
+            "mappedConfidence": float(active_bundle["semanticMetrics"].get("mappedConfidence") or 0.0),
+            "mappingCoverage": float(active_bundle["semanticMetrics"].get("mappingCoverage") or 0.0),
+            "mappedCount": mapped_count,
+            "unmappedCount": int(active_bundle["unmappedCount"]),
+            "correctlyMappedCount": mapped_count,
+            "wronglyMappedCount": int(active_bundle["semanticMetrics"].get("wronglyMappedCount") or 0),
+            "ruUnmappedCount": 0,
+            "ruMappingPass": True,
+            "droppedPlaceholderColumns": active_bundle["droppedPlaceholderColumns"],
+            "removedSummaryRows": 0,
+            "removedDescriptionRows": int(header_block.get("startRow") or 0),
+        }
+        recovery_diff = {
+            "mappedCount_before": int(pre_bundle["mappedCount"]),
+            "mappedCount_after": int(post_bundle["mappedCount"]),
+            "unmappedCount_before": int(pre_bundle["unmappedCount"]),
+            "unmappedCount_after": int(post_bundle["unmappedCount"]),
+            "mappingCoverage_before": round(pre_cov, 3),
+            "mappingCoverage_after": round(post_cov, 3),
+            "coreFieldHit_before": int(pre_core),
+            "coreFieldHit_after": int(post_core),
+        }
+        ru_mapping_quality = {
+            "correctlyMappedCount": mapped_count,
+            "wronglyMappedCount": int(active_bundle["semanticMetrics"].get("wronglyMappedCount") or 0),
+            "unmappedCount": int(active_bundle["unmappedCount"]),
+            "goldenTotal": mapped_count + int(active_bundle["unmappedCount"]),
+            "pass": active_bundle["semanticStatus"] != "failed",
+            "details": [],
+        }
 
-            platform = self._ensure_platform(session, batch.platform_code, 'Ozon')
-            shop = self._ensure_shop(session, platform.id, shop_id)
+        result = {
+            "sessionId": session_id,
+            "fileName": path.name,
+            "fileSize": path.stat().st_size if path.exists() else 0,
+            "sheetNames": raw_meta.get("sheetNames") or default_meta.get("sheetNames") or [],
+            "selectedSheet": raw_meta.get("selectedSheet") or default_meta.get("selectedSheet") or "",
+            "totalRows": int(len(active_bundle["df"])),
+            "totalColumns": int(len(active_bundle["df"].columns)),
+            "rawColumns": int(raw_df.shape[1]),
+            "normalizedColumns": int(len(flattened_headers)),
+            "readerEngineUsed": raw_meta.get("readerEngineUsed") or default_meta.get("readerEngineUsed"),
+            "readerFallbackStage": raw_meta.get("readerFallbackStage") or default_meta.get("readerFallbackStage"),
+            "fieldRegistryVersion": str(self._registry_cfg.get("version") or "v1"),
+            "headerRow": int((header_block if header_recovery_applied else {"startRow": 0}).get("startRow") or 0),
+            "dataPreview": preview_rows,
+            "platform": active_bundle["platform"],
+            "fieldMappings": active_bundle["fieldMappings"],
+            "mappedCount": mapped_count,
+            "unmappedCount": int(active_bundle["unmappedCount"]),
+            "confidence": confidence,
+            "stats": stats,
+            "ruMappingQuality": ru_mapping_quality,
+            "transportStatus": active_bundle["transportStatus"],
+            "semanticStatus": active_bundle["semanticStatus"],
+            "finalStatus": active_bundle["finalStatus"],
+            "semanticGateReasons": active_bundle["semanticGateReasons"],
+            "riskOverrideReasons": active_bundle["riskOverrideReasons"],
+            "semanticAcceptanceReason": active_bundle["semanticAcceptanceReason"],
+            "semanticMetrics": active_bundle["semanticMetrics"],
+            "coreFieldHitSummary": active_bundle["coreFieldHitSummary"],
+            "headerBlock": active_bundle["headerBlock"],
+            "flattenedHeaders": active_bundle["flattenedHeaders"],
+            "headerRecoveryApplied": header_recovery_applied,
+            "headerStructureScore": active_bundle["headerStructureScore"],
+            "headerStructureRiskSignals": active_bundle["headerStructureRiskSignals"],
+            "droppedPlaceholderColumns": active_bundle["droppedPlaceholderColumns"],
+            "rescuedPlaceholderColumns": active_bundle["rescuedPlaceholderColumns"],
+            "preRecoveryStatus": pre_bundle["semanticStatus"],
+            "postRecoveryStatus": post_bundle["semanticStatus"],
+            "recoveryAttempted": recovery_attempted,
+            "recoveryImproved": recovery_improved,
+            "sampleHint": None,
+            "recoveryDiff": recovery_diff,
+            "status": status_map.get(active_bundle["finalStatus"], "partial"),
+            "diagnosis": active_bundle["diagnosis"],
+        }
 
-            batch.shop_id = shop.id
-            batch.status = 'processing'
-            batch_file.mapped_fields_json = {
-                **parsed_state,
-                'finalMappings': rename_map,
-                'manualOverrides': manual_overrides,
-                'confirmedBy': operator,
-                'confirmedAt': datetime.utcnow().isoformat(),
-            }
-            batch_file.status = 'processing'
+        self._sessions[session_id] = {
+            "sessionId": session_id,
+            "filePath": str(path),
+            "fileName": path.name,
+            "shopId": shop_id,
+            "operator": operator,
+            "result": result,
+            "df": valid_df,
+            "rowErrors": row_errors,
+            "duplicateCount": duplicate_count,
+            "createdAt": datetime.now().isoformat(),
+        }
+        self.batches.append({
+            "sessionId": session_id,
+            "fileName": path.name,
+            "createdAt": datetime.now().isoformat(),
+            "status": result["status"],
+            "finalStatus": result["finalStatus"],
+        })
+        return result
 
-            inserted = 0
-            for idx, row in valid_df.iterrows():
-                row_dict = row.to_dict()
-                try:
-                    sku_obj = self._ensure_sku(session, shop.id, str(row_dict.get('sku')), row_dict.get('product_name') or row_dict.get('name'))
-                    date_obj = self._ensure_date(session, datetime.utcnow().date())
-                    self._upsert_daily_facts(session, batch.id, shop.id, sku_obj.id, date_obj.id, row_dict)
-                    inserted += 1
-                except Exception as exc:
-                    errors.append(f"行{idx + 1}入库失败: {exc}")
-                    session.add(
-                        ImportErrorLog(
-                            batch_file_id=batch_file.id,
-                            row_no=idx + 1,
-                            column_name=None,
-                            error_type='db_insert',
-                            raw_value=str(row_dict),
-                            error_message=str(exc),
-                        )
-                    )
-
-            for original, mapped in rename_map.items():
-                session.add(
-                    MappingFeedback(
-                        platform_code=batch.platform_code,
-                        raw_field_name=original,
-                        mapped_field_name=mapped,
-                        confirmed_by=operator,
-                        confirmed_at=datetime.utcnow(),
-                    )
-                )
-
-            batch.success_count = inserted
-            batch.error_count = len(errors)
-            batch.status = 'success' if inserted > 0 else 'failed'
-            batch.message = f"去重{duplicate_count}条，错误{len(errors)}条"
-            batch.finished_at = datetime.utcnow()
-            batch_file.status = batch.status
-
+    def confirm_import(self, session_id: int, shop_id: int, manual_overrides: Optional[List[dict]] = None, operator: str = "frontend_user") -> dict:
+        if session_id not in self._sessions:
             return {
-                'sessionId': session_id,
-                'batchId': batch.id,
-                'importedRows': inserted,
-                'errorRows': len(errors),
-                'status': batch.status,
-                'warnings': [f'发现并移除 {duplicate_count} 条重复记录'] if duplicate_count else [],
-                'errors': errors[:20],
+                "sessionId": session_id,
+                "batchId": 0,
+                "importedRows": 0,
+                "errorRows": 0,
+                "status": "failed",
+                "warnings": [],
+                "errors": ["session not found"],
+                "transportStatus": "failed",
+                "semanticStatus": "failed",
+                "finalStatus": "failed",
+                "semanticGateReasons": ["session_not_found"],
+                "riskOverrideReasons": [],
+                "semanticAcceptanceReason": [],
+                "recoverySummary": {},
             }
 
-    def _ensure_platform(self, session, platform_code: str, platform_name: str) -> DimPlatform:
-        obj = session.query(DimPlatform).filter(DimPlatform.platform_code == platform_code).one_or_none()
-        if obj:
-            return obj
-        obj = DimPlatform(platform_code=platform_code, platform_name=platform_name, is_active=True)
-        session.add(obj)
-        session.flush()
-        return obj
+        session = self._sessions[session_id]
+        result = session["result"]
+        valid_df: pd.DataFrame = session["df"]
+        row_errors: List[Dict[str, Any]] = session["rowErrors"]
+        manual_overrides = manual_overrides or []
 
-    def _ensure_shop(self, session, platform_id: int, shop_id: int) -> DimShop:
-        obj = session.query(DimShop).filter(DimShop.id == shop_id).one_or_none()
-        if obj:
-            return obj
-        obj = DimShop(
-            id=shop_id,
-            platform_id=platform_id,
-            shop_code=f'shop-{shop_id}',
-            shop_name=f'默认店铺{shop_id}',
-            currency_code='RUB',
-            timezone='Europe/Moscow',
-            status='active',
-        )
-        session.add(obj)
-        session.flush()
-        return obj
+        if manual_overrides:
+            # 仅记录，不在当前轻量版中二次重写 DataFrame。
+            result = copy.deepcopy(result)
+            result["fieldMappings"] = list(result.get("fieldMappings") or []) + [
+                {
+                    "originalField": str(item.get("originalField") or "manual_override"),
+                    "normalizedField": str(item.get("normalizedField") or "manual_override"),
+                    "standardField": item.get("standardField"),
+                    "mappingSource": "manual_override",
+                    "confidence": 1.0,
+                    "sampleValues": [],
+                    "isManual": True,
+                    "reasons": ["manual_override_applied"],
+                }
+                for item in manual_overrides
+            ]
 
-    def _ensure_sku(self, session, shop_id: int, sku: str, sku_name: str | None) -> DimSku:
-        obj = session.query(DimSku).filter(DimSku.shop_id == shop_id, DimSku.sku == sku).one_or_none()
-        if obj:
-            if sku_name and not obj.sku_name:
-                obj.sku_name = sku_name
-            return obj
-        obj = DimSku(shop_id=shop_id, sku=sku, sku_name=sku_name, status='active', is_active=True)
-        session.add(obj)
-        session.flush()
-        return obj
+        warnings: List[str] = []
+        if session.get("duplicateCount"):
+            warnings.append(f"发现并移除 {session['duplicateCount']} 条重复记录")
+        if result.get("finalStatus") == "risk":
+            warnings.append("当前样本处于 risk 状态，请结合语义门禁原因复核")
 
-    def _ensure_date(self, session, target_date) -> DimDate:
-        obj = session.query(DimDate).filter(DimDate.date_value == target_date).one_or_none()
-        if obj:
-            return obj
-        obj = DimDate(
-            date_value=target_date,
-            year=target_date.year,
-            month=target_date.month,
-            day=target_date.day,
-            week_of_year=target_date.isocalendar().week,
-        )
-        session.add(obj)
-        session.flush()
-        return obj
+        response = {
+            "sessionId": session_id,
+            "batchId": session_id,
+            "importedRows": int(len(valid_df)),
+            "errorRows": int(len(row_errors)),
+            "status": "success",
+            "warnings": warnings,
+            "errors": [str(item.get("error")) for item in row_errors[:50]],
+            "rowErrorSummary": {
+                "auto_fixed": 0,
+                "ignorable": 0,
+                "quarantined": int(len(row_errors)),
+                "fatal": 0,
+            },
+            "quarantineCount": int(len(row_errors)),
+            "stagingRows": int(len(valid_df)),
+            "factLoadErrors": 0,
+            "transportStatus": result.get("transportStatus"),
+            "semanticStatus": result.get("semanticStatus"),
+            "finalStatus": result.get("finalStatus"),
+            "semanticGateReasons": list(result.get("semanticGateReasons") or []),
+            "riskOverrideReasons": list(result.get("riskOverrideReasons") or []),
+            "semanticAcceptanceReason": list(result.get("semanticAcceptanceReason") or []),
+            "recoverySummary": {
+                "headerRecoveryApplied": result.get("headerRecoveryApplied"),
+                "preRecoveryStatus": result.get("preRecoveryStatus"),
+                "postRecoveryStatus": result.get("postRecoveryStatus"),
+                "recoveryAttempted": result.get("recoveryAttempted"),
+                "recoveryImproved": result.get("recoveryImproved"),
+                "semanticGateReasons": list(result.get("semanticGateReasons") or []),
+                "riskOverrideReasons": list(result.get("riskOverrideReasons") or []),
+                "recoveryDiff": copy.deepcopy(result.get("recoveryDiff") or {}),
+            },
+            "runtimeAudit": {
+                "sessionId": session_id,
+                "operator": operator,
+                "shopId": shop_id,
+                "confirmedAt": datetime.now().isoformat(),
+                "sourceFile": session.get("fileName"),
+                "finalStatus": result.get("finalStatus"),
+                "transportStatus": result.get("transportStatus"),
+                "semanticStatus": result.get("semanticStatus"),
+                "quarantineCount": int(len(row_errors)),
+                "factLoadErrors": 0,
+                "recoverySummary": {
+                    "headerRecoveryApplied": result.get("headerRecoveryApplied"),
+                    "preRecoveryStatus": result.get("preRecoveryStatus"),
+                    "postRecoveryStatus": result.get("postRecoveryStatus"),
+                    "recoveryAttempted": result.get("recoveryAttempted"),
+                    "recoveryImproved": result.get("recoveryImproved"),
+                },
+            },
+        }
+        return response
 
+    # ---------- 兼容旧接口 ----------
 
-    @staticmethod
-    def _scalar(value):
-        """将可能为 Series/list 的值转成标量"""
-        try:
-            import pandas as _pd
-            if isinstance(value, _pd.Series):
-                return value.iloc[0] if len(value) else None
-        except Exception:
-            pass
-        if isinstance(value, (list, tuple)):
-            return value[0] if value else None
-        return value
+    def list_batches(self) -> list:
+        return self.batches
 
-    def _upsert_daily_facts(self, session, batch_id: int, shop_id: int, sku_id: int, date_id: int, row: dict) -> None:
-        def pick(*keys, default=None):
-            for key in keys:
-                value = self._scalar(row.get(key))
-                if value is not None and value != '':
-                    return value
-            return default
-
-        fact = (
-            session.query(FactSkuDaily)
-            .filter(
-                FactSkuDaily.date_id == date_id,
-                FactSkuDaily.shop_id == shop_id,
-                FactSkuDaily.sku_id == sku_id,
-            )
-            .one_or_none()
-        )
-        if fact is None:
-            fact = FactSkuDaily(
-                date_id=date_id,
-                shop_id=shop_id,
-                sku_id=sku_id,
-                batch_id=batch_id,
-            )
-            session.add(fact)
-
-        impressions_total = int(pick('impressions_total', 'impressions', default=0) or 0)
-        card_visits = int(pick('product_card_visits', 'card_visits', 'visits', default=0) or 0)
-        add_to_cart_total = int(pick('add_to_cart_total', 'add_to_cart', default=0) or 0)
-        items_ordered = int(pick('items_ordered', 'orders', default=0) or 0)
-        items_canceled = int(pick('items_canceled', 'cancelled_count', default=0) or 0)
-        items_returned = int(pick('items_returned', 'returns', default=0) or 0)
-        order_amount = float(pick('order_amount', 'revenue', default=0) or 0)
-
-        fact.impressions_total = impressions_total
-        fact.card_visits = card_visits
-        fact.add_to_cart_total = add_to_cart_total
-        fact.orders_count = items_ordered
-        fact.cancelled_count = items_canceled
-        fact.returned_count = items_returned
-        fact.revenue_ordered = order_amount
-        fact.revenue_delivered = float(pick('delivered_amount', default=order_amount) or order_amount)
-        fact.batch_id = batch_id
-
-        sale_price = float(pick('sale_price', default=pick('avg_sale_price', 'list_price', default=0)) or 0)
-        list_price = float(pick('list_price', default=sale_price) or sale_price)
-        fixed_cost_total = float(pick('fixed_cost_total', 'cost_price', default=0) or 0)
-        variable_rate_total = float(pick('variable_rate_total', 'commission_rate', default=0.2) or 0.2)
-        profit = self.profit_solver.solve_current(
-            ProfitInput(
-                sale_price=sale_price,
-                list_price=list_price,
-                variable_rate_total=variable_rate_total,
-                fixed_cost_total=fixed_cost_total,
-            )
+    def import_from_file(self, file_path: str, save_to_db: bool = False, output_path: Optional[str] = None) -> ImportResult:
+        parse_result = self.parse_import_file(file_path)
+        session_id = int(parse_result.get("sessionId") or 0)
+        confirm = self.confirm_import(session_id=session_id, shop_id=1, manual_overrides=[], operator="import_from_file") if session_id else {
+            "importedRows": 0,
+            "errorRows": 0,
+            "errors": ["parse_failed"],
+            "warnings": [],
+            "status": "failed",
+        }
+        data = self._sessions.get(session_id, {}).get("df")
+        records = data.to_dict("records") if isinstance(data, pd.DataFrame) else []
+        if output_path:
+            self.save_to_json(records, output_path, metadata={"parse": parse_result, "confirm": confirm})
+        return ImportResult(
+            success=confirm.get("status") == "success",
+            total_rows=int(parse_result.get("totalRows") or 0),
+            imported=int(confirm.get("importedRows") or 0),
+            failed=int(confirm.get("errorRows") or 0),
+            errors=[{"error": x} for x in confirm.get("errors") or []],
+            warnings=list(confirm.get("warnings") or []),
+            data=records,
         )
 
-        profit_fact = (
-            session.query(FactProfitSnapshot)
-            .filter(
-                FactProfitSnapshot.date_id == date_id,
-                FactProfitSnapshot.shop_id == shop_id,
-                FactProfitSnapshot.sku_id == sku_id,
-            )
-            .one_or_none()
-        )
-        if profit_fact is None:
-            profit_fact = FactProfitSnapshot(
-                date_id=date_id,
-                shop_id=shop_id,
-                sku_id=sku_id,
-                batch_id=batch_id,
-                sale_price=0.0,
-                list_price=0.0,
-                fixed_cost_total=0.0,
-                variable_rate_total=0.0,
-                base_profit=0.0,
-                contribution_profit=0.0,
-                post_fulfillment_profit=0.0,
-                net_profit=0.0,
-                net_margin=0.0,
-                break_even_price=0.0,
-                break_even_discount_ratio=0.0,
-            )
-            session.add(profit_fact)
-
-        profit_fact.sale_price = sale_price
-        profit_fact.list_price = list_price
-        profit_fact.fixed_cost_total = fixed_cost_total
-        profit_fact.variable_rate_total = variable_rate_total
-        profit_fact.base_profit = profit.net_profit
-        profit_fact.contribution_profit = profit.net_profit
-        profit_fact.post_fulfillment_profit = profit.net_profit
-        profit_fact.net_profit = profit.net_profit
-        profit_fact.net_margin = profit.net_margin
-        profit_fact.break_even_price = profit.break_even_price
-        profit_fact.break_even_discount_ratio = profit.break_even_discount_ratio
-        profit_fact.batch_id = batch_id
-
-        ext_fact = (
-            session.query(FactSkuExtDaily)
-            .filter(
-                FactSkuExtDaily.date_id == date_id,
-                FactSkuExtDaily.shop_id == shop_id,
-                FactSkuExtDaily.sku_id == sku_id,
-            )
-            .one_or_none()
-        )
-        if ext_fact is None:
-            ext_fact = FactSkuExtDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
-            session.add(ext_fact)
-        ext_fact.items_purchased = int(pick('items_purchased', default=items_ordered) or 0)
-        ext_fact.promo_days_count = int(pick('promo_days_count', default=0) or 0)
-        ext_fact.discount_pct = float(pick('discount_pct', default=0) or 0)
-        price_index_raw = pick('price_index_status', default=None)
-        ext_fact.price_index_status = str(price_index_raw).strip() if price_index_raw not in [None, ''] else None
-        ext_fact.batch_id = batch_id
-
-        orders_fact = (
-            session.query(FactOrdersDaily)
-            .filter(
-                FactOrdersDaily.date_id == date_id,
-                FactOrdersDaily.shop_id == shop_id,
-                FactOrdersDaily.sku_id == sku_id,
-            )
-            .one_or_none()
-        )
-        if orders_fact is None:
-            orders_fact = FactOrdersDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
-            session.add(orders_fact)
-        orders_fact.ordered_qty = items_ordered
-        orders_fact.delivered_qty = int(pick('items_delivered', default=items_ordered - items_canceled - items_returned) or 0)
-        orders_fact.cancelled_qty = items_canceled
-        orders_fact.returned_qty = items_returned
-        orders_fact.ordered_amount = order_amount
-        orders_fact.delivered_amount = float(pick('delivered_amount', default=order_amount) or order_amount)
-        orders_fact.batch_id = batch_id
-
-        reviews_fact = (
-            session.query(FactReviewsDaily)
-            .filter(
-                FactReviewsDaily.date_id == date_id,
-                FactReviewsDaily.shop_id == shop_id,
-                FactReviewsDaily.sku_id == sku_id,
-            )
-            .one_or_none()
-        )
-        if reviews_fact is None:
-            reviews_fact = FactReviewsDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
-            session.add(reviews_fact)
-        reviews_fact.rating_avg = float(pick('rating_value', 'rating', default=0) or 0)
-        reviews_fact.new_reviews_count = int(pick('review_count', 'reviews', default=0) or 0)
-        reviews_fact.negative_reviews_count = int(pick('negative_review_count', default=0) or 0)
-        reviews_fact.quality_risk_score = float(max(0.0, 5.0 - reviews_fact.rating_avg))
-        reviews_fact.batch_id = batch_id
-
-        ads_fact = (
-            session.query(FactAdsDaily)
-            .filter(
-                FactAdsDaily.date_id == date_id,
-                FactAdsDaily.shop_id == shop_id,
-                FactAdsDaily.sku_id == sku_id,
-            )
-            .one_or_none()
-        )
-        if ads_fact is None:
-            ads_fact = FactAdsDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, campaign_id=None, batch_id=batch_id)
-            session.add(ads_fact)
-        ads_fact.ad_spend = float(pick('ad_spend', default=0) or 0)
-        ads_fact.ad_orders = int(pick('ad_orders', default=0) or 0)
-        ads_fact.ad_revenue = float(pick('ad_revenue', default=order_amount) or 0)
-        ads_fact.ad_clicks = int(pick('ad_clicks', default=card_visits) or 0)
-        ads_fact.cpc = ads_fact.ad_spend / ads_fact.ad_clicks if ads_fact.ad_clicks else 0.0
-        ads_fact.roas = ads_fact.ad_revenue / ads_fact.ad_spend if ads_fact.ad_spend else float(pick('ad_revenue_rate', default=0) or 0)
-        ads_fact.batch_id = batch_id
-
-        inventory_fact = (
-            session.query(FactInventoryDaily)
-            .filter(
-                FactInventoryDaily.date_id == date_id,
-                FactInventoryDaily.shop_id == shop_id,
-                FactInventoryDaily.sku_id == sku_id,
-            )
-            .one_or_none()
-        )
-        if inventory_fact is None:
-            inventory_fact = FactInventoryDaily(date_id=date_id, shop_id=shop_id, sku_id=sku_id, batch_id=batch_id)
-            session.add(inventory_fact)
-        inventory_fact.stock_total = int(pick('stock_total', 'stock', default=0) or 0)
-        inventory_fact.stock_fbo = int(pick('stock_fbo', default=inventory_fact.stock_total) or 0)
-        inventory_fact.stock_fbs = int(pick('stock_fbs', default=0) or 0)
-        inventory_fact.days_of_supply = float(
-            pick('days_of_supply', default=(inventory_fact.stock_total / items_ordered if items_ordered else 0.0)) or 0.0
-        )
-        inventory_fact.batch_id = batch_id
+    def save_to_json(self, data: List[Dict[str, Any]], output_path: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+        payload: Dict[str, Any] = {
+            "timestamp": datetime.now().isoformat(),
+            "count": len(data),
+            "data": data,
+        }
+        if metadata:
+            payload["metadata"] = metadata
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)

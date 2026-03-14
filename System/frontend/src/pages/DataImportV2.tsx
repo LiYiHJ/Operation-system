@@ -1,12 +1,12 @@
-import { Upload, Button, Card, Steps, Table, Tag, Alert, Progress, Descriptions, Divider, message, Select, Space, Tabs, Tooltip, Badge, Row, Col, Statistic } from 'antd'
+import { Upload, Button, Card, Steps, Table, Tag, Alert, Progress, Descriptions, Divider, message, Select, Space, Tabs, Tooltip, Badge, Row, Col, Statistic, Modal } from 'antd'
 import {
   UploadOutlined, FileExcelOutlined, CheckCircleOutlined, WarningOutlined,
-  LoadingOutlined, SaveOutlined, EyeOutlined, DatabaseOutlined
+  LoadingOutlined, SaveOutlined, EyeOutlined, DatabaseOutlined, ExclamationCircleOutlined
 } from '@ant-design/icons'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { importApi } from '../services/api'
-import type { ImportResult, FieldMapping, ConfirmImportResponse } from '../types'
+import type { ImportResult, FieldMapping, ConfirmImportResponse, FieldRegistryField } from '../types'
 
 const isMappedField = (m: Pick<FieldMapping, 'standardField'>) => !!m.standardField && m.standardField !== 'unmapped'
 const isIgnoredField = (m: FieldMapping) => !!m.reasons?.includes('dynamic_column_ignored')
@@ -90,6 +90,37 @@ export default function DataImportV2() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [importing, setImporting] = useState(false)
   const [savedTemplates, setSavedTemplates] = useState<any[]>([])
+  const [standardFieldRegistry, setStandardFieldRegistry] = useState(STANDARD_FIELDS)
+
+  const semanticRisk = importResult?.finalStatus === 'risk'
+
+  const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
+    if (status === 'passed') return <Tag color="green">passed</Tag>
+    if (status === 'risk') return <Tag color="orange">risk</Tag>
+    if (status === 'failed') return <Tag color="red">failed</Tag>
+    return <Tag color="default">n/a</Tag>
+  }
+
+  useEffect(() => {
+    importApi.getFieldRegistry()
+      .then((registry) => {
+        const next: Record<string, { name: string; category: string; required: boolean; description?: string }> = {}
+        ;(registry.fields || []).forEach((f: FieldRegistryField) => {
+          next[f.canonical] = {
+            name: f.displayLabel || f.canonical,
+            category: f.type || '通用',
+            required: f.canonical === 'sku',
+            description: f.factTarget,
+          }
+        })
+        if (Object.keys(next).length > 0) {
+          setStandardFieldRegistry(next as typeof STANDARD_FIELDS)
+        }
+      })
+      .catch(() => {
+        // keep local fallback
+      })
+  }, [])
 
   const buildDisplayStats = (result: ImportResult) => {
     const ignoredFields = new Set(result.stats?.ignoredFields || [])
@@ -142,7 +173,11 @@ export default function DataImportV2() {
       const result = await importApi.uploadFile(selectedFile, 1)
       setImportResult(result)
       setCurrentStep(2)
-      message.success('文件解析成功！')
+      if (result.finalStatus === 'risk') {
+        message.warning('文件解析完成，但存在语义风险，请先检查门禁状态再确认导入。')
+      } else {
+        message.success('文件解析成功！')
+      }
     } catch (error: any) {
       message.error(`解析失败: ${error.message}`)
       setCurrentStep(0)
@@ -233,6 +268,25 @@ export default function DataImportV2() {
   const confirmImport = async () => {
     if (!importResult) return
 
+    // Soft gate 策略：finalStatus=risk 时允许继续，但必须二次确认并显示风险原因。
+    // 后续建议：在生产环境可按租户/开关升级为 hard gate（risk 直接禁止 confirm）。
+    if (importResult.finalStatus === 'risk') {
+      const reasons = (importResult.semanticGateReasons || importResult.semanticAcceptanceReason || []).join('、') || 'semantic_gate_not_met'
+      const proceed = await new Promise<boolean>((resolve) => {
+        Modal.confirm({
+          title: '存在语义风险，确认继续导入？',
+          icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
+          content: `finalStatus=risk，原因：${reasons}` ,
+          okText: '仍要继续导入',
+          cancelText: '返回检查',
+          okButtonProps: { danger: true },
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        })
+      })
+      if (!proceed) return
+    }
+
     setImporting(true)
 
     try {
@@ -278,7 +332,7 @@ export default function DataImportV2() {
         message="智能数据导入系统"
         description={
           <div>
-            <p>✅ 支持 Excel (.xlsx, .xls)、CSV、JSON 格式</p>
+            <p>✅ 支持导入多格式；当前已完成实证：xlsx / csv</p>
             <p>✅ 自动识别 Ozon/Wildberries/AliExpress/Amazon 等平台</p>
             <p>✅ 智能字段映射（支持俄语/中文/英语）</p>
             <p>✅ 手动调整映射（针对特殊格式）</p>
@@ -318,7 +372,7 @@ export default function DataImportV2() {
         </p>
         <p className="ant-upload-text">点击或拖拽文件到此区域</p>
         <p className="ant-upload-hint">
-          支持 Excel (.xlsx, .xls)、CSV、JSON，单个文件不超过 50MB
+          支持导入多格式（已完成实证：xlsx/csv），单个文件不超过 50MB
         </p>
       </Upload.Dragger>
 
@@ -383,7 +437,7 @@ export default function DataImportV2() {
         key: 'standardField',
         width: 200,
         render: (field: string, _: any, index: number) => {
-          const standardField = STANDARD_FIELDS[field as keyof typeof STANDARD_FIELDS]
+          const standardField = standardFieldRegistry[field as keyof typeof standardFieldRegistry]
 
           return (
             <Select
@@ -399,7 +453,7 @@ export default function DataImportV2() {
                 <WarningOutlined style={{ color: '#faad14' }} /> 不映射
               </Select.Option>
 
-              {Object.entries(STANDARD_FIELDS).map(([key, config]) => (
+              {Object.entries(standardFieldRegistry).map(([key, config]) => (
                 <Select.Option
                   key={key}
                   value={key}
@@ -504,6 +558,91 @@ export default function DataImportV2() {
           description={`文件字段 ${stats.rawColumns}；候选字段 ${stats.candidateColumns}（用于映射统计）；已映射 ${stats.mappedCount}；未映射 ${stats.unmappedCount}；忽略动态列 ${stats.ignoredColumns}；映射置信度 ${(stats.mappedConfidence * 100).toFixed(1)}%。`}
         />
 
+        <Card style={{ marginBottom: '16px' }}>
+          <Descriptions bordered column={3} size="small">
+            <Descriptions.Item label="传输状态">{renderGateTag(importResult.transportStatus)}</Descriptions.Item>
+            <Descriptions.Item label="语义状态">{renderGateTag(importResult.semanticStatus)}</Descriptions.Item>
+            <Descriptions.Item label="最终状态">{renderGateTag(importResult.finalStatus)}</Descriptions.Item>
+          </Descriptions>
+          {semanticRisk && (
+            <Alert
+              type="warning"
+              showIcon
+              style={{ marginTop: '12px' }}
+              message="存在语义风险"
+              description={`该样本链路可达，但语义门禁未全部通过：${(importResult.semanticGateReasons || []).join('、') || 'semantic_gate_not_met'}`}
+            />
+          )}
+          {importResult.recoveryAttempted && (
+            <Alert
+              type={importResult.recoveryImproved ? 'success' : 'warning'}
+              showIcon
+              style={{ marginTop: '12px' }}
+              message={importResult.recoveryImproved ? '已执行表头恢复，指标已改善' : '已执行表头恢复，但仍存在风险'}
+              description={
+                importResult.recoveryDiff
+                  ? `mapped ${importResult.recoveryDiff.mappedCount_before}→${importResult.recoveryDiff.mappedCount_after}；unmapped ${importResult.recoveryDiff.unmappedCount_before}→${importResult.recoveryDiff.unmappedCount_after}；coverage ${(importResult.recoveryDiff.mappingCoverage_before * 100).toFixed(1)}%→${(importResult.recoveryDiff.mappingCoverage_after * 100).toFixed(1)}%。`
+                  : '本次恢复未生成可比较指标。'
+              }
+            />
+          )}
+        </Card>
+
+        {(importResult.headerBlock || importResult.headerStructureScore !== undefined) && (
+          <Card style={{ marginBottom: '16px' }} title="表头结构与恢复信息">
+            <Descriptions bordered column={3} size="small">
+              <Descriptions.Item label="headerBlock">
+                {importResult.headerBlock ? `${importResult.headerBlock.startRow + 1} - ${importResult.headerBlock.endRow + 1}` : 'n/a'}
+              </Descriptions.Item>
+              <Descriptions.Item label="headerBlock置信度">
+                {importResult.headerBlock ? `${((importResult.headerBlock.confidence || 0) * 100).toFixed(1)}%` : 'n/a'}
+              </Descriptions.Item>
+              <Descriptions.Item label="结构评分">
+                {importResult.headerStructureScore !== undefined ? `${(importResult.headerStructureScore * 100).toFixed(1)}%` : 'n/a'}
+              </Descriptions.Item>
+              <Descriptions.Item label="是否执行恢复">
+                {importResult.recoveryAttempted ? <Tag color="blue">是</Tag> : <Tag>否</Tag>}
+              </Descriptions.Item>
+              <Descriptions.Item label="是否采用恢复结果">
+                {importResult.headerRecoveryApplied ? <Tag color="green">是</Tag> : <Tag color="default">否</Tag>}
+              </Descriptions.Item>
+              <Descriptions.Item label="恢复后状态">
+                {renderGateTag(importResult.postRecoveryStatus || importResult.semanticStatus)}
+              </Descriptions.Item>
+              <Descriptions.Item label="是否改善">
+                {importResult.recoveryImproved ? <Tag color="green">improved</Tag> : <Tag color="orange">not_improved</Tag>}
+              </Descriptions.Item>
+            </Descriptions>
+            {!!importResult.headerStructureRiskSignals?.length && (
+              <Alert
+                style={{ marginTop: 12 }}
+                type="info"
+                showIcon
+                message="结构风险信号"
+                description={(importResult.headerStructureRiskSignals || []).join('、')}
+              />
+            )}
+            {!!importResult.semanticGateReasons?.length && (
+              <Alert
+                style={{ marginTop: 12 }}
+                type="info"
+                showIcon
+                message="语义门禁原因"
+                description={importResult.semanticGateReasons.join('、')}
+              />
+            )}
+            {!!importResult.riskOverrideReasons?.length && (
+              <Alert
+                style={{ marginTop: 12 }}
+                type="warning"
+                showIcon
+                message="风险保留原因"
+                description={importResult.riskOverrideReasons.join('、')}
+              />
+            )}
+          </Card>
+        )}
+
         {/* 文件信息 */}
         <Card style={{ marginBottom: '24px' }}>
           <Descriptions bordered column={4}>
@@ -574,14 +713,15 @@ export default function DataImportV2() {
             重新上传
           </Button>
           <Button
-            type="primary"
+            type={semanticRisk ? 'default' : 'primary'}
+            danger={semanticRisk}
             size="large"
             icon={<CheckCircleOutlined />}
             onClick={confirmImport}
             loading={importing}
             disabled={stats.mappedCount === 0}
           >
-            确认导入 {stats.mappedCount} 个字段
+            {semanticRisk ? '存在语义风险，继续导入（需确认）' : `确认导入 ${stats.mappedCount} 个字段`}
           </Button>
         </Space>
       </div>
@@ -622,7 +762,7 @@ export default function DataImportV2() {
 
       <Card>
         <Steps current={currentStep} style={{ marginBottom: '32px' }}>
-          <Steps.Step title="上传文件" description="选择 Excel/CSV/JSON" />
+          <Steps.Step title="上传文件" description="选择文件（xlsx/csv 已实证）" />
           <Steps.Step title="智能解析" description="识别格式和表头" icon={importing && currentStep === 1 ? <LoadingOutlined /> : undefined} />
           <Steps.Step title="字段映射" description="调整映射关系" />
           <Steps.Step title="完成" description="数据已导入" />
@@ -638,9 +778,9 @@ export default function DataImportV2() {
         <Tabs>
           <Tabs.TabPane tab="支持的格式" key="formats">
             <ul>
-              <li>✅ <strong>Excel</strong>: .xlsx, .xls（支持多个 Sheet）</li>
-              <li>✅ <strong>CSV</strong>: UTF-8, GBK 编码（自动检测）</li>
-              <li>✅ <strong>JSON</strong>: 数组格式或对象格式</li>
+              <li>✅ <strong>Excel</strong>: 支持导入 .xlsx/.xls（当前已完成实证：.xlsx）</li>
+              <li>✅ <strong>CSV</strong>: UTF-8, GBK 编码（当前已完成实证）</li>
+              <li>⚠️ <strong>JSON</strong>: 能力存在，待真实样本实证</li>
               <li>✅ <strong>特殊格式</strong>: 支持非顶格表头、合并单元格（自动识别）</li>
             </ul>
           </Tabs.TabPane>
@@ -666,21 +806,3 @@ export default function DataImportV2() {
           <Tabs.TabPane tab="常见问题" key="faq">
             <ul>
               <li><strong>Q: 文件表头不在第一行怎么办？</strong>
-                <br />A: 系统会自动搜索前 20 行，识别包含关键词的行作为表头
-              </li>
-              <li><strong>Q: 字段名是中英混杂怎么办？</strong>
-                <br />A: 系统支持多语言关键词匹配，会尝试识别所有可能的标准字段
-              </li>
-              <li><strong>Q: 字段映射不准确怎么办？</strong>
-                <br />A: 点击"映射到"列手动调整，并保存为模板供下次使用
-              </li>
-              <li><strong>Q: 可以导入多个文件吗？</strong>
-                <br />A: 目前单次只能导入一个文件，但可以连续导入多次
-              </li>
-            </ul>
-          </Tabs.TabPane>
-        </Tabs>
-      </Card>
-    </div>
-  )
-}
