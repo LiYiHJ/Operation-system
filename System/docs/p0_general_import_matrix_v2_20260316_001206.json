@@ -1,0 +1,152 @@
+[
+  {
+    "sample": "ru_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\analytics_report_2026-03-12_23_49.xlsx",
+    "uploadProbe": {
+      "processReturnCode": 0,
+      "stderr": "",
+      "httpStatusLine": "HTTP/1.1 500 INTERNAL SERVER ERROR",
+      "headers": [
+        "Server: Werkzeug/3.1.6 Python/3.12.4",
+        "Date: Sun, 15 Mar 2026 16:12:09 GMT",
+        "Content-Type: application/json",
+        "Content-Length: 44",
+        "Access-Control-Allow-Origin: http://127.0.0.1:5173",
+        "Vary: Origin",
+        "Connection: close"
+      ],
+      "rawBody": "{\n  \"error\": \"name 'self' is not defined\"\n}",
+      "json": {
+        "error": "name 'self' is not defined"
+      },
+      "jsonError": null
+    },
+    "uploadSummary": {
+      "sessionId": null,
+      "transportStatus": null,
+      "semanticStatus": null,
+      "finalStatus": null,
+      "semanticGateReasons": null,
+      "riskOverrideReasons": null,
+      "semanticAcceptanceReason": null,
+      "mappedCount": null,
+      "unmappedCount": null,
+      "mappingCoverage": null,
+      "headerStructureScore": null,
+      "headerStructureRiskSignals": null,
+      "preRecoveryStatus": null,
+      "postRecoveryStatus": null,
+      "recoveryAttempted": null,
+      "headerRecoveryApplied": null,
+      "recoveryImproved": null,
+      "recoveryDiff": null,
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "entityKeyAudit": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirmProbe": null,
+    "confirmSummary": null
+  },
+  {
+    "sample": "cn_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\销售数据分析.xlsx",
+    "uploadProbe": {
+      "processReturnCode": 0,
+      "stderr": "",
+      "httpStatusLine": "HTTP/1.1 500 INTERNAL SERVER ERROR",
+      "headers": [
+        "Server: Werkzeug/3.1.6 Python/3.12.4",
+        "Date: Sun, 15 Mar 2026 16:12:10 GMT",
+        "Content-Type: application/json",
+        "Content-Length: 44",
+        "Access-Control-Allow-Origin: http://127.0.0.1:5173",
+        "Vary: Origin",
+        "Connection: close"
+      ],
+      "rawBody": "{\n  \"error\": \"name 'self' is not defined\"\n}",
+      "json": {
+        "error": "name 'self' is not defined"
+      },
+      "jsonError": null
+    },
+    "uploadSummary": {
+      "sessionId": null,
+      "transportStatus": null,
+      "semanticStatus": null,
+      "finalStatus": null,
+      "semanticGateReasons": null,
+      "riskOverrideReasons": null,
+      "semanticAcceptanceReason": null,
+      "mappedCount": null,
+      "unmappedCount": null,
+      "mappingCoverage": null,
+      "headerStructureScore": null,
+      "headerStructureRiskSignals": null,
+      "preRecoveryStatus": null,
+      "postRecoveryStatus": null,
+      "recoveryAttempted": null,
+      "headerRecoveryApplied": null,
+      "recoveryImproved": null,
+      "recoveryDiff": null,
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "entityKeyAudit": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirmProbe": null,
+    "confirmSummary": null
+  },
+  {
+    "sample": "ru_bad_header_xlsx",
+    "path": "C:\\Operation-system\\System\\sample_data\\ozon_bad_header_or_missing_sku.xlsx",
+    "uploadProbe": {
+      "processReturnCode": 0,
+      "stderr": "",
+      "httpStatusLine": "HTTP/1.1 500 INTERNAL SERVER ERROR",
+      "headers": [
+        "Server: Werkzeug/3.1.6 Python/3.12.4",
+        "Date: Sun, 15 Mar 2026 16:12:12 GMT",
+        "Content-Type: application/json",
+        "Content-Length: 44",
+        "Access-Control-Allow-Origin: http://127.0.0.1:5173",
+        "Vary: Origin",
+        "Connection: close"
+      ],
+      "rawBody": "{\n  \"error\": \"name 'self' is not defined\"\n}",
+      "json": {
+        "error": "name 'self' is not defined"
+      },
+      "jsonError": null
+    },
+    "uploadSummary": {
+      "sessionId": null,
+      "transportStatus": null,
+      "semanticStatus": null,
+      "finalStatus": null,
+      "semanticGateReasons": null,
+      "riskOverrideReasons": null,
+      "semanticAcceptanceReason": null,
+      "mappedCount": null,
+      "unmappedCount": null,
+      "mappingCoverage": null,
+      "headerStructureScore": null,
+      "headerStructureRiskSignals": null,
+      "preRecoveryStatus": null,
+      "postRecoveryStatus": null,
+      "recoveryAttempted": null,
+      "headerRecoveryApplied": null,
+      "recoveryImproved": null,
+      "recoveryDiff": null,
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "entityKeyAudit": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirmProbe": null,
+    "confirmSummary": null
+  }
+]

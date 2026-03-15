@@ -28,13 +28,6 @@ import xml.etree.ElementTree as ET
 
 import pandas as pd
 
-from ecom_v51.import_engine.canonical_registry import ENTITY_KEY_FIELD_CANDIDATES
-from ecom_v51.import_engine.value_semantic import (
-    extract_entity_key_token,
-    infer_entity_key_from_header,
-    score_series_as_entity_key,
-)
-
 try:
     from .models import ImportBatchDiagnosis  # type: ignore
 except Exception:
@@ -519,99 +512,6 @@ class ImportService:
             seen.add(col_name)
         return collapsed
 
-
-    def _entity_key_fields(self) -> List[str]:
-        return list(ENTITY_KEY_FIELD_CANDIDATES)
-
-    def _mapped_target_set(self, field_mappings: List[dict]) -> set[str]:
-        targets: set[str] = set()
-        for item in field_mappings or []:
-            target = item.get("standardField")
-            if target:
-                targets.add(str(target))
-        return targets
-
-    def _apply_entity_key_rescue(self, mapped_df: pd.DataFrame, field_mappings: List[dict]) -> Tuple[pd.DataFrame, List[dict], Dict[str, Any]]:
-        audit: Dict[str, Any] = {
-            "detected": False,
-            "field": None,
-            "sourceHeader": None,
-            "detectedBy": None,
-            "confidence": 0.0,
-            "sampleToken": None,
-            "candidateHeaders": [],
-        }
-
-        if mapped_df is None:
-            return mapped_df, field_mappings, audit
-
-        existing_targets = self._mapped_target_set(field_mappings)
-        existing_entity_keys = sorted(existing_targets & set(self._entity_key_fields()))
-        if existing_entity_keys:
-            audit.update({
-                "detected": True,
-                "field": existing_entity_keys[0],
-                "sourceHeader": existing_entity_keys[0],
-                "detectedBy": "header_alias",
-                "confidence": 1.0,
-                "sampleToken": None,
-                "candidateHeaders": existing_entity_keys,
-            })
-            return mapped_df, field_mappings, audit
-
-        best_index: Optional[int] = None
-        best_header: Optional[str] = None
-        best_score = 0.0
-        best_token: Optional[str] = None
-        candidate_headers: List[str] = []
-
-        for idx, item in enumerate(field_mappings or []):
-            if item.get("standardField"):
-                continue
-            header = str(item.get("originalField") or "")
-            if not header:
-                continue
-            candidate_headers.append(header)
-            if header not in mapped_df.columns:
-                continue
-            series = mapped_df.loc[:, header]
-            if isinstance(series, pd.DataFrame):
-                if series.empty:
-                    continue
-                series = series.bfill(axis=1).iloc[:, 0]
-            values = [self._safe_scalar(v) for v in series.head(50).tolist()]
-            score = score_series_as_entity_key(values, header=header)
-            if score > best_score:
-                best_index = idx
-                best_header = header
-                best_score = score
-                best_token = next((extract_entity_key_token(v) for v in values if extract_entity_key_token(v)), None)
-
-        audit["candidateHeaders"] = candidate_headers[:12]
-        if best_index is None or best_header is None or best_score < 0.62:
-            return mapped_df, field_mappings, audit
-
-        target_field = infer_entity_key_from_header(best_header) or "sku"
-        field_mappings[best_index]["standardField"] = target_field
-        field_mappings[best_index]["confidence"] = max(float(field_mappings[best_index].get("confidence") or 0.0), float(best_score))
-        field_mappings[best_index]["entityKeyRescued"] = True
-        field_mappings[best_index].setdefault("reasons", [])
-        if "value_entity_key_rescued" not in field_mappings[best_index]["reasons"]:
-            field_mappings[best_index]["reasons"].append("value_entity_key_rescued")
-
-        mapped_df = mapped_df.rename(columns={best_header: target_field})
-        mapped_df = self._collapse_duplicate_columns(mapped_df)
-
-        audit.update({
-            "detected": True,
-            "field": target_field,
-            "sourceHeader": best_header,
-            "detectedBy": "value_semantic",
-            "confidence": float(best_score),
-            "sampleToken": best_token,
-        })
-        return mapped_df, field_mappings, audit
-
     def _build_alias_lookup(self, fields: List[dict]) -> Dict[str, str]:
         lookup: Dict[str, str] = {}
         for field in fields:
@@ -1089,7 +989,6 @@ class ImportService:
             "price_index_status",
         ]
         optional_hits = [field for field in optional_pool if field in targets]
-        entity_key_hits = sorted(targets & set(self._entity_key_fields()))
         funnel_signal_fields = [
             field
             for field in [
@@ -1104,8 +1003,6 @@ class ImportService:
         ]
         return {
             "sku": "sku" in targets,
-            "entity_key": bool(entity_key_hits),
-            "entityKeyFields": entity_key_hits,
             "orders_or_order_amount": bool({"orders", "order_amount"} & targets),
             "impressions_total": "impressions_total" in targets,
             "impressions_total_or_search_catalog": bool({"impressions_total", "impressions_search_catalog"} & targets),
@@ -1118,7 +1015,7 @@ class ImportService:
             "funnelSignalCount": len(funnel_signal_fields),
             "funnelSignalFields": funnel_signal_fields,
             "criticalComboComplete": all([
-                bool(entity_key_hits),
+                "sku" in targets,
                 bool({"orders", "order_amount"} & targets),
                 bool({"impressions_total", "impressions_search_catalog"} & targets),
                 bool({"product_card_visits", "add_to_cart_total"} & targets),
@@ -1181,7 +1078,7 @@ class ImportService:
             return "failed", ["no_mapped_fields"], [], [], metrics
 
         if not core["sku"] and not clean_strong_bundle_without_sku:
-            reasons.append("missing_entity_key")
+            reasons.append("missing_sku")
         if not core["orders_or_order_amount"]:
             reasons.append("missing_order_signal")
         if coverage < 0.5:
@@ -1233,7 +1130,6 @@ class ImportService:
 
     def _build_bundle(self, df: pd.DataFrame, header_block: dict, flattened_headers: List[str], header_recovery_applied: bool, dropped_placeholder_columns: List[str], rescued_placeholder_columns: List[str]) -> dict:
         mapped_df, field_mappings = self.map_columns(df)
-        mapped_df, field_mappings, entity_key_audit = self._apply_entity_key_rescue(mapped_df, field_mappings)
         semantic_field_mappings = [item for item in field_mappings if not item.get("excludeFromSemanticGate")]
         mapped_targets = [str(item["standardField"]) for item in semantic_field_mappings if item.get("standardField")]
         candidate_columns = sum(1 for item in semantic_field_mappings if not self._is_placeholder_col(item.get("originalField")))
@@ -1282,7 +1178,6 @@ class ImportService:
         return {
             "df": mapped_df,
             "fieldMappings": field_mappings,
-            "entityKeyAudit": entity_key_audit,
             "mappedTargets": mapped_targets,
             "mappedCount": mapped_count,
             "unmappedCount": len(unmapped_fields),
@@ -1438,9 +1333,6 @@ class ImportService:
             "dataPreview": preview_rows,
             "platform": active_bundle["platform"],
             "fieldMappings": active_bundle["fieldMappings"],
-            "entityKeyAudit": active_bundle.get("entityKeyAudit"),
-            "finalStatus": "risk" if int(imported_rows or 0) == 0 and int(quarantine_count or 0) > 0 else final_status,
-            "riskOverrideReasons": list(dict.fromkeys((risk_override_reasons or []) + (["all_rows_quarantined"] if int(imported_rows or 0) == 0 and int(quarantine_count or 0) > 0 else []))),
             "mappedCanonicalFields": list(dict.fromkeys([str(item.get("standardField")) for item in (active_bundle.get("fieldMappings") or []) if item.get("standardField")]))[:20],
             "topUnmappedHeaders": [str(item.get("originalField")) for item in (active_bundle.get("fieldMappings") or []) if not item.get("standardField") and not item.get("dynamicCompanion")][:20],
             "mappedCount": mapped_count,
