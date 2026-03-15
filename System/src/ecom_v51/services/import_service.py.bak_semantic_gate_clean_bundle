@@ -1051,19 +1051,6 @@ class ImportService:
         strong_risk_signals = {"multi_row_header_block", "short_explainable_column_run", "placeholder_columns_present"}
         risk_signal_hits = sorted(strong_risk_signals & set(header_signals))
         under_structure_scrutiny = bool(risk_signal_hits) or header_structure_score < 0.72
-        clean_strong_bundle_without_sku = (
-            not core["sku"]
-            and not under_structure_scrutiny
-            and coverage >= 0.85
-            and mapped_count >= 10
-            and core["orders_or_order_amount"]
-            and core["impressions_total_or_search_catalog"]
-            and core["product_card_visits_or_add_to_cart_total"]
-            and int(core.get("funnelSignalCount") or 0) >= 5
-            and int(core.get("optionalHitCount") or 0) >= 3
-            and wrongly_mapped_count == 0
-        )
-        critical_requirements_met = bool(core.get("criticalComboComplete")) or clean_strong_bundle_without_sku
         metrics = {
             "mappingCoverage": coverage,
             "mappedCount": mapped_count,
@@ -1071,13 +1058,12 @@ class ImportService:
             "funnelSignalCount": int(core.get("funnelSignalCount") or 0),
             "structureRiskHitCount": len(risk_signal_hits),
             "underStructureScrutiny": under_structure_scrutiny,
-            "cleanStrongBundleWithoutSku": clean_strong_bundle_without_sku,
         }
 
         if mapped_count == 0 or candidate_columns == 0:
             return "failed", ["no_mapped_fields"], [], [], metrics
 
-        if not core["sku"] and not clean_strong_bundle_without_sku:
+        if not core["sku"]:
             reasons.append("missing_sku")
         if not core["orders_or_order_amount"]:
             reasons.append("missing_order_signal")
@@ -1101,7 +1087,7 @@ class ImportService:
             if not core["product_card_visits_or_add_to_cart_total"]:
                 reasons.append("missing_mid_funnel_signal")
 
-        if not critical_requirements_met:
+        if not core.get("criticalComboComplete"):
             reasons.append("insufficient_core_field_hits")
 
         if len(risk_signal_hits) >= 2 and header_structure_score < 0.68:
@@ -1112,14 +1098,7 @@ class ImportService:
         if not reasons:
             if risk_override_reasons:
                 return "risk", [], risk_override_reasons, [], metrics
-            if clean_strong_bundle_without_sku:
-                acceptance_reason.extend([
-                    "mapping_thresholds_met",
-                    "clean_structure_exception",
-                    "funnel_shape_present",
-                ])
-            else:
-                acceptance_reason.extend(["mapping_thresholds_met", "core_fields_present", "funnel_shape_present"])
+            acceptance_reason.extend(["mapping_thresholds_met", "core_fields_present", "funnel_shape_present"])
             return "passed", [], [], acceptance_reason, metrics
 
         if mapped_count >= 2:

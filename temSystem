@@ -1,0 +1,167 @@
+warning: in the working copy of 'System/src/ecom_v51/services/import_service.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/System/src/ecom_v51/services/import_service.py b/System/src/ecom_v51/services/import_service.py[m
+[1mindex 390a753..b67f582 100644[m
+[1m--- a/System/src/ecom_v51/services/import_service.py[m
+[1m+++ b/System/src/ecom_v51/services/import_service.py[m
+[36m@@ -814,14 +814,37 @@[m [mclass ImportService:[m
+             "price_index_status",[m
+         ][m
+         optional_hits = [field for field in optional_pool if field in targets][m
+[32m+[m[32m        funnel_signal_fields = [[m
+[32m+[m[32m            field[m
+[32m+[m[32m            for field in [[m
+[32m+[m[32m                "impressions_total",[m
+[32m+[m[32m                "impressions_search_catalog",[m
+[32m+[m[32m                "product_card_visits",[m
+[32m+[m[32m                "add_to_cart_total",[m
+[32m+[m[32m                "orders",[m
+[32m+[m[32m                "order_amount",[m
+[32m+[m[32m            ][m
+[32m+[m[32m            if field in targets[m
+[32m+[m[32m        ][m
+         return {[m
+             "sku": "sku" in targets,[m
+             "orders_or_order_amount": bool({"orders", "order_amount"} & targets),[m
+             "impressions_total": "impressions_total" in targets,[m
+[32m+[m[32m            "impressions_total_or_search_catalog": bool({"impressions_total", "impressions_search_catalog"} & targets),[m
+[32m+[m[32m            "product_card_visits": "product_card_visits" in targets,[m
+[32m+[m[32m            "add_to_cart_total": "add_to_cart_total" in targets,[m
+             "product_card_visits_or_add_to_cart_total": bool({"product_card_visits", "add_to_cart_total"} & targets),[m
+             "optionalFieldPool": optional_pool,[m
+             "optionalHitCount": len(optional_hits),[m
+             "optionalHitFields": optional_hits,[m
+[32m+[m[32m            "funnelSignalCount": len(funnel_signal_fields),[m
+[32m+[m[32m            "funnelSignalFields": funnel_signal_fields,[m
+[32m+[m[32m            "criticalComboComplete": all([[m
+[32m+[m[32m                "sku" in targets,[m
+[32m+[m[32m                bool({"orders", "order_amount"} & targets),[m
+[32m+[m[32m                bool({"impressions_total", "impressions_search_catalog"} & targets),[m
+[32m+[m[32m                bool({"product_card_visits", "add_to_cart_total"} & targets),[m
+[32m+[m[32m            ]),[m
+             "mappedTargets": sorted(targets),[m
+         }[m
+ [m
+[36m@@ -850,68 +873,72 @@[m [mclass ImportService:[m
+         acceptance_reason: List[str] = [][m
+         coverage = round(mapped_count / candidate_columns, 3) if candidate_columns > 0 else 0.0[m
+         core = ImportService._build_core_field_hit_summary(mapped_targets)[m
+[32m+[m[32m        strong_risk_signals = {"multi_row_header_block", "short_explainable_column_run", "placeholder_columns_present"}[m
+[32m+[m[32m        risk_signal_hits = sorted(strong_risk_signals & set(header_signals))[m
+[32m+[m[32m        under_structure_scrutiny = bool(risk_signal_hits) or header_structure_score < 0.72[m
+[32m+[m[32m        metrics = {[m
+[32m+[m[32m            "mappingCoverage": coverage,[m
+[32m+[m[32m            "mappedCount": mapped_count,[m
+[32m+[m[32m            "unmappedCount": max(candidate_columns - mapped_count, 0),[m
+[32m+[m[32m            "funnelSignalCount": int(core.get("funnelSignalCount") or 0),[m
+[32m+[m[32m            "structureRiskHitCount": len(risk_signal_hits),[m
+[32m+[m[32m            "underStructureScrutiny": under_structure_scrutiny,[m
+[32m+[m[32m        }[m
+ [m
+         if mapped_count == 0 or candidate_columns == 0:[m
+[31m-            return "failed", ["no_mapped_fields"], [], [], {"mappingCoverage": coverage, "mappedCount": mapped_count, "unmappedCount": max(candidate_columns - mapped_count, 0)}[m
+[32m+[m[32m            return "failed", ["no_mapped_fields"], [], [], metrics[m
+ [m
+         if not core["sku"]:[m
+             reasons.append("missing_sku")[m
+         if not core["orders_or_order_amount"]:[m
+             reasons.append("missing_order_signal")[m
+[31m-        if not core["impressions_total"]:[m
+[31m-            reasons.append("missing_top_funnel_signal")[m
+[31m-        if not core["product_card_visits_or_add_to_cart_total"]:[m
+[31m-            reasons.append("missing_mid_funnel_signal")[m
+         if coverage < 0.5:[m
+             reasons.append("mapping_coverage_below_0_5")[m
+         if mapped_count < 4:[m
+             reasons.append("mapped_count_below_4")[m
+[31m-        if core["sku"] is False or core["orders_or_order_amount"] is False or core["impressions_total"] is False or core["product_card_visits_or_add_to_cart_total"] is False:[m
+[31m-            reasons.append("insufficient_core_field_hits")[m
+         if wrongly_mapped_count > 0:[m
+             reasons.append("wrongly_mapped_fields_present")[m
+ [m
+[31m-        strong_risk_signals = {"multi_row_header_block", "short_explainable_column_run", "placeholder_columns_present"}[m
+[31m-        risk_signal_hits = sorted(strong_risk_signals & set(header_signals))[m
+[31m-        if len(risk_signal_hits) >= 2 and header_structure_score < 0.65:[m
+[32m+[m[32m        if under_structure_scrutiny:[m
+[32m+[m[32m            if not core["impressions_total_or_search_catalog"]:[m
+[32m+[m[32m                reasons.append("missing_top_funnel_signal_under_header_risk")[m
+[32m+[m[32m            if not core["product_card_visits_or_add_to_cart_total"]:[m
+[32m+[m[32m                reasons.append("missing_mid_funnel_signal_under_header_risk")[m
+[32m+[m[32m            if int(core.get("funnelSignalCount") or 0) < 3:[m
+[32m+[m[32m                reasons.append("insufficient_funnel_signal_count_under_header_risk")[m
+[32m+[m[32m        else:[m
+[32m+[m[32m            if not core["impressions_total_or_search_catalog"]:[m
+[32m+[m[32m                reasons.append("missing_top_funnel_signal")[m
+[32m+[m[32m            if not core["product_card_visits_or_add_to_cart_total"]:[m
+[32m+[m[32m                reasons.append("missing_mid_funnel_signal")[m
+[32m+[m
+[32m+[m[32m        if not core.get("criticalComboComplete"):[m
+[32m+[m[32m            reasons.append("insufficient_core_field_hits")[m
+[32m+[m
+[32m+[m[32m        if len(risk_signal_hits) >= 2 and header_structure_score < 0.68:[m
+             risk_override_reasons.append("multiple_header_risk_signals")[m
+         if "short_explainable_column_run" in risk_signal_hits:[m
+             risk_override_reasons.append("short_explainable_column_run")[m
+ [m
+         if not reasons:[m
+             if risk_override_reasons:[m
+[31m-                return "risk", [], risk_override_reasons, [], {[m
+[31m-                    "mappingCoverage": coverage,[m
+[31m-                    "mappedCount": mapped_count,[m
+[31m-                    "unmappedCount": max(candidate_columns - mapped_count, 0),[m
+[31m-                }[m
+[31m-            acceptance_reason.extend(["mapping_thresholds_met", "core_fields_present"])[m
+[31m-            return "passed", [], [], acceptance_reason, {[m
+[31m-                "mappingCoverage": coverage,[m
+[31m-                "mappedCount": mapped_count,[m
+[31m-                "unmappedCount": max(candidate_columns - mapped_count, 0),[m
+[31m-            }[m
+[32m+[m[32m                return "risk", [], risk_override_reasons, [], metrics[m
+[32m+[m[32m            acceptance_reason.extend(["mapping_thresholds_met", "core_fields_present", "funnel_shape_present"])[m
+[32m+[m[32m            return "passed", [], [], acceptance_reason, metrics[m
+ [m
+         if mapped_count >= 2:[m
+[31m-            return "risk", reasons, risk_override_reasons, acceptance_reason, {[m
+[31m-                "mappingCoverage": coverage,[m
+[31m-                "mappedCount": mapped_count,[m
+[31m-                "unmappedCount": max(candidate_columns - mapped_count, 0),[m
+[31m-            }[m
+[31m-        return "failed", reasons, risk_override_reasons, acceptance_reason, {[m
+[31m-            "mappingCoverage": coverage,[m
+[31m-            "mappedCount": mapped_count,[m
+[31m-            "unmappedCount": max(candidate_columns - mapped_count, 0),[m
+[31m-        }[m
+[32m+[m[32m            return "risk", reasons, risk_override_reasons, acceptance_reason, metrics[m
+[32m+[m[32m        return "failed", reasons, risk_override_reasons, acceptance_reason, metrics[m
+ [m
+     # ---------- 主链路 ----------[m
+ [m
+     def _build_bundle(self, df: pd.DataFrame, header_block: dict, flattened_headers: List[str], header_recovery_applied: bool, dropped_placeholder_columns: List[str], rescued_placeholder_columns: List[str]) -> dict:[m
+         mapped_df, field_mappings = self.map_columns(df)[m
+[31m-        mapped_targets = [str(item["standardField"]) for item in field_mappings if item.get("standardField")][m
+[31m-        candidate_columns = sum(1 for col in df.columns if not self._is_placeholder_col(col))[m
+[32m+[m[32m        semantic_field_mappings = [item for item in field_mappings if not item.get("excludeFromSemanticGate")][m
+[32m+[m[32m        mapped_targets = [str(item["standardField"]) for item in semantic_field_mappings if item.get("standardField")][m
+[32m+[m[32m        candidate_columns = sum(1 for item in semantic_field_mappings if not self._is_placeholder_col(item.get("originalField")))[m
+         mapped_count = len(mapped_targets)[m
+[31m-        unmapped_fields = [str(item["originalField"]) for item in field_mappings if not item.get("standardField")][m
+[32m+[m[32m        unmapped_fields = [str(item["originalField"]) for item in semantic_field_mappings if not item.get("standardField")][m
+         wrongly_mapped_count = 0[m
+         header_structure_score, header_structure_signals = self._compute_header_structure_score(header_block, flattened_headers, dropped_placeholder_columns)[m
+         semantic_status, semantic_gate_reasons, risk_override_reasons, acceptance_reason, semantic_metrics = self._semantic_gate([m
+[36m@@ -1068,6 +1095,7 @@[m [mclass ImportService:[m
+             "ruUnmappedCount": 0,[m
+             "ruMappingPass": True,[m
+             "droppedPlaceholderColumns": active_bundle["droppedPlaceholderColumns"],[m
+[32m+[m[32m            "dynamicMetricColumns": [str(item.get("originalField")) for item in (active_bundle.get("fieldMappings") or []) if item.get("dynamicCompanion")],[m
+             "removedSummaryRows": 0,[m
+             "removedDescriptionRows": int(header_block.get("startRow") or 0),[m
+             "recoveryCandidateCount": int(recovery_result.get("candidateCount") or 0),[m
+[36m@@ -1109,6 +1137,8 @@[m [mclass ImportService:[m
+             "dataPreview": preview_rows,[m
+             "platform": active_bundle["platform"],[m
+             "fieldMappings": active_bundle["fieldMappings"],[m
+[32m+[m[32m            "mappedCanonicalFields": list(dict.fromkeys([str(item.get("standardField")) for item in (active_bundle.get("fieldMappings") or []) if item.get("standardField")]))[:20],[m
+[32m+[m[32m            "topUnmappedHeaders": [str(item.get("originalField")) for item in (active_bundle.get("fieldMappings") or []) if not item.get("standardField") and not item.get("dynamicCompanion")][:20],[m
+             "mappedCount": mapped_count,[m
+             "unmappedCount": int(active_bundle["unmappedCount"]),[m
+             "confidence": confidence,[m

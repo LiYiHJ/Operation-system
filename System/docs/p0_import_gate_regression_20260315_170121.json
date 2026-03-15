@@ -1,0 +1,104 @@
+[
+  {
+    "sample": "ru_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\analytics_report_2026-03-12_23_49.xlsx",
+    "upload": {
+      "sessionId": 1,
+      "transportStatus": "failed",
+      "semanticStatus": "failed",
+      "finalStatus": "failed",
+      "semanticGateReasons": [
+        "read_failed"
+      ],
+      "riskOverrideReasons": [],
+      "semanticAcceptanceReason": [],
+      "mappedCount": 0,
+      "unmappedCount": 0,
+      "mappingCoverage": null,
+      "headerStructureScore": null,
+      "headerStructureRiskSignals": null,
+      "preRecoveryStatus": null,
+      "postRecoveryStatus": null,
+      "recoveryAttempted": null,
+      "headerRecoveryApplied": null,
+      "recoveryImproved": null,
+      "recoveryDiff": null,
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirm": {
+      "importedRows": 0,
+      "errorRows": 0,
+      "quarantineCount": null,
+      "factLoadErrors": null,
+      "transportStatus": "failed",
+      "semanticStatus": "failed",
+      "finalStatus": "failed",
+      "semanticGateReasons": [
+        "session_not_found"
+      ],
+      "riskOverrideReasons": [],
+      "recoverySummary": {}
+    }
+  },
+  {
+    "sample": "cn_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\销售数据分析.xlsx",
+    "upload": {
+      "sessionId": null,
+      "transportStatus": null,
+      "semanticStatus": null,
+      "finalStatus": null,
+      "semanticGateReasons": null,
+      "riskOverrideReasons": null,
+      "semanticAcceptanceReason": null,
+      "mappedCount": null,
+      "unmappedCount": null,
+      "mappingCoverage": null,
+      "headerStructureScore": null,
+      "headerStructureRiskSignals": null,
+      "preRecoveryStatus": null,
+      "postRecoveryStatus": null,
+      "recoveryAttempted": null,
+      "headerRecoveryApplied": null,
+      "recoveryImproved": null,
+      "recoveryDiff": null,
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirm": null
+  },
+  {
+    "sample": "ru_bad_header_xlsx",
+    "path": "C:\\Operation-system\\System\\sample_data\\ozon_bad_header_or_missing_sku.xlsx",
+    "upload": {
+      "sessionId": null,
+      "transportStatus": null,
+      "semanticStatus": null,
+      "finalStatus": null,
+      "semanticGateReasons": null,
+      "riskOverrideReasons": null,
+      "semanticAcceptanceReason": null,
+      "mappedCount": null,
+      "unmappedCount": null,
+      "mappingCoverage": null,
+      "headerStructureScore": null,
+      "headerStructureRiskSignals": null,
+      "preRecoveryStatus": null,
+      "postRecoveryStatus": null,
+      "recoveryAttempted": null,
+      "headerRecoveryApplied": null,
+      "recoveryImproved": null,
+      "recoveryDiff": null,
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirm": null
+  }
+]

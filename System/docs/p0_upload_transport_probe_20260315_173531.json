@@ -1,0 +1,76 @@
+[
+  {
+    "sample": "ru_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\analytics_report_2026-03-12_23_49.xlsx",
+    "result": {
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "rawBody": "{\n  \"confidence\": 0.0,\n  \"dataPreview\": [],\n  \"diagnosis\": {\n    \"keyField\": null,\n    \"status\": \"failed\",\n    \"suggestions\": [\n      \"\\u8bfb\\u53d6\\u6587\\u4ef6\\u5931\\u8d25\\uff1aUnable to read workbook: could not read stylesheet from C:\\\\Operation-system\\\\System\\\\src\\\\uploads\\\\20260315_173531_analytics_report_2026-03-12_23_49.xlsx.\\nThis is most probably because the workbook source files contain some invalid XML.\\nPlease see the exception for more details.\"\n    ],\n    \"unmappedFields\": []\n  },\n  \"fieldMappings\": [],\n  \"fieldRegistryVersion\": \"v1.0.0\",\n  \"fileName\": \"20260315_173531_analytics_report_2026-03-12_23_49.xlsx\",\n  \"fileSize\": 455196,\n  \"finalStatus\": \"failed\",\n  \"headerRow\": 0,\n  \"mappedCount\": 0,\n  \"platform\": \"generic\",\n  \"readerEngineUsed\": null,\n  \"readerFallbackStage\": \"none\",\n  \"riskOverrideReasons\": [],\n  \"selectedSheet\": \"CSV\",\n  \"semanticAcceptanceReason\": [],\n  \"semanticGateReasons\": [\n    \"read_failed\"\n  ],\n  \"semanticStatus\": \"failed\",\n  \"sessionId\": 4,\n  \"sheetNames\": [\n    \"CSV\"\n  ],\n  \"status\": \"failed\",\n  \"totalColumns\": 0,\n  \"totalRows\": 0,\n  \"transportStatus\": \"failed\",\n  \"unmappedCount\": 0\n}\n",
+      "json": {
+        "confidence": 0.0,
+        "dataPreview": [],
+        "diagnosis": {
+          "keyField": null,
+          "status": "failed",
+          "suggestions": [
+            "读取文件失败：Unable to read workbook: could not read stylesheet from C:\\Operation-system\\System\\src\\uploads\\20260315_173531_analytics_report_2026-03-12_23_49.xlsx.\nThis is most probably because the workbook source files contain some invalid XML.\nPlease see the exception for more details."
+          ],
+          "unmappedFields": []
+        },
+        "fieldMappings": [],
+        "fieldRegistryVersion": "v1.0.0",
+        "fileName": "20260315_173531_analytics_report_2026-03-12_23_49.xlsx",
+        "fileSize": 455196,
+        "finalStatus": "failed",
+        "headerRow": 0,
+        "mappedCount": 0,
+        "platform": "generic",
+        "readerEngineUsed": null,
+        "readerFallbackStage": "none",
+        "riskOverrideReasons": [],
+        "selectedSheet": "CSV",
+        "semanticAcceptanceReason": [],
+        "semanticGateReasons": [
+          "read_failed"
+        ],
+        "semanticStatus": "failed",
+        "sessionId": 4,
+        "sheetNames": [
+          "CSV"
+        ],
+        "status": "failed",
+        "totalColumns": 0,
+        "totalRows": 0,
+        "transportStatus": "failed",
+        "unmappedCount": 0
+      },
+      "jsonError": null
+    }
+  },
+  {
+    "sample": "cn_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\销售数据分析.xlsx",
+    "result": {
+      "httpStatus": 500,
+      "contentType": "application/json",
+      "rawBody": "{\n  \"error\": \"'DataFrame' object has no attribute 'tolist'\"\n}\n",
+      "json": {
+        "error": "'DataFrame' object has no attribute 'tolist'"
+      },
+      "jsonError": null
+    }
+  },
+  {
+    "sample": "ru_bad_header_xlsx",
+    "path": "C:\\Operation-system\\System\\sample_data\\ozon_bad_header_or_missing_sku.xlsx",
+    "result": {
+      "httpStatus": 500,
+      "contentType": "application/json",
+      "rawBody": "{\n  \"error\": \"'DataFrame' object has no attribute 'tolist'\"\n}\n",
+      "json": {
+        "error": "'DataFrame' object has no attribute 'tolist'"
+      },
+      "jsonError": null
+    }
+  }
+]
