@@ -25,9 +25,26 @@ class FieldPattern:
 class IntelligentFieldMapper:
     """智能字段映射器 - 参考利润算法的优秀设计"""
 
-    def __init__(self):
+    def __init__(self, field_registry: Optional[list[dict]] = None):
         self.field_patterns = self._init_field_patterns()
         self.fuzzy_threshold = 0.7  # 模糊匹配阈值
+        self.registry_alias_lookup = self._build_registry_alias_lookup(field_registry or [])
+
+    @staticmethod
+    def _build_registry_alias_lookup(field_registry: list[dict]) -> Dict[str, str]:
+        lookup: Dict[str, str] = {}
+        for field in field_registry:
+            canonical = str(field.get('canonical') or '').strip()
+            if not canonical:
+                continue
+            aliases = field.get('aliases') or {}
+            for lang_aliases in aliases.values():
+                for alias in lang_aliases or []:
+                    key = str(alias).strip().lower()
+                    if key:
+                        lookup[key] = canonical
+            lookup[canonical.lower()] = canonical
+        return lookup
 
     def _init_field_patterns(self) -> Dict[str, FieldPattern]:
         """初始化字段模式（参考利润算法的规则引擎）"""
@@ -221,6 +238,13 @@ class IntelligentFieldMapper:
         # 1. 标准化列名（去除空格、转小写）
         normalized_name = column_name.strip().lower().replace('_', ' ').replace('-', ' ')
 
+        # 0. registry 直接命中（高优先级）
+        if normalized_name in self.registry_alias_lookup:
+            return self.registry_alias_lookup[normalized_name], 0.99, ["registry_exact"]
+        for alias, canonical in self.registry_alias_lookup.items():
+            if alias and (alias in normalized_name or normalized_name in alias):
+                return canonical, 0.9, ["registry_contains"]
+
         # 2. 遍历所有字段模式
         for field_name, pattern in self.field_patterns.items():
             score = 0.0
@@ -238,15 +262,19 @@ class IntelligentFieldMapper:
                 score += regex_score * 0.5  # 提高到 50% 权重 ✅ 已修复
                 reasons.append(f"正则匹配({regex_score:.2f})")
 
+            has_structural_match = keyword_score > 0 or regex_score > 0
+
             # 2.3 数据验证（如果有样本数据）
-            if sample_data is not None and pattern.validator:
+            # 仅用于提高置信度，不能单独决定映射资格
+            if has_structural_match and sample_data is not None and pattern.validator:
                 validation_score = self._validate_data(sample_data, pattern.validator)
                 if validation_score > 0:
                     score += validation_score * 0.3  # 提高到 30% 权重 ✅ 已修复
                     reasons.append(f"数据验证通过({validation_score:.2f})")
 
             # 2.4 优先级加成
-            score += pattern.priority / 100  # ✅ 已修复：1000 → 100
+            if has_structural_match:
+                score += pattern.priority / 100  # ✅ 已修复：1000 → 100
 
             if score > 0:
                 matches.append((field_name, score, reasons))

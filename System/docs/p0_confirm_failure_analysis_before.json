@@ -1,0 +1,206 @@
+{
+  "results": [
+    {
+      "name": "demo",
+      "file": "/workspace/Operation-system/System/sample_data/p4_demo_import.csv",
+      "parse": {
+        "sessionId": 1,
+        "mappedCount": 17,
+        "unmappedCount": 0,
+        "stats": {
+          "candidateColumns": 17,
+          "ignoredColumns": 0,
+          "ignoredFields": [],
+          "mappedConfidence": 0.95,
+          "mappingCoverage": 1.0,
+          "mappedCount": 17,
+          "unmappedCount": 0,
+          "droppedPlaceholderColumns": [],
+          "removedSummaryRows": 0,
+          "removedDescriptionRows": 0
+        }
+      },
+      "confirm": {
+        "status": "success",
+        "importedRows": 6,
+        "errorRows": 0,
+        "warnings": []
+      },
+      "error_samples": [],
+      "error_groups": []
+    },
+    {
+      "name": "realA",
+      "file": "/workspace/Operation-system/System/src/uploads/20260308_142700_analytics_report_2026-03-06_03_58.xlsx",
+      "parse": {
+        "sessionId": 2,
+        "mappedCount": 26,
+        "unmappedCount": 21,
+        "stats": {
+          "candidateColumns": 47,
+          "ignoredColumns": 26,
+          "ignoredFields": [
+            "Динамика",
+            "Динамика_1",
+            "Динамика_2",
+            "Динамика_3",
+            "Динамика_4",
+            "Динамика_5",
+            "Динамика_6",
+            "Динамика_7",
+            "Динамика_8",
+            "Динамика_9",
+            "Динамика_10",
+            "Динамика_11",
+            "Динамика_12",
+            "Динамика_13",
+            "Динамика_14",
+            "Динамика_15",
+            "Динамика_16",
+            "Динамика_17",
+            "Динамика_18",
+            "Динамика_19",
+            "Динамика_20",
+            "Динамика_21",
+            "Динамика_22",
+            "Динамика_23",
+            "Динамика_24",
+            "Динамика_25"
+          ],
+          "mappedConfidence": 0.945,
+          "mappingCoverage": 0.553,
+          "mappedCount": 26,
+          "unmappedCount": 21,
+          "droppedPlaceholderColumns": [],
+          "removedSummaryRows": 1,
+          "removedDescriptionRows": 2
+        }
+      },
+      "confirm": {
+        "status": "failed",
+        "importedRows": 0,
+        "errorRows": 1505,
+        "warnings": [
+          "发现并移除 100 条重复记录"
+        ]
+      },
+      "error_samples": [
+        "行1入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行2入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行3入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行4入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行5入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行6入库失败: invalid literal for int() with base 10: '36 из 90'",
+        "行7入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行8入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行9入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行10入库失败: invalid literal for int() with base 10: '90 из 90'"
+      ],
+      "error_groups": [
+        [
+          "invalid literal for int() with base 10: '90 из 90'",
+          15
+        ],
+        [
+          "invalid literal for int() with base 10: '36 из 90'",
+          4
+        ],
+        [
+          "invalid literal for int() with base 10: '88 из 90'",
+          1
+        ]
+      ]
+    },
+    {
+      "name": "realB",
+      "file": "/workspace/Operation-system/System/sample_data/ozon_bad_header_or_missing_sku.xlsx",
+      "parse": {
+        "sessionId": 3,
+        "mappedCount": 26,
+        "unmappedCount": 21,
+        "stats": {
+          "candidateColumns": 47,
+          "ignoredColumns": 26,
+          "ignoredFields": [
+            "Динамика",
+            "Динамика_1",
+            "Динамика_2",
+            "Динамика_3",
+            "Динамика_4",
+            "Динамика_5",
+            "Динамика_6",
+            "Динамика_7",
+            "Динамика_8",
+            "Динамика_9",
+            "Динамика_10",
+            "Динамика_11",
+            "Динамика_12",
+            "Динамика_13",
+            "Динамика_14",
+            "Динамика_15",
+            "Динамика_16",
+            "Динамика_17",
+            "Динамика_18",
+            "Динамика_19",
+            "Динамика_20",
+            "Динамика_21",
+            "Динамика_22",
+            "Динамика_23",
+            "Динамика_24",
+            "Динамика_25"
+          ],
+          "mappedConfidence": 0.945,
+          "mappingCoverage": 0.553,
+          "mappedCount": 26,
+          "unmappedCount": 21,
+          "droppedPlaceholderColumns": [],
+          "removedSummaryRows": 1,
+          "removedDescriptionRows": 2
+        }
+      },
+      "confirm": {
+        "status": "failed",
+        "importedRows": 0,
+        "errorRows": 1505,
+        "warnings": [
+          "发现并移除 100 条重复记录"
+        ]
+      },
+      "error_samples": [
+        "行1入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行2入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行3入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行4入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行5入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行6入库失败: invalid literal for int() with base 10: '36 из 90'",
+        "行7入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行8入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行9入库失败: invalid literal for int() with base 10: '90 из 90'",
+        "行10入库失败: invalid literal for int() with base 10: '90 из 90'"
+      ],
+      "error_groups": [
+        [
+          "invalid literal for int() with base 10: '90 из 90'",
+          15
+        ],
+        [
+          "invalid literal for int() with base 10: '36 из 90'",
+          4
+        ],
+        [
+          "invalid literal for int() with base 10: '88 из 90'",
+          1
+        ]
+      ]
+    }
+  ],
+  "facts": {
+    "fact_sku_daily": 1511,
+    "fact_orders_daily": 6,
+    "fact_reviews_daily": 6,
+    "fact_ads_daily": 6,
+    "fact_inventory_daily": 6,
+    "fact_profit_snapshot": 1511,
+    "fact_sku_ext_daily": 1511
+  }
+}

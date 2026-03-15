@@ -1,0 +1,1188 @@
+{
+  "reproBefore": {
+    "analytics_xlsx_openpyxl_error": "Unable to read workbook: could not read stylesheet from data/analytics_report_2026-03-12_23_49.xlsx.\nThis is most probably because the workbook source files contain some invalid XML.\nPlease see the exception for more details.",
+    "cn_xlsx": {
+      "rawColumns": 32,
+      "legacyCandidateColumnsApprox": 31
+    },
+    "real_csv_scene": {
+      "rawColumns": 32,
+      "legacyCandidateColumnsApprox": 31
+    }
+  },
+  "layeredRootCause": {
+    "A_file_reader": "openpyxl 对损坏样式 XML 容错差，analytics xlsx 会在 stylesheet 阶段失败，导致上传 500 风险。",
+    "B_header_detection": "读失败时 header scoring 无法执行。",
+    "C_data_region_extraction": "读失败时无法提取明细区，后续映射全部中断。",
+    "D_normalization": "旧占位/col_* 处理耦合导致候选列被误裁剪。",
+    "E_candidate_generation": "候选生成易与映射命中耦合，导致 candidateColumns 被动缩减。",
+    "F_cn_mapping": "中文 normalize 与 alias 覆盖不足导致命中率低。",
+    "G_frontend_consume": "前端依赖后端 stats/candidate 展示，后端口径异常会直接体现在 UI 统计和映射表。"
+  },
+  "afterFix": {
+    "analytics_xlsx": {
+      "readerEngineUsed": "openpyxl",
+      "readerFallbackStage": "fallback_ooxml_repair",
+      "sourceType": "xlsx",
+      "rawColumns": 73,
+      "normalizedColumns": 47,
+      "candidateColumns": 47,
+      "ignoredColumns": 0,
+      "mappedCount": 36,
+      "unmappedCount": 11,
+      "mappingCoverage": 0.766,
+      "mappedConfidence": 0.941,
+      "fieldMappings": [
+        {
+          "originalField": "Товары",
+          "normalizedField": "товары",
+          "standardField": "name",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.981
+        },
+        {
+          "originalField": "Категория 1 уровня",
+          "normalizedField": "категория 1 уровня",
+          "standardField": "category",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Категория 2 уровня",
+          "normalizedField": "категория 2 уровня",
+          "standardField": "category",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Категория 3 уровня",
+          "normalizedField": "категория 3 уровня",
+          "standardField": "category",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Бренд",
+          "normalizedField": "бренд",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "Модель",
+          "normalizedField": "модель",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "Схема работы",
+          "normalizedField": "схема работы",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "SKU",
+          "normalizedField": "sku",
+          "standardField": "sku",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Артикул",
+          "normalizedField": "артикул",
+          "standardField": "sku",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Продажи ABC-анализ по сумме заказов",
+          "normalizedField": "продажи abc-анализ по сумме заказов",
+          "standardField": "abc_class",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.9
+        },
+        {
+          "originalField": "ABC-анализ по количеству заказов",
+          "normalizedField": "abc-анализ по количеству заказов",
+          "standardField": "abc_class",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.9
+        },
+        {
+          "originalField": "Заказано на сумму",
+          "normalizedField": "заказано на сумму",
+          "standardField": "order_amount",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Доля в общей сумме заказов",
+          "normalizedField": "доля в общей сумме заказов",
+          "standardField": "orders",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.936
+        },
+        {
+          "originalField": "Воронка продаж Позиция в поиске и каталоге",
+          "normalizedField": "воронка продаж позиция в поиске и каталоге",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "Показы всего",
+          "normalizedField": "показы всего",
+          "standardField": "impressions_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Конверсия из показа в заказ",
+          "normalizedField": "конверсия из показа в заказ",
+          "standardField": "orders",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.936
+        },
+        {
+          "originalField": "Показы в поиске и каталоге",
+          "normalizedField": "показы в поиске и каталоге",
+          "standardField": "impressions_search_catalog",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Конверсия из поиска и каталога в корзину",
+          "normalizedField": "конверсия из поиска и каталога в корзину",
+          "standardField": "conversion_rate",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.933
+        },
+        {
+          "originalField": "Добавления из поиска и каталога в корзину",
+          "normalizedField": "добавления из поиска и каталога в корзину",
+          "standardField": "add_to_cart",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.871
+        },
+        {
+          "originalField": "Конверсия из поиска и каталога в карточку",
+          "normalizedField": "конверсия из поиска и каталога в карточку",
+          "standardField": null,
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "Посещения карточки товара",
+          "normalizedField": "посещения карточки товара",
+          "standardField": "product_card_visits",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Конверсия из карточки в корзину",
+          "normalizedField": "конверсия из карточки в корзину",
+          "standardField": null,
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "Добавления из карточки в корзину",
+          "normalizedField": "добавления из карточки в корзину",
+          "standardField": null,
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "Конверсия в корзину общая",
+          "normalizedField": "конверсия в корзину общая",
+          "standardField": "add_to_cart_cvr_total",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Добавления в корзину всего",
+          "normalizedField": "добавления в корзину всего",
+          "standardField": "add_to_cart_total",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Конверсия из корзины в заказ",
+          "normalizedField": "конверсия из корзины в заказ",
+          "standardField": "orders",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.936
+        },
+        {
+          "originalField": "Заказано товаров",
+          "normalizedField": "заказано товаров",
+          "standardField": "items_ordered",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Доставлено товаров",
+          "normalizedField": "доставлено товаров",
+          "standardField": "items_delivered",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Конверсия из заказа в выкуп",
+          "normalizedField": "конверсия из заказа в выкуп",
+          "standardField": "orders",
+          "mappingSource": "intelligent_mapper",
+          "confidence": 0.936
+        },
+        {
+          "originalField": "Выкуплено товаров",
+          "normalizedField": "выкуплено товаров",
+          "standardField": "items_purchased",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        }
+      ],
+      "ignoredFields": [],
+      "normalizeStats": {
+        "removedDescriptionRows": 2,
+        "removedSummaryRows": 1,
+        "droppedPlaceholderColumns": []
+      }
+    },
+    "cn_xlsx": {
+      "readerEngineUsed": "openpyxl_values",
+      "readerFallbackStage": "fallback_openpyxl_readonly",
+      "sourceType": "xlsx",
+      "rawColumns": 33,
+      "normalizedColumns": 32,
+      "candidateColumns": 32,
+      "ignoredColumns": 0,
+      "mappedCount": 29,
+      "unmappedCount": 3,
+      "mappingCoverage": 0.906,
+      "mappedConfidence": 0.945,
+      "fieldMappings": [
+        {
+          "originalField": "col_1",
+          "normalizedField": "col_1",
+          "standardField": "sku",
+          "mappingSource": "first_column_fallback",
+          "confidence": 0.8
+        },
+        {
+          "originalField": "ABC分析",
+          "normalizedField": "abc分析",
+          "standardField": null,
+          "mappingSource": "alias_exact",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "订购金额",
+          "normalizedField": "订购金额",
+          "standardField": "order_amount",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "在订单总额中的份额",
+          "normalizedField": "在订单总额中的份额",
+          "standardField": "order_amount_share",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "在搜索结果和目录中的位置",
+          "normalizedField": "在搜索结果和目录中的位置",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "总展示次数",
+          "normalizedField": "总展示次数",
+          "standardField": "impressions_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从展示到点击的转化率",
+          "normalizedField": "从展示到点击的转化率",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "搜索结果和目录中的展示次数",
+          "normalizedField": "搜索结果和目录中的展示次数",
+          "standardField": "impressions_search_catalog",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车的转化率",
+          "normalizedField": "从搜索结果和目录中添加至购物车的转化率",
+          "standardField": "search_catalog_to_cart_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车",
+          "normalizedField": "从搜索结果和目录中添加至购物车",
+          "standardField": "add_to_cart_from_search_catalog",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从搜索结果和目录中进入卡片的转化率",
+          "normalizedField": "从搜索结果和目录中进入卡片的转化率",
+          "standardField": "search_catalog_to_card_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "商品卡片访问",
+          "normalizedField": "商品卡片访问",
+          "standardField": "product_card_visits",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从商品卡片添加至购物车的转化率",
+          "normalizedField": "从商品卡片添加至购物车的转化率",
+          "standardField": "card_to_cart_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从商品卡片添加至购物车",
+          "normalizedField": "从商品卡片添加至购物车",
+          "standardField": "add_to_cart_from_card",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "添加至购物车的转化率总计",
+          "normalizedField": "添加至购物车的转化率总计",
+          "standardField": "add_to_cart_cvr_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "添加至购物车总计",
+          "normalizedField": "添加至购物车总计",
+          "standardField": "add_to_cart_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从购物车到订单的转化率",
+          "normalizedField": "从购物车到订单的转化率",
+          "standardField": "cart_to_order_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已订购商品",
+          "normalizedField": "已订购商品",
+          "standardField": "items_ordered",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已配送商品",
+          "normalizedField": "已配送商品",
+          "standardField": "items_delivered",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从订单到认购的转化率",
+          "normalizedField": "从订单到认购的转化率",
+          "standardField": "order_to_purchase_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已认购商品",
+          "normalizedField": "已认购商品",
+          "standardField": "items_purchased",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已取消商品",
+          "normalizedField": "已取消商品",
+          "standardField": "items_canceled",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已退货商品",
+          "normalizedField": "已退货商品",
+          "standardField": "items_returned",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "平均价格",
+          "normalizedField": "平均价格",
+          "standardField": "avg_sale_price",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "根据您的价格计算的折扣",
+          "normalizedField": "根据您的价格计算的折扣",
+          "standardField": "discount_pct",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "价格指数",
+          "normalizedField": "价格指数",
+          "standardField": "price_index_status",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "天在促销活动中",
+          "normalizedField": "天在促销活动中",
+          "standardField": "promo_days_count",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "总体广告收入率",
+          "normalizedField": "总体广告收入率",
+          "standardField": "ad_revenue_rate",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "推广天数（按点击付费）",
+          "normalizedField": "推广天数(按点击付费)",
+          "standardField": "ppc_days_count",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "评价",
+          "normalizedField": "评价",
+          "standardField": "review_count",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        }
+      ],
+      "ignoredFields": [],
+      "normalizeStats": {
+        "removedDescriptionRows": 0,
+        "removedSummaryRows": 1,
+        "droppedPlaceholderColumns": []
+      }
+    },
+    "real_csv_scene": {
+      "readerEngineUsed": null,
+      "readerFallbackStage": "none",
+      "sourceType": "csv",
+      "rawColumns": 32,
+      "normalizedColumns": 32,
+      "candidateColumns": 32,
+      "ignoredColumns": 0,
+      "mappedCount": 29,
+      "unmappedCount": 3,
+      "mappingCoverage": 0.906,
+      "mappedConfidence": 0.945,
+      "fieldMappings": [
+        {
+          "originalField": "col_1",
+          "normalizedField": "col_1",
+          "standardField": "sku",
+          "mappingSource": "first_column_fallback",
+          "confidence": 0.8
+        },
+        {
+          "originalField": "ABC分析",
+          "normalizedField": "abc分析",
+          "standardField": null,
+          "mappingSource": "alias_exact",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "订购金额",
+          "normalizedField": "订购金额",
+          "standardField": "order_amount",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "在订单总额中的份额",
+          "normalizedField": "在订单总额中的份额",
+          "standardField": "order_amount_share",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "在搜索结果和目录中的位置",
+          "normalizedField": "在搜索结果和目录中的位置",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "总展示次数",
+          "normalizedField": "总展示次数",
+          "standardField": "impressions_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从展示到点击的转化率",
+          "normalizedField": "从展示到点击的转化率",
+          "standardField": null,
+          "mappingSource": "unmapped",
+          "confidence": 0.0
+        },
+        {
+          "originalField": "搜索结果和目录中的展示次数",
+          "normalizedField": "搜索结果和目录中的展示次数",
+          "standardField": "impressions_search_catalog",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车的转化率",
+          "normalizedField": "从搜索结果和目录中添加至购物车的转化率",
+          "standardField": "search_catalog_to_cart_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车",
+          "normalizedField": "从搜索结果和目录中添加至购物车",
+          "standardField": "add_to_cart_from_search_catalog",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从搜索结果和目录中进入卡片的转化率",
+          "normalizedField": "从搜索结果和目录中进入卡片的转化率",
+          "standardField": "search_catalog_to_card_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "商品卡片访问",
+          "normalizedField": "商品卡片访问",
+          "standardField": "product_card_visits",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从商品卡片添加至购物车的转化率",
+          "normalizedField": "从商品卡片添加至购物车的转化率",
+          "standardField": "card_to_cart_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从商品卡片添加至购物车",
+          "normalizedField": "从商品卡片添加至购物车",
+          "standardField": "add_to_cart_from_card",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "添加至购物车的转化率总计",
+          "normalizedField": "添加至购物车的转化率总计",
+          "standardField": "add_to_cart_cvr_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "添加至购物车总计",
+          "normalizedField": "添加至购物车总计",
+          "standardField": "add_to_cart_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从购物车到订单的转化率",
+          "normalizedField": "从购物车到订单的转化率",
+          "standardField": "cart_to_order_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已订购商品",
+          "normalizedField": "已订购商品",
+          "standardField": "items_ordered",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已配送商品",
+          "normalizedField": "已配送商品",
+          "standardField": "items_delivered",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "从订单到认购的转化率",
+          "normalizedField": "从订单到认购的转化率",
+          "standardField": "order_to_purchase_cvr",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已认购商品",
+          "normalizedField": "已认购商品",
+          "standardField": "items_purchased",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已取消商品",
+          "normalizedField": "已取消商品",
+          "standardField": "items_canceled",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "已退货商品",
+          "normalizedField": "已退货商品",
+          "standardField": "items_returned",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "平均价格",
+          "normalizedField": "平均价格",
+          "standardField": "avg_sale_price",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "根据您的价格计算的折扣",
+          "normalizedField": "根据您的价格计算的折扣",
+          "standardField": "discount_pct",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "价格指数",
+          "normalizedField": "价格指数",
+          "standardField": "price_index_status",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "天在促销活动中",
+          "normalizedField": "天在促销活动中",
+          "standardField": "promo_days_count",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "总体广告收入率",
+          "normalizedField": "总体广告收入率",
+          "standardField": "ad_revenue_rate",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "推广天数（按点击付费）",
+          "normalizedField": "推广天数(按点击付费)",
+          "standardField": "ppc_days_count",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "评价",
+          "normalizedField": "评价",
+          "standardField": "review_count",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        }
+      ],
+      "ignoredFields": [],
+      "normalizeStats": {
+        "removedDescriptionRows": 0,
+        "removedSummaryRows": 1,
+        "droppedPlaceholderColumns": []
+      }
+    },
+    "demo_csv": {
+      "readerEngineUsed": null,
+      "readerFallbackStage": "none",
+      "sourceType": "csv",
+      "rawColumns": 17,
+      "normalizedColumns": 17,
+      "candidateColumns": 17,
+      "ignoredColumns": 0,
+      "mappedCount": 17,
+      "unmappedCount": 0,
+      "mappingCoverage": 1.0,
+      "mappedConfidence": 0.95,
+      "fieldMappings": [
+        {
+          "originalField": "SKU",
+          "normalizedField": "sku",
+          "standardField": "sku",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Name",
+          "normalizedField": "name",
+          "standardField": "name",
+          "mappingSource": "legacy_static_dict",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Impressions",
+          "normalizedField": "impressions",
+          "standardField": "impressions_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Card visits",
+          "normalizedField": "card visits",
+          "standardField": "product_card_visits",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Add to Cart",
+          "normalizedField": "add to cart",
+          "standardField": "add_to_cart_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Orders",
+          "normalizedField": "orders",
+          "standardField": "orders",
+          "mappingSource": "legacy_static_dict",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Revenue",
+          "normalizedField": "revenue",
+          "standardField": "order_amount",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Rating",
+          "normalizedField": "rating",
+          "standardField": "rating_value",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Reviews",
+          "normalizedField": "reviews",
+          "standardField": "review_count",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Returns",
+          "normalizedField": "returns",
+          "standardField": "items_returned",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Stock",
+          "normalizedField": "stock",
+          "standardField": "stock_total",
+          "mappingSource": "alias_exact",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Ad spend",
+          "normalizedField": "ad spend",
+          "standardField": "ad_spend",
+          "mappingSource": "legacy_static_dict",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "Ad orders",
+          "normalizedField": "ad orders",
+          "standardField": "ad_orders",
+          "mappingSource": "legacy_static_dict",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "sale_price",
+          "normalizedField": "sale_price",
+          "standardField": "sale_price",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "list_price",
+          "normalizedField": "list_price",
+          "standardField": "list_price",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "cost_price",
+          "normalizedField": "cost_price",
+          "standardField": "cost_price",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        },
+        {
+          "originalField": "commission_rate",
+          "normalizedField": "commission_rate",
+          "standardField": "commission_rate",
+          "mappingSource": "legacy_extra_map",
+          "confidence": 0.95
+        }
+      ],
+      "ignoredFields": [],
+      "normalizeStats": {
+        "removedDescriptionRows": 0,
+        "removedSummaryRows": 0,
+        "droppedPlaceholderColumns": []
+      }
+    }
+  },
+  "compareTable": [
+    {
+      "fileKey": "analytics_xlsx",
+      "legacyCandidateColumnsApprox": null,
+      "candidateColumnsNow": 47,
+      "mappedNow": 36,
+      "unmappedNow": 11,
+      "readerFallbackStageNow": "fallback_ooxml_repair"
+    },
+    {
+      "fileKey": "cn_xlsx",
+      "legacyCandidateColumnsApprox": 31,
+      "candidateColumnsNow": 32,
+      "mappedNow": 29,
+      "unmappedNow": 3,
+      "readerFallbackStageNow": "fallback_openpyxl_readonly"
+    },
+    {
+      "fileKey": "real_csv_scene",
+      "legacyCandidateColumnsApprox": 31,
+      "candidateColumnsNow": 32,
+      "mappedNow": 29,
+      "unmappedNow": 3,
+      "readerFallbackStageNow": "none"
+    },
+    {
+      "fileKey": "demo_csv",
+      "legacyCandidateColumnsApprox": null,
+      "candidateColumnsNow": 17,
+      "mappedNow": 17,
+      "unmappedNow": 0,
+      "readerFallbackStageNow": "none"
+    }
+  ],
+  "apiSamples": {
+    "analytics_xlsx": {
+      "uploadStatus": 200,
+      "uploadBody": {
+        "readerEngineUsed": "openpyxl",
+        "readerFallbackStage": "fallback_ooxml_repair",
+        "candidateColumns": 47,
+        "mappedCount": 36,
+        "mappingCoverage": 0.766
+      },
+      "confirmStatus": 200,
+      "confirmBody": {
+        "status": "success",
+        "importedRows": 1370,
+        "errorRows": 0,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "fatal": 0,
+          "ignorable": 0,
+          "quarantined": 0
+        }
+      }
+    },
+    "cn_xlsx": {
+      "uploadStatus": 200,
+      "uploadBody": {
+        "readerEngineUsed": "openpyxl_values",
+        "readerFallbackStage": "fallback_openpyxl_readonly",
+        "candidateColumns": 32,
+        "mappedCount": 29,
+        "mappingCoverage": 0.906
+      },
+      "confirmStatus": 200,
+      "confirmBody": {
+        "status": "success",
+        "importedRows": 19,
+        "errorRows": 25,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "fatal": 0,
+          "ignorable": 0,
+          "quarantined": 25
+        }
+      }
+    },
+    "real_csv_scene": {
+      "uploadStatus": 200,
+      "uploadBody": {
+        "readerEngineUsed": null,
+        "readerFallbackStage": "none",
+        "candidateColumns": 32,
+        "mappedCount": 29,
+        "mappingCoverage": 0.906
+      },
+      "confirmStatus": 200,
+      "confirmBody": {
+        "status": "success",
+        "importedRows": 19,
+        "errorRows": 23,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "fatal": 0,
+          "ignorable": 0,
+          "quarantined": 23
+        }
+      }
+    },
+    "demo_csv": {
+      "uploadStatus": 200,
+      "uploadBody": {
+        "readerEngineUsed": null,
+        "readerFallbackStage": "none",
+        "candidateColumns": 17,
+        "mappedCount": 17,
+        "mappingCoverage": 1.0
+      },
+      "confirmStatus": 200,
+      "confirmBody": {
+        "status": "success",
+        "importedRows": 6,
+        "errorRows": 0,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "fatal": 0,
+          "ignorable": 0,
+          "quarantined": 0
+        }
+      }
+    }
+  },
+  "confirmRegression": {
+    "analytics_xlsx": {
+      "status": "success",
+      "importedRows": 1370,
+      "errorRows": 0
+    },
+    "cn_xlsx": {
+      "status": "success",
+      "importedRows": 19,
+      "errorRows": 25
+    },
+    "real_csv_scene": {
+      "status": "success",
+      "importedRows": 19,
+      "errorRows": 23
+    },
+    "demo_csv": {
+      "status": "success",
+      "importedRows": 6,
+      "errorRows": 0
+    }
+  },
+  "registrySample": {
+    "status": 200,
+    "version": "v1.0.0",
+    "fieldCount": 33,
+    "sample": [
+      {
+        "aliases": {
+          "en": [
+            "sku",
+            "seller_sku",
+            "offer_id"
+          ],
+          "platform": [
+            "Ozon SKU",
+            "Offer ID"
+          ],
+          "ru": [
+            "Артикул",
+            "Артикул товара",
+            "Seller SKU"
+          ],
+          "zh": [
+            "SKU",
+            "商品SKU",
+            "商品编号",
+            "ABC分析",
+            "商品sku",
+            "sku编号"
+          ]
+        },
+        "canonical": "sku",
+        "displayLabel": "sku",
+        "enumValues": [],
+        "factTarget": "fact_sku_daily.sku",
+        "type": "string",
+        "unit": null,
+        "validator": "optional"
+      },
+      {
+        "aliases": {
+          "en": [
+            "abc_class",
+            "abc class"
+          ],
+          "platform": [
+            "ABC"
+          ],
+          "ru": [
+            "ABC-класс"
+          ],
+          "zh": [
+            "ABC分类",
+            "ABC等级"
+          ]
+        },
+        "canonical": "abc_class",
+        "displayLabel": "abc_class",
+        "enumValues": [],
+        "factTarget": "fact_sku_daily.abc_class",
+        "type": "string",
+        "unit": null,
+        "validator": "optional"
+      },
+      {
+        "aliases": {
+          "en": [
+            "order_amount",
+            "gmv"
+          ],
+          "platform": [
+            "Revenue"
+          ],
+          "ru": [
+            "Сумма заказов"
+          ],
+          "zh": [
+            "订单金额",
+            "下单金额",
+            "订购金额",
+            "订单总额"
+          ]
+        },
+        "canonical": "order_amount",
+        "displayLabel": "订单金额",
+        "enumValues": [],
+        "factTarget": "fact_orders_daily.order_amount",
+        "type": "number",
+        "unit": null,
+        "validator": "non_negative"
+      },
+      {
+        "aliases": {
+          "en": [
+            "order_amount_share"
+          ],
+          "platform": [
+            "Revenue Share"
+          ],
+          "ru": [
+            "Доля суммы заказов"
+          ],
+          "zh": [
+            "订单金额占比",
+            "在订单总额中的份额"
+          ]
+        },
+        "canonical": "order_amount_share",
+        "displayLabel": "order_amount_share",
+        "enumValues": [],
+        "factTarget": "fact_sku_daily.order_amount_share",
+        "type": "string",
+        "unit": null,
+        "validator": "optional"
+      },
+      {
+        "aliases": {
+          "en": [
+            "avg_sale_price",
+            "asp"
+          ],
+          "platform": [
+            "Average Sale Price"
+          ],
+          "ru": [
+            "Средняя цена продажи"
+          ],
+          "zh": [
+            "平均销售价",
+            "平均价格"
+          ]
+        },
+        "canonical": "avg_sale_price",
+        "displayLabel": "avg_sale_price",
+        "enumValues": [],
+        "factTarget": "fact_sku_daily.avg_sale_price",
+        "type": "string",
+        "unit": null,
+        "validator": "optional"
+      }
+    ]
+  },
+  "quarantineStats": {
+    "analytics_xlsx": {
+      "auto_fixed": 0,
+      "ignorable": 0,
+      "quarantined": 0,
+      "fatal": 0
+    },
+    "cn_xlsx": {
+      "auto_fixed": 0,
+      "ignorable": 0,
+      "quarantined": 25,
+      "fatal": 0
+    },
+    "real_csv_scene": {
+      "auto_fixed": 0,
+      "ignorable": 0,
+      "quarantined": 23,
+      "fatal": 0
+    },
+    "demo_csv": {
+      "auto_fixed": 0,
+      "ignorable": 0,
+      "quarantined": 0,
+      "fatal": 0
+    }
+  },
+  "passCriteria": {
+    "xlsx_no_500": true,
+    "csv_candidate_not_collapsed": true,
+    "cn_core_fields_hit": {
+      "订单金额": true,
+      "总展示次数": true,
+      "商品卡片访问": true,
+      "下单数": true,
+      "加购数": true,
+      "评分": true,
+      "评论数": true,
+      "库存": true,
+      "价格指数状态": true,
+      "活动天数": true
+    },
+    "parse_explainable": true,
+    "confirm_not_regressed": true
+  }
+}

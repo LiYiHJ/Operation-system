@@ -1,0 +1,83 @@
+[
+  {
+    "sampleId": "ru_real_xlsx",
+    "upload": {
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticAcceptanceReason": ["semantic_gate_met"]
+    },
+    "confirm": {
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticAcceptanceReason": ["semantic_gate_met"],
+      "status": "success"
+    },
+    "batch": {
+      "id": 7,
+      "status": "success",
+      "message": "去重0条，错误0条; transport=passed, semantic=passed, final=passed"
+    },
+    "runtimeAudit": {
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticAcceptanceReason": ["semantic_gate_met"]
+    }
+  },
+  {
+    "sampleId": "cn_real_xlsx",
+    "upload": {
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticAcceptanceReason": ["semantic_gate_met"]
+    },
+    "confirm": {
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticAcceptanceReason": ["semantic_gate_met"],
+      "status": "success"
+    },
+    "batch": {
+      "id": 8,
+      "status": "success",
+      "message": "去重0条，错误0条; transport=passed, semantic=passed, final=passed"
+    },
+    "runtimeAudit": {
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticAcceptanceReason": ["semantic_gate_met"]
+    }
+  },
+  {
+    "sampleId": "ru_bad_header_xlsx",
+    "upload": {
+      "transportStatus": "passed",
+      "semanticStatus": "risk",
+      "finalStatus": "risk",
+      "semanticAcceptanceReason": ["header_structure_risk", "low_mapping_coverage", "semantic_gate_not_met"]
+    },
+    "confirm": {
+      "transportStatus": "passed",
+      "semanticStatus": "risk",
+      "finalStatus": "risk",
+      "semanticAcceptanceReason": ["header_structure_risk", "low_mapping_coverage", "semantic_gate_not_met"],
+      "status": "success"
+    },
+    "batch": {
+      "id": 9,
+      "status": "success",
+      "message": "去重100条，错误0条; transport=passed, semantic=risk, final=risk"
+    },
+    "runtimeAudit": {
+      "transportStatus": "passed",
+      "semanticStatus": "risk",
+      "finalStatus": "risk",
+      "semanticAcceptanceReason": ["header_structure_risk", "low_mapping_coverage", "semantic_gate_not_met"]
+    }
+  }
+]

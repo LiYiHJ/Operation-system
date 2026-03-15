@@ -1,28 +1,23 @@
-"""
-策略任务API路由
-"""
+"""策略任务 API 路由"""
 
 from flask import Blueprint, jsonify, request
+
 from ecom_v51.services import StrategyTaskService
 from ecom_v51.db.session import get_session
 from ecom_v51.db.models import StrategyTask, DimSku
+
 
 strategy_bp = Blueprint('strategy', __name__)
 
 
 @strategy_bp.route('/list', methods=['GET'])
 def list_tasks():
-    """
-    获取策略任务列表
-    前端调用: strategyAPI.getList()
-    """
+    """获取策略任务列表"""
     try:
         priority = request.args.get('priority', '')
         status = request.args.get('status', '')
-        
         service = StrategyTaskService()
         tasks = service.list_tasks(priority=priority, status=status)
-        
         return jsonify(tasks)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -30,16 +25,10 @@ def list_tasks():
 
 @strategy_bp.route('/analyze', methods=['POST'])
 def analyze():
-    """
-    策略分析
-    前端调用: strategyAPI.analyze(data, shopName)
-    """
+    """策略分析"""
     try:
-        data = request.get_json()
-        
-        service = StrategyTaskService()
-        # TODO: 批量分析
-        
+        _data = request.get_json()
+        _service = StrategyTaskService()
         return jsonify({'tasks': []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -47,16 +36,10 @@ def analyze():
 
 @strategy_bp.route('/quick-summary', methods=['POST'])
 def quick_summary():
-    """
-    快速摘要
-    前端调用: strategyAPI.getQuickSummary(data)
-    """
+    """快速摘要"""
     try:
-        data = request.get_json()
-        
-        service = StrategyTaskService()
-        # TODO: 生成快速摘要
-        
+        _data = request.get_json()
+        _service = StrategyTaskService()
         return jsonify({'summary': {}})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -88,10 +71,9 @@ def decision_confirm():
 
 @strategy_bp.route('/generate/<sku>', methods=['POST'])
 def generate_compat(sku: str):
-    """兼容旧路径：按SKU快速创建策略任务"""
+    """兼容旧路径：按 SKU 快速创建策略任务"""
     try:
         payload = request.get_json() or {}
-        service = StrategyTaskService()
         issue_summary = f"兼容生成策略: {sku}"
         action = str((payload.get('snapshot') or {}).get('recommendedAction') or '请进入决策页确认执行')
         with get_session() as session:
@@ -124,14 +106,20 @@ def batch_compat():
         service = StrategyTaskService()
         rows = service.list_tasks(status='pending').get('tasks', [])
         task_ids = [int(x.get('id')) for x in rows if str(x.get('id')).isdigit()]
-        return jsonify({'batchId': f'compat-{len(rows)}', 'totalTasks': len(rows), 'summary': {'pending': len(rows)}, 'taskIds': task_ids[:200], 'compat': True})
+        return jsonify({
+            'batchId': f'compat-{len(rows)}',
+            'totalTasks': len(rows),
+            'summary': {'pending': len(rows)},
+            'taskIds': task_ids[:200],
+            'compat': True,
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 @strategy_bp.route('/decision', methods=['POST'])
 def decision_compat():
-    """兼容旧路径：转发到decision_preview"""
+    """兼容旧路径：转发到 decision_preview"""
     try:
         service = StrategyTaskService()
         payload = service.decision_preview(scope='all')
@@ -156,6 +144,10 @@ def update_task_status(task_id: int):
             if assigned_to:
                 task.owner = str(assigned_to)
             session.flush()
-            return jsonify({'taskId': task.id, 'status': task.status, 'updatedAt': task.updated_at.isoformat() if task.updated_at else None})
+            return jsonify({
+                'taskId': task.id,
+                'status': task.status,
+                'updatedAt': task.updated_at.isoformat() if task.updated_at else None,
+            })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

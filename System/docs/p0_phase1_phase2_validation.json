@@ -1,0 +1,129 @@
+{
+  "phase": "phase1_phase2",
+  "samples": {
+    "analytics_xlsx": {
+      "file": "System/data/analytics_report_2026-03-12_23_49.xlsx",
+      "parse": {
+        "sessionId": 5,
+        "readerEngineUsed": "openpyxl",
+        "readerFallbackStage": "fallback_ooxml_repair",
+        "rawColumns": 73,
+        "normalizedColumns": 47,
+        "candidateColumns": 47,
+        "mappedCount": 26,
+        "unmappedCount": 21,
+        "mappingCoverage": 0.553
+      },
+      "confirm": {
+        "status": "success",
+        "importedRows": 1370,
+        "errorRows": 0,
+        "stagingRows": 1370,
+        "quarantineCount": 0,
+        "factLoadErrors": 0,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "ignorable": 0,
+          "quarantined": 0,
+          "fatal": 0
+        }
+      }
+    },
+    "cn_xlsx": {
+      "file": "System/data/销售数据分析.xlsx",
+      "parse": {
+        "sessionId": 6,
+        "readerEngineUsed": "openpyxl_values",
+        "readerFallbackStage": "fallback_openpyxl_readonly",
+        "rawColumns": 33,
+        "normalizedColumns": 32,
+        "candidateColumns": 32,
+        "mappedCount": 29,
+        "unmappedCount": 3,
+        "mappingCoverage": 0.906
+      },
+      "confirm": {
+        "status": "success",
+        "importedRows": 19,
+        "errorRows": 25,
+        "stagingRows": 19,
+        "quarantineCount": 25,
+        "factLoadErrors": 0,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "ignorable": 0,
+          "quarantined": 25,
+          "fatal": 0
+        }
+      }
+    },
+    "real_csv_scene": {
+      "file": "System/sample_data/p0_csv_scene_from_cn.csv",
+      "parse": {
+        "sessionId": 7,
+        "readerEngineUsed": null,
+        "readerFallbackStage": "none",
+        "rawColumns": 32,
+        "normalizedColumns": 32,
+        "candidateColumns": 32,
+        "mappedCount": 29,
+        "unmappedCount": 3,
+        "mappingCoverage": 0.906
+      },
+      "confirm": {
+        "status": "success",
+        "importedRows": 19,
+        "errorRows": 23,
+        "stagingRows": 19,
+        "quarantineCount": 23,
+        "factLoadErrors": 0,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "ignorable": 0,
+          "quarantined": 23,
+          "fatal": 0
+        }
+      }
+    },
+    "demo_csv": {
+      "file": "System/sample_data/p4_demo_import.csv",
+      "parse": {
+        "sessionId": 8,
+        "readerEngineUsed": null,
+        "readerFallbackStage": "none",
+        "rawColumns": 17,
+        "normalizedColumns": 17,
+        "candidateColumns": 17,
+        "mappedCount": 17,
+        "unmappedCount": 0,
+        "mappingCoverage": 1.0
+      },
+      "confirm": {
+        "status": "success",
+        "importedRows": 6,
+        "errorRows": 0,
+        "stagingRows": 6,
+        "quarantineCount": 0,
+        "factLoadErrors": 0,
+        "rowErrorSummary": {
+          "auto_fixed": 0,
+          "ignorable": 0,
+          "quarantined": 0,
+          "fatal": 0
+        }
+      }
+    }
+  },
+  "cnCoreFieldHit": {
+    "订单金额": true,
+    "总展示次数": true,
+    "商品卡片访问": true,
+    "下单数": false,
+    "加购数": true,
+    "评分": true,
+    "评论数": true,
+    "库存": false,
+    "价格指数状态": true,
+    "活动天数": true
+  }
+}

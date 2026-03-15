@@ -1,0 +1,28 @@
+{
+  "db": "/workspace/Operation-system/System/data/ecom_v51.db",
+  "counts": {
+    "fact_sku_daily": 1511,
+    "fact_orders_daily": 1511,
+    "fact_reviews_daily": 1511,
+    "fact_ads_daily": 1511,
+    "fact_inventory_daily": 1511,
+    "fact_profit_snapshot": 1511,
+    "fact_sku_ext_daily": 1511,
+    "strategy_task": 1,
+    "execution_log": 1,
+    "push_delivery_log": 2
+  },
+  "gatePassByTable": {
+    "fact_sku_daily": true,
+    "fact_orders_daily": true,
+    "fact_reviews_daily": true,
+    "fact_ads_daily": true,
+    "fact_inventory_daily": true,
+    "fact_profit_snapshot": true,
+    "fact_sku_ext_daily": true,
+    "strategy_task": true,
+    "execution_log": true,
+    "push_delivery_log": true
+  },
+  "allPass": true
+}

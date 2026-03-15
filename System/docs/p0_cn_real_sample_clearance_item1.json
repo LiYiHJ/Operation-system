@@ -1,0 +1,40 @@
+{
+  "scope": "cn_real_sample_clearance_item1",
+  "file": "System/data/销售数据分析.xlsx",
+  "beforeObserved": {
+    "confirm": {
+      "status": "success",
+      "importedRows": 19,
+      "errorRows": 25,
+      "rowErrorSummary": {
+        "quarantined": 25,
+        "fatal": 0
+      }
+    },
+    "keyIssue": "大量 SKU不能为空 进入 quarantine"
+  },
+  "afterFix": {
+    "parse": {
+      "mappedCount": 29,
+      "unmappedCount": 3,
+      "candidateColumns": 32
+    },
+    "confirm": {
+      "status": "success",
+      "importedRows": 11,
+      "errorRows": 0,
+      "stagingRows": 11,
+      "factLoadErrors": 0,
+      "rowErrorSummary": {
+        "auto_fixed": 0,
+        "ignorable": 0,
+        "quarantined": 0,
+        "fatal": 0
+      }
+    }
+  },
+  "notes": [
+    "通过 SKU 值标准化与 no-sku 说明/汇总行忽略，消除了中文真实样本的 SKU 为空 quarantine。",
+    "当前 importedRows 下降，表示该样本中大量无 SKU 行被视为不可入库行并被忽略。"
+  ]
+}

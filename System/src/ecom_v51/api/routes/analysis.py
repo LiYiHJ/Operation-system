@@ -25,13 +25,14 @@ def price_cockpit():
         return jsonify({'error': str(e)}), 500
 
 
-
-
 @analysis_bp.route('/price', methods=['GET'])
 def price_compat():
     """兼容旧路径：/analysis/price -> /analysis/price-cockpit"""
     try:
-        service = AnalysisService(shop_id=int(request.args.get('shopId', request.args.get('shop_id', 1))), days=int(request.args.get('days', 7)))
+        service = AnalysisService(
+            shop_id=int(request.args.get('shopId', request.args.get('shop_id', 1))),
+            days=int(request.args.get('days', 7)),
+        )
         return jsonify(service.price_cockpit(view=request.args.get('view', 'daily')))
     except Exception as e:
         return jsonify({'error': str(e)}), 500

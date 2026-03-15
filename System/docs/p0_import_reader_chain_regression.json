@@ -1,0 +1,1727 @@
+{
+  "before": {
+    "analytics_xlsx": {
+      "legacyReadError": "Unable to read workbook: could not read stylesheet from data/analytics_report_2026-03-12_23_49.xlsx.\nThis is most probably because the workbook source files contain some invalid XML.\nPlease see the exception for more details.",
+      "legacyCandidateColumnsApprox": 47
+    },
+    "cn_xlsx": {
+      "legacyRead": "ok",
+      "legacyCandidateColumnsApprox": 31
+    },
+    "real_csv_scene": {
+      "legacyRead": "ok",
+      "legacyCandidateColumnsApprox": 31
+    },
+    "demo_csv": {
+      "legacyRead": "ok",
+      "legacyCandidateColumnsApprox": 17
+    }
+  },
+  "after": {
+    "analytics_xlsx": {
+      "readerEngineUsed": "openpyxl",
+      "readerFallbackStage": "fallback_ooxml_repair",
+      "rawColumns": 73,
+      "rawColumnNames": [
+        "Товары",
+        "Категория 1 уровня",
+        "Категория 2 уровня",
+        "Категория 3 уровня",
+        "Бренд",
+        "Модель",
+        "Схема работы",
+        "SKU",
+        "Артикул",
+        "Продажи",
+        "Unnamed: 10",
+        "Unnamed: 11",
+        "Unnamed: 12",
+        "Unnamed: 13",
+        "Unnamed: 14",
+        "Воронка продаж",
+        "Unnamed: 16",
+        "Unnamed: 17",
+        "Unnamed: 18",
+        "Unnamed: 19"
+      ],
+      "normalizedColumns": 47,
+      "normalizedColumnNames": [
+        "Товары",
+        "Категория 1 уровня",
+        "Категория 2 уровня",
+        "Категория 3 уровня",
+        "Бренд",
+        "Модель",
+        "Схема работы",
+        "SKU",
+        "Артикул",
+        "Продажи ABC-анализ по сумме заказов",
+        "ABC-анализ по количеству заказов",
+        "Заказано на сумму",
+        "Доля в общей сумме заказов",
+        "Воронка продаж Позиция в поиске и каталоге",
+        "Показы всего",
+        "Конверсия из показа в заказ",
+        "Показы в поиске и каталоге",
+        "Конверсия из поиска и каталога в корзину",
+        "Добавления из поиска и каталога в корзину",
+        "Конверсия из поиска и каталога в карточку"
+      ],
+      "candidateColumns": 47,
+      "candidateFieldNames": [
+        "Товары",
+        "Категория 1 уровня",
+        "Категория 2 уровня",
+        "Категория 3 уровня",
+        "Бренд",
+        "Модель",
+        "Схема работы",
+        "SKU",
+        "Артикул",
+        "Продажи ABC-анализ по сумме заказов",
+        "ABC-анализ по количеству заказов",
+        "Заказано на сумму",
+        "Доля в общей сумме заказов",
+        "Воронка продаж Позиция в поиске и каталоге",
+        "Показы всего",
+        "Конверсия из показа в заказ",
+        "Показы в поиске и каталоге",
+        "Конверсия из поиска и каталога в корзину",
+        "Добавления из поиска и каталога в корзину",
+        "Конверсия из поиска и каталога в карточку"
+      ],
+      "ignoredColumns": 0,
+      "ignoredFields": [],
+      "mappedCount": 36,
+      "unmappedCount": 11,
+      "mappingCoverage": 0.766,
+      "mappedConfidence": 0.943,
+      "fieldMappingsSample": [
+        {
+          "originalField": "Товары",
+          "standardField": "name",
+          "confidence": 0.981,
+          "sampleValues": [
+            "мини-швабра, губчатая насадка, для кухни и ванной, с ручным отжимом",
+            "мини-швабра, губчатая насадка, для кухни и ванной, с ручным отжимом",
+            "Бытовые мини-швабры не нужно отжимать вручную, они подходят для кухонь и ванных комнат.",
+            "Трендовая радужная керамическая ваза с полосками современный декор для гостиной, прихожей и спальни, идеально для цветочных композиций",
+            "Трендовый Керамический Набор Ваз Для Украшения Интерьера И Цветочной Композиции"
+          ],
+          "isManual": false,
+          "reasons": [
+            "关键词匹配(0.12)"
+          ]
+        },
+        {
+          "originalField": "Категория 1 уровня",
+          "standardField": "category",
+          "confidence": 0.95,
+          "sampleValues": [
+            "Дом и сад",
+            "Дом и сад",
+            "Дом и сад",
+            "Дом и сад",
+            "Дом и сад"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Категория 2 уровня",
+          "standardField": "category",
+          "confidence": 0.95,
+          "sampleValues": [
+            "Инвентарь для уборки",
+            "Инвентарь для уборки",
+            "Инвентарь для уборки",
+            "Декор и интерьер",
+            "Декор и интерьер"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Категория 3 уровня",
+          "standardField": "category",
+          "confidence": 0.95,
+          "sampleValues": [
+            "Швабра",
+            "Швабра",
+            "Швабра",
+            "Ваза",
+            "Ваза"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Бренд",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "Модель",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "HAA132",
+            "HAA132",
+            "HAA132",
+            "HAA045",
+            "HAA047"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "Схема работы",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "FBS",
+            "FBS",
+            "FBS",
+            "FBS",
+            "FBS"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "SKU",
+          "standardField": "sku",
+          "confidence": 0.95,
+          "sampleValues": [
+            "3181329490",
+            "2833956250",
+            "3181392478",
+            "2381697073",
+            "2494283355"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Артикул",
+          "standardField": "sku",
+          "confidence": 0.95,
+          "sampleValues": [
+            "HAA132-03-Y1",
+            "HAA132-01-Y1",
+            "HAA180-07",
+            "HAA045-03",
+            "HAA047-06"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Продажи ABC-анализ по сумме заказов",
+          "standardField": "orders",
+          "confidence": 0.936,
+          "sampleValues": [
+            "A",
+            "A",
+            "A",
+            "A",
+            "A"
+          ],
+          "isManual": false,
+          "reasons": [
+            "关键词匹配(0.14)"
+          ]
+        },
+        {
+          "originalField": "ABC-анализ по количеству заказов",
+          "standardField": "orders",
+          "confidence": 0.936,
+          "sampleValues": [
+            "A",
+            "A",
+            "A",
+            "A",
+            "A"
+          ],
+          "isManual": false,
+          "reasons": [
+            "关键词匹配(0.14)"
+          ]
+        },
+        {
+          "originalField": "Заказано на сумму",
+          "standardField": "order_amount",
+          "confidence": 0.95,
+          "sampleValues": [
+            "42703",
+            "37075",
+            "18196",
+            "15813",
+            "12344"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Доля в общей сумме заказов",
+          "standardField": "orders",
+          "confidence": 0.936,
+          "sampleValues": [
+            "0.111",
+            "0.096",
+            "0.047",
+            "0.040999999999999995",
+            "0.032"
+          ],
+          "isManual": false,
+          "reasons": [
+            "关键词匹配(0.14)"
+          ]
+        },
+        {
+          "originalField": "Воронка продаж Позиция в поиске и каталоге",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "401",
+            "162",
+            "557",
+            "161",
+            "451"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "Показы всего",
+          "standardField": "impressions_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "33302",
+            "156878",
+            "18026",
+            "17404",
+            "9187"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Конверсия из показа в заказ",
+          "standardField": "orders",
+          "confidence": 0.936,
+          "sampleValues": [
+            "0.0054",
+            "0.0023",
+            "0.0037",
+            "0.0018",
+            "0.0008"
+          ],
+          "isManual": false,
+          "reasons": [
+            "关键词匹配(0.14)"
+          ]
+        },
+        {
+          "originalField": "Показы в поиске и каталоге",
+          "standardField": "impressions_search_catalog",
+          "confidence": 0.95,
+          "sampleValues": [
+            "1402",
+            "8347",
+            "791",
+            "2890",
+            "996"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Конверсия из поиска и каталога в корзину",
+          "standardField": "conversion_rate",
+          "confidence": 0.933,
+          "sampleValues": [
+            "0.0036",
+            "0.0016",
+            "0.0013",
+            "0.0034999999999999996",
+            "0"
+          ],
+          "isManual": false,
+          "reasons": [
+            "关键词匹配(0.20)",
+            "正则匹配(0.33)"
+          ]
+        },
+        {
+          "originalField": "Добавления из поиска и каталога в корзину",
+          "standardField": "add_to_cart",
+          "confidence": 0.871,
+          "sampleValues": [
+            "5",
+            "13",
+            "1",
+            "10",
+            "0"
+          ],
+          "isManual": false,
+          "reasons": [
+            "关键词匹配(0.29)"
+          ]
+        },
+        {
+          "originalField": "Конверсия из поиска и каталога в карточку",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "2.1469",
+            "0.7661",
+            "2.3565",
+            "0.4865",
+            "0.8143"
+          ],
+          "isManual": false,
+          "reasons": []
+        }
+      ],
+      "normalizeStats": {
+        "droppedPlaceholderColumns": [],
+        "droppedDynamicColumns": [
+          "Динамика",
+          "Динамика_1",
+          "Динамика_10",
+          "Динамика_11",
+          "Динамика_12",
+          "Динамика_13",
+          "Динамика_14",
+          "Динамика_15",
+          "Динамика_16",
+          "Динамика_17",
+          "Динамика_18",
+          "Динамика_19",
+          "Динамика_2",
+          "Динамика_20",
+          "Динамика_21",
+          "Динамика_22",
+          "Динамика_23",
+          "Динамика_24",
+          "Динамика_25",
+          "Динамика_3",
+          "Динамика_4",
+          "Динамика_5",
+          "Динамика_6",
+          "Динамика_7",
+          "Динамика_8",
+          "Динамика_9"
+        ],
+        "removedDescriptionRows": 2,
+        "removedSummaryRows": 1
+      }
+    },
+    "cn_xlsx": {
+      "readerEngineUsed": "openpyxl_values",
+      "readerFallbackStage": "fallback_openpyxl_readonly",
+      "rawColumns": 33,
+      "rawColumnNames": [
+        "col_1",
+        "ABC分析",
+        "订购金额",
+        "在订单总额中的份额",
+        "在搜索结果和目录中的位置",
+        "总展示次数",
+        "从展示到点击的转化率",
+        "搜索结果和目录中的展示次数",
+        "从搜索结果和目录中添加至购物车的转化率",
+        "从搜索结果和目录中添加至购物车",
+        "从搜索结果和目录中进入卡片的转化率",
+        "商品卡片访问",
+        "从商品卡片添加至购物车的转化率",
+        "从商品卡片添加至购物车",
+        "添加至购物车的转化率总计",
+        "添加至购物车总计",
+        "从购物车到订单的转化率",
+        "已订购商品",
+        "已配送商品",
+        "从订单到认购的转化率"
+      ],
+      "normalizedColumns": 32,
+      "normalizedColumnNames": [
+        "col_1",
+        "ABC分析",
+        "订购金额",
+        "在订单总额中的份额",
+        "在搜索结果和目录中的位置",
+        "总展示次数",
+        "从展示到点击的转化率",
+        "搜索结果和目录中的展示次数",
+        "从搜索结果和目录中添加至购物车的转化率",
+        "从搜索结果和目录中添加至购物车",
+        "从搜索结果和目录中进入卡片的转化率",
+        "商品卡片访问",
+        "从商品卡片添加至购物车的转化率",
+        "从商品卡片添加至购物车",
+        "添加至购物车的转化率总计",
+        "添加至购物车总计",
+        "从购物车到订单的转化率",
+        "已订购商品",
+        "已配送商品",
+        "从订单到认购的转化率"
+      ],
+      "candidateColumns": 32,
+      "candidateFieldNames": [
+        "col_1",
+        "ABC分析",
+        "订购金额",
+        "在订单总额中的份额",
+        "在搜索结果和目录中的位置",
+        "总展示次数",
+        "从展示到点击的转化率",
+        "搜索结果和目录中的展示次数",
+        "从搜索结果和目录中添加至购物车的转化率",
+        "从搜索结果和目录中添加至购物车",
+        "从搜索结果和目录中进入卡片的转化率",
+        "商品卡片访问",
+        "从商品卡片添加至购物车的转化率",
+        "从商品卡片添加至购物车",
+        "添加至购物车的转化率总计",
+        "添加至购物车总计",
+        "从购物车到订单的转化率",
+        "已订购商品",
+        "已配送商品",
+        "从订单到认购的转化率"
+      ],
+      "ignoredColumns": 0,
+      "ignoredFields": [],
+      "mappedCount": 29,
+      "unmappedCount": 3,
+      "mappingCoverage": 0.906,
+      "mappedConfidence": 0.945,
+      "fieldMappingsSample": [
+        {
+          "originalField": "col_1",
+          "standardField": "sku",
+          "confidence": 0.8,
+          "sampleValues": [
+            "Mop, length 13 cm",
+            "FBS 货号HAA132-01-Y1",
+            "Mop, length 25 cm",
+            "FBS 货号HAA180-04",
+            "Mop, length 10.0 cm"
+          ],
+          "isManual": false,
+          "reasons": [
+            "sku_fallback_first_column"
+          ]
+        },
+        {
+          "originalField": "ABC分析",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "根据金额和数量",
+            "—",
+            "A",
+            "A",
+            "A"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "订购金额",
+          "standardField": "order_amount",
+          "confidence": 0.95,
+          "sampleValues": [
+            "3 542 745 ₽",
+            "245 029 ₽",
+            "244 964 ₽",
+            "78 305 ₽",
+            "59 273 ₽"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "在订单总额中的份额",
+          "standardField": "order_amount_share",
+          "confidence": 0.95,
+          "sampleValues": [
+            "1.0",
+            "0.0",
+            "0.07",
+            "0.07",
+            "0.02"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "在搜索结果和目录中的位置",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "213.0",
+            "184.0",
+            "543.0",
+            "634.0",
+            "418.0"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "总展示次数",
+          "standardField": "impressions_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "12 031 806",
+            "1 090 398",
+            "171 516",
+            "55 536",
+            "97 651"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从展示到点击的转化率",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "0,15%",
+            "0,13%",
+            "0,61%",
+            "0,52%",
+            "0,37%"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "搜索结果和目录中的展示次数",
+          "standardField": "impressions_search_catalog",
+          "confidence": 0.95,
+          "sampleValues": [
+            "2 092 887",
+            "31 206",
+            "4 820",
+            "2 094",
+            "8 278"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车的转化率",
+          "standardField": "search_catalog_to_cart_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "0,12%",
+            "0,12%",
+            "0,12%",
+            "0,1%",
+            "0,16%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车",
+          "standardField": "add_to_cart_from_search_catalog",
+          "confidence": 0.95,
+          "sampleValues": [
+            "2 483",
+            "38",
+            "6",
+            "2",
+            "13"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从搜索结果和目录中进入卡片的转化率",
+          "standardField": "search_catalog_to_card_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "34,38%",
+            "180,02%",
+            "658,92%",
+            "728,13%",
+            "157,61%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "商品卡片访问",
+          "standardField": "product_card_visits",
+          "confidence": 0.95,
+          "sampleValues": [
+            "719 506",
+            "56 178",
+            "31 760",
+            "15 247",
+            "13 047"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从商品卡片添加至购物车的转化率",
+          "standardField": "card_to_cart_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "7,37%",
+            "8,26%",
+            "8,49%",
+            "5,83%",
+            "8,16%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从商品卡片添加至购物车",
+          "standardField": "add_to_cart_from_card",
+          "confidence": 0.95,
+          "sampleValues": [
+            "53 030",
+            "4 643",
+            "2 698",
+            "889",
+            "1 065"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "添加至购物车的转化率总计",
+          "standardField": "add_to_cart_cvr_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "0,46%",
+            "0,43%",
+            "1,58%",
+            "1,6%",
+            "1,1%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "添加至购物车总计",
+          "standardField": "add_to_cart_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "55 513",
+            "4 681",
+            "2 704",
+            "891",
+            "1 078"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从购物车到订单的转化率",
+          "standardField": "cart_to_order_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "33,39%",
+            "29,72%",
+            "38,99%",
+            "32,62%",
+            "33,62%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "已订购商品",
+          "standardField": "items_ordered",
+          "confidence": 0.95,
+          "sampleValues": [
+            "17 708",
+            "1 380",
+            "1 052",
+            "290",
+            "358"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "已配送商品",
+          "standardField": "items_delivered",
+          "confidence": 0.95,
+          "sampleValues": [
+            "15 470",
+            "1 255",
+            "840",
+            "219",
+            "259"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从订单到认购的转化率",
+          "standardField": "order_to_purchase_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "93,04%",
+            "94,06%",
+            "96,01%",
+            "95,52%",
+            "94,41%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        }
+      ],
+      "normalizeStats": {
+        "droppedPlaceholderColumns": [],
+        "droppedDynamicColumns": [],
+        "removedDescriptionRows": 0,
+        "removedSummaryRows": 1
+      }
+    },
+    "real_csv_scene": {
+      "readerEngineUsed": null,
+      "readerFallbackStage": "none",
+      "rawColumns": 32,
+      "rawColumnNames": [
+        "Unnamed: 0",
+        "ABC分析",
+        "订购金额",
+        "在订单总额中的份额",
+        "在搜索结果和目录中的位置",
+        "总展示次数",
+        "从展示到点击的转化率",
+        "搜索结果和目录中的展示次数",
+        "从搜索结果和目录中添加至购物车的转化率",
+        "从搜索结果和目录中添加至购物车",
+        "从搜索结果和目录中进入卡片的转化率",
+        "商品卡片访问",
+        "从商品卡片添加至购物车的转化率",
+        "从商品卡片添加至购物车",
+        "添加至购物车的转化率总计",
+        "添加至购物车总计",
+        "从购物车到订单的转化率",
+        "已订购商品",
+        "已配送商品",
+        "从订单到认购的转化率"
+      ],
+      "normalizedColumns": 32,
+      "normalizedColumnNames": [
+        "col_1",
+        "ABC分析",
+        "订购金额",
+        "在订单总额中的份额",
+        "在搜索结果和目录中的位置",
+        "总展示次数",
+        "从展示到点击的转化率",
+        "搜索结果和目录中的展示次数",
+        "从搜索结果和目录中添加至购物车的转化率",
+        "从搜索结果和目录中添加至购物车",
+        "从搜索结果和目录中进入卡片的转化率",
+        "商品卡片访问",
+        "从商品卡片添加至购物车的转化率",
+        "从商品卡片添加至购物车",
+        "添加至购物车的转化率总计",
+        "添加至购物车总计",
+        "从购物车到订单的转化率",
+        "已订购商品",
+        "已配送商品",
+        "从订单到认购的转化率"
+      ],
+      "candidateColumns": 32,
+      "candidateFieldNames": [
+        "col_1",
+        "ABC分析",
+        "订购金额",
+        "在订单总额中的份额",
+        "在搜索结果和目录中的位置",
+        "总展示次数",
+        "从展示到点击的转化率",
+        "搜索结果和目录中的展示次数",
+        "从搜索结果和目录中添加至购物车的转化率",
+        "从搜索结果和目录中添加至购物车",
+        "从搜索结果和目录中进入卡片的转化率",
+        "商品卡片访问",
+        "从商品卡片添加至购物车的转化率",
+        "从商品卡片添加至购物车",
+        "添加至购物车的转化率总计",
+        "添加至购物车总计",
+        "从购物车到订单的转化率",
+        "已订购商品",
+        "已配送商品",
+        "从订单到认购的转化率"
+      ],
+      "ignoredColumns": 0,
+      "ignoredFields": [],
+      "mappedCount": 29,
+      "unmappedCount": 3,
+      "mappingCoverage": 0.906,
+      "mappedConfidence": 0.945,
+      "fieldMappingsSample": [
+        {
+          "originalField": "col_1",
+          "standardField": "sku",
+          "confidence": 0.8,
+          "sampleValues": [
+            "Mop, length 13 cm",
+            "FBS 货号HAA132-01-Y1",
+            "Mop, length 25 cm",
+            "FBS 货号HAA180-04",
+            "Mop, length 10.0 cm"
+          ],
+          "isManual": false,
+          "reasons": [
+            "sku_fallback_first_column"
+          ]
+        },
+        {
+          "originalField": "ABC分析",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "根据金额和数量",
+            "—",
+            "A",
+            "A",
+            "A"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "订购金额",
+          "standardField": "order_amount",
+          "confidence": 0.95,
+          "sampleValues": [
+            "3 542 745 ₽",
+            "245 029 ₽",
+            "244 964 ₽",
+            "78 305 ₽",
+            "59 273 ₽"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "在订单总额中的份额",
+          "standardField": "order_amount_share",
+          "confidence": 0.95,
+          "sampleValues": [
+            "1.0",
+            "0.0",
+            "0.07",
+            "0.07",
+            "0.02"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "在搜索结果和目录中的位置",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "213.0",
+            "184.0",
+            "543.0",
+            "634.0",
+            "418.0"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "总展示次数",
+          "standardField": "impressions_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "12 031 806",
+            "1 090 398",
+            "171 516",
+            "55 536",
+            "97 651"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从展示到点击的转化率",
+          "standardField": null,
+          "confidence": 0.0,
+          "sampleValues": [
+            "0,15%",
+            "0,13%",
+            "0,61%",
+            "0,52%",
+            "0,37%"
+          ],
+          "isManual": false,
+          "reasons": []
+        },
+        {
+          "originalField": "搜索结果和目录中的展示次数",
+          "standardField": "impressions_search_catalog",
+          "confidence": 0.95,
+          "sampleValues": [
+            "2 092 887",
+            "31 206",
+            "4 820",
+            "2 094",
+            "8 278"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车的转化率",
+          "standardField": "search_catalog_to_cart_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "0,12%",
+            "0,12%",
+            "0,12%",
+            "0,1%",
+            "0,16%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从搜索结果和目录中添加至购物车",
+          "standardField": "add_to_cart_from_search_catalog",
+          "confidence": 0.95,
+          "sampleValues": [
+            "2 483",
+            "38",
+            "6",
+            "2",
+            "13"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从搜索结果和目录中进入卡片的转化率",
+          "standardField": "search_catalog_to_card_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "34,38%",
+            "180,02%",
+            "658,92%",
+            "728,13%",
+            "157,61%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "商品卡片访问",
+          "standardField": "product_card_visits",
+          "confidence": 0.95,
+          "sampleValues": [
+            "719 506",
+            "56 178",
+            "31 760",
+            "15 247",
+            "13 047"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从商品卡片添加至购物车的转化率",
+          "standardField": "card_to_cart_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "7,37%",
+            "8,26%",
+            "8,49%",
+            "5,83%",
+            "8,16%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从商品卡片添加至购物车",
+          "standardField": "add_to_cart_from_card",
+          "confidence": 0.95,
+          "sampleValues": [
+            "53 030",
+            "4 643",
+            "2 698",
+            "889",
+            "1 065"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "添加至购物车的转化率总计",
+          "standardField": "add_to_cart_cvr_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "0,46%",
+            "0,43%",
+            "1,58%",
+            "1,6%",
+            "1,1%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "添加至购物车总计",
+          "standardField": "add_to_cart_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "55 513",
+            "4 681",
+            "2 704",
+            "891",
+            "1 078"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从购物车到订单的转化率",
+          "standardField": "cart_to_order_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "33,39%",
+            "29,72%",
+            "38,99%",
+            "32,62%",
+            "33,62%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "已订购商品",
+          "standardField": "items_ordered",
+          "confidence": 0.95,
+          "sampleValues": [
+            "17 708",
+            "1 380",
+            "1 052",
+            "290",
+            "358"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "已配送商品",
+          "standardField": "items_delivered",
+          "confidence": 0.95,
+          "sampleValues": [
+            "15 470",
+            "1 255",
+            "840",
+            "219",
+            "259"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "从订单到认购的转化率",
+          "standardField": "order_to_purchase_cvr",
+          "confidence": 0.95,
+          "sampleValues": [
+            "93,04%",
+            "94,06%",
+            "96,01%",
+            "95,52%",
+            "94,41%"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        }
+      ],
+      "normalizeStats": {
+        "droppedPlaceholderColumns": [],
+        "droppedDynamicColumns": [],
+        "removedDescriptionRows": 0,
+        "removedSummaryRows": 1
+      }
+    },
+    "demo_csv": {
+      "readerEngineUsed": null,
+      "readerFallbackStage": "none",
+      "rawColumns": 17,
+      "rawColumnNames": [
+        "SKU",
+        "Name",
+        "Impressions",
+        "Card visits",
+        "Add to Cart",
+        "Orders",
+        "Revenue",
+        "Rating",
+        "Reviews",
+        "Returns",
+        "Stock",
+        "Ad spend",
+        "Ad orders",
+        "sale_price",
+        "list_price",
+        "cost_price",
+        "commission_rate"
+      ],
+      "normalizedColumns": 17,
+      "normalizedColumnNames": [
+        "SKU",
+        "Name",
+        "Impressions",
+        "Card visits",
+        "Add to Cart",
+        "Orders",
+        "Revenue",
+        "Rating",
+        "Reviews",
+        "Returns",
+        "Stock",
+        "Ad spend",
+        "Ad orders",
+        "sale_price",
+        "list_price",
+        "cost_price",
+        "commission_rate"
+      ],
+      "candidateColumns": 17,
+      "candidateFieldNames": [
+        "SKU",
+        "Name",
+        "Impressions",
+        "Card visits",
+        "Add to Cart",
+        "Orders",
+        "Revenue",
+        "Rating",
+        "Reviews",
+        "Returns",
+        "Stock",
+        "Ad spend",
+        "Ad orders",
+        "sale_price",
+        "list_price",
+        "cost_price",
+        "commission_rate"
+      ],
+      "ignoredColumns": 0,
+      "ignoredFields": [],
+      "mappedCount": 17,
+      "unmappedCount": 0,
+      "mappingCoverage": 1.0,
+      "mappedConfidence": 0.95,
+      "fieldMappingsSample": [
+        {
+          "originalField": "SKU",
+          "standardField": "sku",
+          "confidence": 0.95,
+          "sampleValues": [
+            "SKU-THERMO-01",
+            "SKU-THERMO-02",
+            "SKU-BAG-01",
+            "SKU-BAG-02",
+            "SKU-MAT-01"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Name",
+          "standardField": "name",
+          "confidence": 0.95,
+          "sampleValues": [
+            "保温杯经典款",
+            "保温杯轻量款",
+            "运动背包大容量",
+            "通勤背包轻便款",
+            "瑜伽垫防滑款"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Impressions",
+          "standardField": "impressions_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "1200",
+            "950",
+            "1600",
+            "1350",
+            "1100"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Card visits",
+          "standardField": "product_card_visits",
+          "confidence": 0.95,
+          "sampleValues": [
+            "220",
+            "180",
+            "300",
+            "260",
+            "205"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Add to Cart",
+          "standardField": "add_to_cart_total",
+          "confidence": 0.95,
+          "sampleValues": [
+            "58",
+            "42",
+            "77",
+            "66",
+            "52"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Orders",
+          "standardField": "orders",
+          "confidence": 0.95,
+          "sampleValues": [
+            "32",
+            "21",
+            "38",
+            "34",
+            "25"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Revenue",
+          "standardField": "order_amount",
+          "confidence": 0.95,
+          "sampleValues": [
+            "8960",
+            "4830",
+            "12920",
+            "10200",
+            "5750"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Rating",
+          "standardField": "rating_value",
+          "confidence": 0.95,
+          "sampleValues": [
+            "4.8",
+            "4.6",
+            "4.5",
+            "4.3",
+            "4.1"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Reviews",
+          "standardField": "review_count",
+          "confidence": 0.95,
+          "sampleValues": [
+            "12",
+            "8",
+            "15",
+            "11",
+            "9"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Returns",
+          "standardField": "items_returned",
+          "confidence": 0.95,
+          "sampleValues": [
+            "2",
+            "1",
+            "3",
+            "2",
+            "2"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Stock",
+          "standardField": "stock",
+          "confidence": 0.95,
+          "sampleValues": [
+            "180",
+            "95",
+            "72",
+            "48",
+            "36"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Ad spend",
+          "standardField": "ad_spend",
+          "confidence": 0.95,
+          "sampleValues": [
+            "980",
+            "640",
+            "1350",
+            "1120",
+            "760"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "Ad orders",
+          "standardField": "ad_orders",
+          "confidence": 0.95,
+          "sampleValues": [
+            "10",
+            "7",
+            "13",
+            "11",
+            "8"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "sale_price",
+          "standardField": "sale_price",
+          "confidence": 0.95,
+          "sampleValues": [
+            "280",
+            "230",
+            "340",
+            "300",
+            "230"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "list_price",
+          "standardField": "list_price",
+          "confidence": 0.95,
+          "sampleValues": [
+            "329",
+            "289",
+            "399",
+            "359",
+            "269"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "cost_price",
+          "standardField": "cost_price",
+          "confidence": 0.95,
+          "sampleValues": [
+            "132",
+            "112",
+            "168",
+            "149",
+            "121"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        },
+        {
+          "originalField": "commission_rate",
+          "standardField": "commission_rate",
+          "confidence": 0.95,
+          "sampleValues": [
+            "0.23",
+            "0.22",
+            "0.25",
+            "0.24",
+            "0.21"
+          ],
+          "isManual": false,
+          "reasons": [
+            "explicit_mapping"
+          ]
+        }
+      ],
+      "normalizeStats": {
+        "droppedPlaceholderColumns": [],
+        "droppedDynamicColumns": [],
+        "removedDescriptionRows": 0,
+        "removedSummaryRows": 0
+      }
+    }
+  },
+  "apiSamples": {
+    "analytics_xlsx": {
+      "uploadStatus": 200,
+      "uploadBodySummary": {
+        "readerEngineUsed": "openpyxl",
+        "readerFallbackStage": "fallback_ooxml_repair",
+        "mappedCount": 36,
+        "candidateColumns": 47,
+        "mappingCoverage": 0.766
+      },
+      "confirmStatus": 200,
+      "confirmBodySummary": {
+        "status": "success",
+        "importedRows": 1370,
+        "errorRows": 0
+      }
+    },
+    "cn_xlsx": {
+      "uploadStatus": 200,
+      "uploadBodySummary": {
+        "readerEngineUsed": "openpyxl_values",
+        "readerFallbackStage": "fallback_openpyxl_readonly",
+        "mappedCount": 29,
+        "candidateColumns": 32,
+        "mappingCoverage": 0.906
+      },
+      "confirmStatus": 200,
+      "confirmBodySummary": {
+        "status": "success",
+        "importedRows": 19,
+        "errorRows": 25
+      }
+    },
+    "real_csv_scene": {
+      "uploadStatus": 200,
+      "uploadBodySummary": {
+        "readerEngineUsed": null,
+        "readerFallbackStage": "none",
+        "mappedCount": 29,
+        "candidateColumns": 32,
+        "mappingCoverage": 0.906
+      },
+      "confirmStatus": 200,
+      "confirmBodySummary": {
+        "status": "success",
+        "importedRows": 19,
+        "errorRows": 23
+      }
+    },
+    "demo_csv": {
+      "uploadStatus": 200,
+      "uploadBodySummary": {
+        "readerEngineUsed": null,
+        "readerFallbackStage": "none",
+        "mappedCount": 17,
+        "candidateColumns": 17,
+        "mappingCoverage": 1.0
+      },
+      "confirmStatus": 200,
+      "confirmBodySummary": {
+        "status": "success",
+        "importedRows": 6,
+        "errorRows": 0
+      }
+    }
+  },
+  "compare": {
+    "analytics_xlsx": {
+      "legacyReadError": "Unable to read workbook: could not read stylesheet from data/analytics_report_2026-03-12_23_49.xlsx.\nThis is most probably because the workbook source files contain some invalid XML.\nPlease see the exception for more details.",
+      "legacyCandidateColumnsApprox": 47,
+      "candidateColumnsNow": 47,
+      "mappedNow": 36,
+      "unmappedNow": 11,
+      "readerFallbackStageNow": "fallback_ooxml_repair"
+    },
+    "cn_xlsx": {
+      "legacyReadError": null,
+      "legacyCandidateColumnsApprox": 31,
+      "candidateColumnsNow": 32,
+      "mappedNow": 29,
+      "unmappedNow": 3,
+      "readerFallbackStageNow": "fallback_openpyxl_readonly"
+    },
+    "real_csv_scene": {
+      "legacyReadError": null,
+      "legacyCandidateColumnsApprox": 31,
+      "candidateColumnsNow": 32,
+      "mappedNow": 29,
+      "unmappedNow": 3,
+      "readerFallbackStageNow": "none"
+    },
+    "demo_csv": {
+      "legacyReadError": null,
+      "legacyCandidateColumnsApprox": 17,
+      "candidateColumnsNow": 17,
+      "mappedNow": 17,
+      "unmappedNow": 0,
+      "readerFallbackStageNow": "none"
+    }
+  },
+  "confirmRegression": {
+    "analytics_xlsx": {
+      "status": "success",
+      "importedRows": 1370,
+      "errorRows": 0
+    },
+    "cn_xlsx": {
+      "status": "success",
+      "importedRows": 19,
+      "errorRows": 25
+    },
+    "real_csv_scene": {
+      "status": "success",
+      "importedRows": 19,
+      "errorRows": 23
+    },
+    "demo_csv": {
+      "status": "success",
+      "importedRows": 6,
+      "errorRows": 0
+    }
+  },
+  "coreFieldHitChecklist": {
+    "订单金额": true,
+    "总展示次数": true,
+    "商品卡片访问": true,
+    "下单数": true,
+    "加购数": true,
+    "评分": true,
+    "评论数": true,
+    "库存": true,
+    "价格指数状态": true,
+    "活动天数": true
+  }
+}

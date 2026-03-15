@@ -30,11 +30,15 @@ src/ecom_v51.egg-info/top_level.txt
 src/ecom_v51/api/__init__.py
 src/ecom_v51/api/app.py
 src/ecom_v51/api/routes/__init__.py
+src/ecom_v51/api/routes/ads.py
 src/ecom_v51/api/routes/analysis.py
+src/ecom_v51/api/routes/auth.py
 src/ecom_v51/api/routes/dashboard.py
 src/ecom_v51/api/routes/import_route.py
+src/ecom_v51/api/routes/integration.py
 src/ecom_v51/api/routes/products.py
 src/ecom_v51/api/routes/profit.py
+src/ecom_v51/api/routes/reminder.py
 src/ecom_v51/api/routes/strategy.py
 src/ecom_v51/api/routes/war_room.py
 src/ecom_v51/config/settings.py
@@ -46,8 +50,11 @@ src/ecom_v51/db/init_db.py
 src/ecom_v51/db/models.py
 src/ecom_v51/db/session.py
 src/ecom_v51/services/__init__.py
+src/ecom_v51/services/analysis_service.py
+src/ecom_v51/services/auth_service.py
 src/ecom_v51/services/dashboard_service.py
 src/ecom_v51/services/import_service.py
+src/ecom_v51/services/integration_service.py
 src/ecom_v51/services/product_service.py
 src/ecom_v51/services/profit_service.py
 src/ecom_v51/services/report_service.py
@@ -67,7 +74,3 @@ src/high_crt_analysis/__init__.py
 src/high_crt_analysis/cli.py
 src/high_crt_analysis/engine.py
 src/high_crt_analysis/models.py
-tests/test_complete.py
-tests/test_engine.py
-tests/test_integration.py
-tests/test_v51_system.py

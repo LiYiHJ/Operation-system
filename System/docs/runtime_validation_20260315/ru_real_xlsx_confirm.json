@@ -1,0 +1,29 @@
+﻿{
+    "batchId":  0,
+    "errorRows":  0,
+    "errors":  [
+                   "session not found"
+               ],
+    "finalStatus":  "failed",
+    "importedRows":  0,
+    "recoverySummary":  {
+
+                        },
+    "riskOverrideReasons":  [
+
+                            ],
+    "semanticAcceptanceReason":  [
+
+                                 ],
+    "semanticGateReasons":  [
+                                "session_not_found"
+                            ],
+    "semanticStatus":  "failed",
+    "sessionId":  1,
+    "status":  "failed",
+    "success":  false,
+    "transportStatus":  "failed",
+    "warnings":  [
+
+                 ]
+}

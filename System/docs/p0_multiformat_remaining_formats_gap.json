@@ -1,0 +1,43 @@
+{
+  "scope": "multiformat_remaining_formats_gap",
+  "formats": [
+    {
+      "format": "xls",
+      "realSampleFound": false,
+      "browserEvidenceFound": false,
+      "status": "未完成实证",
+      "note": "缺少真实样本，未执行浏览器上传链路"
+    },
+    {
+      "format": "xlsm",
+      "realSampleFound": false,
+      "browserEvidenceFound": false,
+      "status": "未完成实证",
+      "note": "缺少真实样本，未执行浏览器上传链路"
+    },
+    {
+      "format": "xlsb",
+      "realSampleFound": false,
+      "browserEvidenceFound": false,
+      "status": "未完成实证",
+      "note": "缺少真实样本，未执行浏览器上传链路"
+    },
+    {
+      "format": "json",
+      "realSampleFound": false,
+      "browserEvidenceFound": false,
+      "status": "未完成实证",
+      "note": "缺少真实样本，未执行浏览器上传链路"
+    }
+  ],
+  "sampleDiscoveryCommand": "rg --files System/data System/sample_data | rg '\\.(xls|xlsx|xlsm|xlsb|json)$'",
+  "sampleDiscoveryResult": [
+    "System/data/analytics_report_2026-03-12_23_49.xlsx",
+    "System/data/销售数据分析.xlsx",
+    "System/sample_data/ozon_bad_header_or_missing_sku.xlsx"
+  ],
+  "boundary": [
+    "无真实样本与浏览器证据时不允许上调结论。",
+    "不宣称导入整体通过。"
+  ]
+}

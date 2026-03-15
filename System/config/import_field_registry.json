@@ -42,7 +42,7 @@
           "ABC等级"
         ],
         "ru": [
-          "ABCкласс"
+          "ABC-класс"
         ],
         "en": [
           "abc_class",
@@ -190,7 +190,7 @@
       "canonical": "impression_to_click_cvr",
       "aliases": {
         "zh": [
-          "曝光点击转化率"
+          "曝光-点击转化率"
         ],
         "ru": [
           "Конверсия показ в клик"
@@ -237,7 +237,7 @@
       "canonical": "search_catalog_to_card_cvr",
       "aliases": {
         "zh": [
-          "搜索目录商品卡转化率",
+          "搜索目录-商品卡转化率",
           "从搜索结果和目录中进入卡片的转化率"
         ],
         "ru": [
@@ -311,7 +311,7 @@
       "canonical": "search_catalog_to_cart_cvr",
       "aliases": {
         "zh": [
-          "搜索目录加购转化率",
+          "搜索目录-加购转化率",
           "从搜索结果和目录中添加至购物车的转化率"
         ],
         "ru": [
@@ -359,7 +359,7 @@
       "canonical": "card_to_cart_cvr",
       "aliases": {
         "zh": [
-          "卡片加购转化率",
+          "卡片-加购转化率",
           "从商品卡片添加至购物车的转化率"
         ],
         "ru": [
@@ -434,7 +434,7 @@
       "canonical": "cart_to_order_cvr",
       "aliases": {
         "zh": [
-          "加购下单转化率",
+          "加购-下单转化率",
           "从购物车到订单的转化率"
         ],
         "ru": [
@@ -458,7 +458,7 @@
       "canonical": "order_to_purchase_cvr",
       "aliases": {
         "zh": [
-          "下单购买转化率",
+          "下单-购买转化率",
           "从订单到认购的转化率"
         ],
         "ru": [

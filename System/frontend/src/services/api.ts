@@ -18,6 +18,7 @@ import type {
   ImportResult,
   ConfirmImportRequest,
   ConfirmImportResponse,
+  FieldRegistryResponse,
   SkuAnalysis,
   AbcAnalysis,
   FunnelAnalysis,
@@ -177,6 +178,10 @@ export const importApi = {
     savedTemplates: any[]
   }>> => {
     return apiClient.get('/import/template')
+  },
+
+  getFieldRegistry: (): Promise<FieldRegistryResponse> => {
+    return apiClient.get('/import/field-registry')
   },
 }
 

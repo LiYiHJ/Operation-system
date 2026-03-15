@@ -1,0 +1,47 @@
+{
+  "scope": "xlsx_final_product_upload_path_validation_item",
+  "pathTypes": {
+    "test_fixture": "GET /api/import/test-fixture/<name> (取样辅助)",
+    "upload_server_file": "POST /api/import/upload-server-file (测试辅助，不是最终入口)",
+    "formal_upload": "POST /api/import/upload (最终产品上传入口)"
+  },
+  "browserEvidence": {
+    "network": "browser:/tmp/codex_browser_invocations/69efb3c554e1e07e/artifacts/artifacts/p0_xlsx_final_upload_path_network_v4.json",
+    "screenshot": "browser:/tmp/codex_browser_invocations/69efb3c554e1e07e/artifacts/artifacts/p0_xlsx_final_upload_path_browser_v4.png"
+  },
+  "parse": {
+    "mappedCount": 28,
+    "unmappedCount": 19,
+    "candidateColumns": 47
+  },
+  "confirm": {
+    "status": "success",
+    "importedRows": 1370,
+    "errorRows": 0,
+    "quarantineCount": 0,
+    "stagingRows": 1370,
+    "factLoadErrors": 0
+  },
+  "db": {
+    "import_batch": {
+      "status": "success",
+      "success_count": 1370,
+      "error_count": 0
+    },
+    "import_staging_row": {
+      "loaded": 1370
+    },
+    "import_error_log_count": 0,
+    "facts": {
+      "fact_sku_daily": 1370,
+      "fact_orders_daily": 1370,
+      "fact_inventory_daily": 1370,
+      "fact_reviews_daily": 1370
+    }
+  },
+  "answer": "xlsx 上传链路仍需保守写为阶段性通过。",
+  "boundary": [
+    "test-fixture/upload-server-file 不替代最终产品上传入口。",
+    "不宣称导入整体通过。"
+  ]
+}

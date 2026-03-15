@@ -1,19 +1,16 @@
-"""
-Dashboard API路由
-"""
+"""Dashboard API路由"""
 
 from flask import Blueprint, jsonify, request
+
 from ecom_v51.services import DashboardService
+
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
 
 @dashboard_bp.route('/overview', methods=['GET'])
 def get_overview():
-    """
-    获取Dashboard概览数据
-    前端调用: dashboardAPI.getOverview()
-    """
+    """获取 Dashboard 概览数据"""
     try:
         service = DashboardService()
         days = int(request.args.get('days', 7))
@@ -25,9 +22,7 @@ def get_overview():
 
 @dashboard_bp.route('/metrics', methods=['GET'])
 def get_metrics():
-    """
-    获取关键指标
-    """
+    """获取关键指标"""
     try:
         service = DashboardService()
         days = int(request.args.get('days', 7))
@@ -45,7 +40,7 @@ def get_metrics():
 
 @dashboard_bp.route('/top-skus', methods=['GET'])
 def get_top_skus():
-    """兼容旧路径：返回Top SKU"""
+    """兼容旧路径：返回 Top SKU"""
     try:
         service = DashboardService()
         days = int(request.args.get('days', 7))
@@ -91,7 +86,7 @@ def get_trends():
 
 @dashboard_bp.route('/shop-health', methods=['GET'])
 def get_shop_health():
-    """兼容旧路径：返回店铺健康度（基于overview派生）"""
+    """兼容旧路径：返回店铺健康度（基于 overview 派生）"""
     try:
         service = DashboardService()
         days = int(request.args.get('days', 7))
@@ -101,7 +96,10 @@ def get_shop_health():
             'shopName': 'Default Shop',
             'rating': float(overview.get('avgRating') or 0),
             'delayRate': 0.0,
-            'priceCompetitiveness': {'green': max(int(overview.get('totalProducts') or 0) - int(len(overview.get('alerts') or [])), 0), 'red': int(len(overview.get('alerts') or []))},
+            'priceCompetitiveness': {
+                'green': max(int(overview.get('totalProducts') or 0) - int(len(overview.get('alerts') or [])), 0),
+                'red': int(len(overview.get('alerts') or [])),
+            },
             'totalOrders': int(overview.get('totalOrders') or 0),
             'totalProducts': int(overview.get('totalProducts') or 0),
         }]

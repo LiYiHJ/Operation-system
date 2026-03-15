@@ -215,12 +215,68 @@ class ImportService:
         "rating_value",
     }
 
+
+    HEADER_SCAN_DEPTH = 20
+    HEADER_PREFERRED_START_RANGE = range(8, 17)
+    DYNAMIC_PATTERNS = [
+        "динамик",
+        "изменени",
+        "change",
+        "delta",
+        "trend",
+        "рост",
+        "снижение",
+    ]
+    GENERIC_HEADER_PIECES = {
+        "товар",
+        "товары",
+        "товара",
+        "период",
+        "показатель",
+        "значение",
+        "метрика",
+        "динамика",
+        "изменение",
+        "итого",
+        "всего",
+        "дата",
+        "категория",
+        "ozon",
+        "seller",
+        "sku",
+        "report",
+        "summary",
+        "section",
+        "metric",
+    }
+    RU_PHRASE_CANONICAL_RULES = [
+        (["артикул"], "sku"),
+        (["seller sku"], "sku"),
+        (["offer id"], "sku"),
+        (["показы в поиске", "каталоге"], "impressions_search_catalog"),
+        (["показы", "всего"], "impressions_total"),
+        (["показы"], "impressions_total"),
+        (["посещ", "карточк"], "product_card_visits"),
+        (["переход", "карточк"], "product_card_visits"),
+        (["добав", "корзин"], "add_to_cart_total"),
+        (["заказано на сумму"], "order_amount"),
+        (["сумма заказ"], "order_amount"),
+        (["заказ"], "orders"),
+        (["остат", "склад"], "stock_total"),
+        (["в наличии"], "stock_total"),
+        (["рейтинг"], "rating_value"),
+        (["отзыв"], "review_count"),
+        (["индекс цен"], "price_index_status"),
+        (["средняя позиция", "поиск"], "search_catalog_position_avg"),
+    ]
+
     def __init__(self) -> None:
         self._root_dir = Path(__file__).resolve().parents[3]
         self._registry_cfg = self._load_json(self._root_dir / "config" / "import_field_registry.json", default={"version": "v1", "fields": []})
         self._field_registry = self._registry_cfg.get("fields") or []
-        self._alias_lookup = self._build_alias_lookup(self._field_registry)
         self._fallback_mapping = FieldMapping()
+        self.mapping = self._fallback_mapping
+        self._alias_lookup = self._build_alias_lookup(self._field_registry)
         self.diagnoser = _ImportDiagnoser() if _ImportDiagnoser is not None else _FallbackDiagnoser()
         self.cleaner = DataCleaner()
         self.validator = DataValidator()
@@ -307,7 +363,8 @@ class ImportService:
                         continue
                     lookup[self._normalize_header(alias)] = canonical
                     lookup[self._normalize_header_without_unit(alias)] = canonical
-        for source in [self._fallback_mapping.ozon_mapping, self._fallback_mapping.english_mapping]:
+        fallback = getattr(self, "_fallback_mapping", None) or getattr(self, "mapping", None) or FieldMapping()
+        for source in [fallback.ozon_mapping, fallback.english_mapping]:
             for alias, canonical in source.items():
                 lookup[self._normalize_header(alias)] = canonical
                 lookup[self._normalize_header_without_unit(alias)] = canonical
@@ -371,47 +428,55 @@ class ImportService:
         except Exception as exc:
             return None, f"读取文件失败：{exc}", meta
 
+    def _row_header_profile(self, raw_df: pd.DataFrame, idx: int) -> Dict[str, Any]:
+        row = [str(self._safe_scalar(x) or "").strip() for x in raw_df.iloc[idx].tolist()]
+        non_empty = [x for x in row if x and x.lower() not in {"nan", "none"}]
+        named = [x for x in non_empty if not self._is_placeholder_col(x)]
+        text_like = sum(1 for x in named if re.search(r"[A-Za-zА-Яа-я一-龥]", x))
+        dynamic_like = sum(1 for x in named if self._is_dynamic_companion(x))
+        generic_like = sum(1 for x in named if self._normalize_header(x) in self.GENERIC_HEADER_PIECES)
+        score = len(named) + text_like * 0.3 - dynamic_like * 0.15 - generic_like * 0.05
+        if idx in self.HEADER_PREFERRED_START_RANGE:
+            score += 0.8
+        return {
+            "row": idx,
+            "named": len(named),
+            "textLike": text_like,
+            "dynamicLike": dynamic_like,
+            "genericLike": generic_like,
+            "score": round(score, 3),
+        }
+
     def _detect_header_block(self, raw_df: pd.DataFrame) -> dict:
         if raw_df.empty:
             return {"startRow": 0, "endRow": 0, "confidence": 0.0, "signals": ["empty_file"]}
-
-        max_scan = min(len(raw_df), 8)
-        best_row = 0
-        best_score = -1.0
+        max_scan = min(len(raw_df), self.HEADER_SCAN_DEPTH)
+        profiles = [self._row_header_profile(raw_df, idx) for idx in range(max_scan)]
+        best = max(profiles, key=lambda x: x["score"]) if profiles else {"row": 0, "score": 0.0}
+        start_row = int(best["row"])
+        end_row = start_row
         signals: List[str] = []
-
-        for idx in range(max_scan):
-            row = raw_df.iloc[idx].tolist()
-            non_empty = [str(x).strip() for x in row if str(x).strip() not in {"", "nan", "None"}]
-            unique = len(set(non_empty))
-            text_like = sum(1 for x in non_empty if not re.search(r"\d", x) or re.search(r"[A-Za-zА-Яа-я一-龥]", x))
-            score = len(non_empty) + (unique * 0.2) + (text_like * 0.1)
-            if score > best_score:
-                best_score = score
-                best_row = idx
-
-        # 判断是否为多层表头：best_row 后一行也有较多文本列
-        end_row = best_row
-        if best_row + 1 < max_scan:
-            next_row = [str(x).strip() for x in raw_df.iloc[best_row + 1].tolist()]
-            next_non_empty = [x for x in next_row if x not in {"", "nan", "None"}]
-            if len(next_non_empty) >= max(2, int(len([x for x in raw_df.iloc[best_row].tolist() if str(x).strip() not in {"", "nan", "None"}]) * 0.5)):
-                end_row = best_row + 1
+        # allow deeper multi-row header blocks
+        for lookahead in range(1, min(4, max_scan - start_row)):
+            nxt = profiles[start_row + lookahead]
+            if nxt["named"] >= max(2, int(best["named"] * 0.4)):
+                end_row = start_row + lookahead
                 signals.append("multi_row_header_block")
-
-        header_values = [str(x).strip() for x in raw_df.iloc[best_row].tolist()]
+            else:
+                break
+        header_values = [str(self._safe_scalar(x) or "").strip() for x in raw_df.iloc[start_row].tolist()]
         placeholder_count = sum(1 for x in header_values if self._is_placeholder_col(x))
-        if placeholder_count > 0:
+        if placeholder_count:
             signals.append("placeholder_columns_present")
-        if len([x for x in header_values if str(x).strip()]) < 4:
+        if len([x for x in header_values if x]) < 4:
             signals.append("short_explainable_column_run")
-
-        confidence = min(0.95, 0.45 + max(0, best_score) / max(8.0, raw_df.shape[1] + 2.0))
+        confidence = min(0.98, 0.35 + max(0.0, best["score"]) / max(float(raw_df.shape[1] + 4), 10.0))
         return {
-            "startRow": int(best_row),
-            "endRow": int(end_row),
-            "confidence": round(float(confidence), 3),
+            "startRow": start_row,
+            "endRow": end_row,
+            "confidence": round(confidence, 3),
             "signals": signals,
+            "profiles": profiles[:12],
         }
 
     def _flatten_headers(self, raw_df: pd.DataFrame, header_block: dict) -> Tuple[List[str], List[str], List[str]]:
@@ -421,83 +486,283 @@ class ImportService:
         flattened: List[str] = []
         dropped: List[str] = []
         rescued: List[str] = []
-
         for col_idx in range(raw_df.shape[1]):
             pieces: List[str] = []
             for _, row in header_rows.iterrows():
                 value = str(self._safe_scalar(row.iloc[col_idx]) or "").strip()
-                if value and value.lower() not in {"nan", "none"}:
+                norm = self._normalize_header(value)
+                if value and norm not in {"nan", "none"} and norm not in self.GENERIC_HEADER_PIECES:
                     pieces.append(value)
-            joined = " ".join(dict.fromkeys(pieces)).strip()
+            deduped = list(dict.fromkeys(pieces))
+            joined = " / ".join(deduped).strip()
             if not joined:
-                joined = f"col_{col_idx + 1}"
+                # fallback to first non-empty even if generic
+                fallback_pieces = []
+                for _, row in header_rows.iterrows():
+                    value = str(self._safe_scalar(row.iloc[col_idx]) or "").strip()
+                    if value and value.lower() not in {"nan", "none"}:
+                        fallback_pieces.append(value)
+                joined = " / ".join(list(dict.fromkeys(fallback_pieces))).strip() if fallback_pieces else f"col_{col_idx + 1}"
             if self._is_placeholder_col(joined):
                 dropped.append(joined)
-            else:
-                if len(pieces) > 1:
-                    rescued.append(joined)
+            elif len(deduped) > 1:
+                rescued.append(joined)
             flattened.append(joined)
         return flattened, dropped, rescued
 
     def _materialize_from_raw(self, raw_df: pd.DataFrame, header_block: dict, flattened_headers: List[str]) -> pd.DataFrame:
         data_start = int(header_block.get("endRow") or 0) + 1
         body = raw_df.iloc[data_start:].copy().reset_index(drop=True)
-        # 对齐列数
         if len(flattened_headers) < body.shape[1]:
             flattened_headers = flattened_headers + [f"col_{i+1}" for i in range(len(flattened_headers), body.shape[1])]
         body.columns = flattened_headers[: body.shape[1]]
-        # 剔除全空行
         body = body.dropna(how="all").reset_index(drop=True)
         return body
 
+    def _build_header_candidates(self, raw_df: pd.DataFrame) -> List[Dict[str, Any]]:
+        if raw_df.empty:
+            return []
+        max_scan = min(len(raw_df), self.HEADER_SCAN_DEPTH)
+        profiles = [self._row_header_profile(raw_df, idx) for idx in range(max_scan)]
+        anchors = sorted(profiles, key=lambda x: x["score"], reverse=True)[:8]
+        candidate_spans: List[Tuple[int, int]] = []
+        for profile in anchors:
+            start = int(profile["row"])
+            for depth in range(1, 5):
+                end = min(start + depth - 1, max_scan - 1)
+                candidate_spans.append((start, end))
+            for neighbor in range(max(0, start - 1), min(max_scan, start + 2)):
+                candidate_spans.append((neighbor, neighbor))
+                if neighbor + 1 < max_scan:
+                    candidate_spans.append((neighbor, neighbor + 1))
+        # de-duplicate while preserving order
+        seen = set()
+        spans = []
+        for span in candidate_spans:
+            if span not in seen:
+                seen.add(span)
+                spans.append(span)
+        candidates: List[Dict[str, Any]] = []
+        for start, end in spans:
+            header_block = {
+                "startRow": int(start),
+                "endRow": int(end),
+                "confidence": 0.5,
+                "signals": ["candidate_generated"] + (["multi_row_header_block"] if end > start else []),
+            }
+            flattened, dropped, rescued = self._flatten_headers(raw_df, header_block)
+            df = self._materialize_from_raw(raw_df, header_block, flattened)
+            candidates.append({
+                "headerBlock": header_block,
+                "flattenedHeaders": flattened,
+                "droppedPlaceholderColumns": dropped,
+                "rescuedPlaceholderColumns": rescued,
+                "df": df,
+            })
+        return candidates
+
+    def _score_candidate_bundle(self, bundle: Dict[str, Any]) -> float:
+        mapped = int(bundle.get("mappedCount") or 0)
+        coverage = float((bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0)
+        core_summary = bundle.get("coreFieldHitSummary") or {}
+        core_hits = sum(1 for k, v in core_summary.items() if isinstance(v, bool) and v)
+        structure = float(bundle.get("headerStructureScore") or 0.0)
+        signals = set(bundle.get("headerStructureRiskSignals") or [])
+        header_block = bundle.get("headerBlock") or {}
+        start_row = int(header_block.get("startRow") or 0)
+        score = mapped * 3.0 + core_hits * 6.0 + coverage * 5.0 + structure * 2.0
+        if 8 <= start_row <= 16:
+            score += 1.2
+        if mapped == 0:
+            score -= 4.0
+        if mapped < 2:
+            score -= 2.0
+        if core_hits == 0:
+            score -= 3.0
+        if "short_explainable_column_run" in signals:
+            score -= 1.2
+        if "placeholder_columns_present" in signals:
+            score -= 0.8
+        return round(score, 3)
+
+    def _attempt_candidate_recovery(self, raw_df: pd.DataFrame, pre_bundle: Dict[str, Any]) -> Dict[str, Any]:
+        candidates = self._build_header_candidates(raw_df)
+        evaluated: List[Dict[str, Any]] = []
+        for candidate in candidates:
+            bundle = self._build_bundle(
+                df=candidate["df"].copy(),
+                header_block=candidate["headerBlock"],
+                flattened_headers=candidate["flattenedHeaders"],
+                header_recovery_applied=True,
+                dropped_placeholder_columns=candidate["droppedPlaceholderColumns"],
+                rescued_placeholder_columns=candidate["rescuedPlaceholderColumns"],
+            )
+            bundle["candidateScore"] = self._score_candidate_bundle(bundle)
+            bundle["candidatePreview"] = {
+                "headerRows": [candidate["headerBlock"]["startRow"], candidate["headerBlock"]["endRow"]],
+                "mappedCount": bundle["mappedCount"],
+                "mappingCoverage": float((bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0),
+                "candidateScore": bundle["candidateScore"],
+                "mappedCanonicalFields": list(dict.fromkeys([str(item.get("standardField")) for item in (bundle.get("fieldMappings") or []) if item.get("standardField")]))[:12],
+                "topUnmappedHeaders": [str(item.get("originalField")) for item in (bundle.get("fieldMappings") or []) if not item.get("standardField")][:12],
+                "flattenedHeaderExamples": list((candidate.get("flattenedHeaders") or [])[:12]),
+            }
+            evaluated.append(bundle)
+        if not evaluated:
+            return {
+                "recoveryAttempted": False,
+                "recoveryImproved": False,
+                "headerRecoveryApplied": False,
+                "activeBundle": pre_bundle,
+                "preBundle": pre_bundle,
+                "postBundle": pre_bundle,
+                "candidateCount": 0,
+                "candidatePreview": [],
+            }
+        evaluated.sort(key=lambda x: x.get("candidateScore") or 0.0, reverse=True)
+        best = evaluated[0]
+        pre_cov = float((pre_bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0)
+        post_cov = float((best.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0)
+        pre_core = sum(1 for v in (pre_bundle.get("coreFieldHitSummary") or {}).values() if isinstance(v, bool) and v)
+        post_core = sum(1 for v in (best.get("coreFieldHitSummary") or {}).values() if isinstance(v, bool) and v)
+        improved = (
+            int(best.get("mappedCount") or 0) > int(pre_bundle.get("mappedCount") or 0)
+            or post_cov > pre_cov
+            or post_core > pre_core
+            or float(best.get("candidateScore") or 0.0) > (float(pre_bundle.get("candidateScore") or -999.0) + 0.5)
+        )
+        applied = bool(improved)
+        return {
+            "recoveryAttempted": True,
+            "recoveryImproved": bool(improved),
+            "headerRecoveryApplied": bool(applied),
+            "activeBundle": best if applied else pre_bundle,
+            "preBundle": pre_bundle,
+            "postBundle": best,
+            "candidateCount": len(evaluated),
+            "candidatePreview": [b.get("candidatePreview") for b in evaluated[:5]],
+        }
+
     # ---------- 映射 / 清洗 / 校验 ----------
 
-    def _map_single_column(self, col: Any) -> Tuple[Optional[str], str, List[str]]:
+    def _is_dynamic_companion(self, text: str) -> bool:
+        normalized = self._normalize_header(text)
+        return any(token in normalized for token in self.DYNAMIC_PATTERNS)
+
+    def _compress_header_phrase(self, original: Any) -> List[Tuple[str, str]]:
+        text = str(original or "").strip()
+        normalized = self._normalize_header(text)
+        normalized_wo_unit = self._normalize_header_without_unit(text)
+        candidates: List[Tuple[str, str]] = []
+        seen: set[str] = set()
+
+        def push(value: str, reason: str) -> None:
+            value = value.strip()
+            if value and value not in seen:
+                seen.add(value)
+                candidates.append((value, reason))
+
+        push(normalized, "normalized")
+        if normalized_wo_unit != normalized:
+            push(normalized_wo_unit, "without_unit")
+
+        for needles, canonical in self.RU_PHRASE_CANONICAL_RULES:
+            if all(needle in normalized_wo_unit for needle in needles):
+                push(canonical, f"phrase_rule:{canonical}")
+
+        tokens = [tok for tok in re.split(r"[^a-zа-я0-9一-龥]+", normalized_wo_unit) if tok]
+        meaningful = [tok for tok in tokens if tok not in self.GENERIC_HEADER_PIECES and len(tok) > 2]
+        if meaningful:
+            push(" ".join(dict.fromkeys(meaningful)), "token_compaction")
+        return candidates
+
+    def _map_single_column_details(self, col: Any, sample_values: Optional[List[Any]] = None) -> Dict[str, Any]:
         original = str(col or "")
         normalized = self._normalize_header(original)
-        normalized_wo_unit = self._normalize_header_without_unit(original)
+        compressed = self._compress_header_phrase(original)
+        dynamic_companion = self._is_dynamic_companion(original)
         reasons: List[str] = []
-        canonical = None
-        source = "unmapped"
+        conflicts: List[str] = []
+        best_canonical: Optional[str] = None
+        best_source = "unmapped"
+        best_confidence = 0.0
+        best_compressed = None
 
-        if normalized in self._alias_lookup:
-            canonical = self._alias_lookup[normalized]
-            source = "registry_alias"
-            reasons.append("matched_normalized_alias")
-        elif normalized_wo_unit in self._alias_lookup:
-            canonical = self._alias_lookup[normalized_wo_unit]
-            source = "registry_alias_wo_unit"
-            reasons.append("matched_alias_without_unit")
-        elif original in self._fallback_mapping.ozon_mapping:
-            canonical = self._fallback_mapping.ozon_mapping[original]
-            source = "ru_builtin"
-            reasons.append("matched_ru_builtin")
-        elif original in self._fallback_mapping.english_mapping:
-            canonical = self._fallback_mapping.english_mapping[original]
-            source = "en_builtin"
-            reasons.append("matched_en_builtin")
+        def score_candidate(candidate_text: str, candidate_reason: str) -> Tuple[Optional[str], str, float, List[str]]:
+            local_reasons: List[str] = []
+            if candidate_text in self._alias_lookup:
+                local_reasons.append(candidate_reason)
+                return self._alias_lookup[candidate_text], "registry_alias", 0.99, local_reasons
+            for alias, canonical in self._fallback_mapping.ozon_mapping.items():
+                if self._normalize_header(alias) == candidate_text:
+                    local_reasons.append(candidate_reason)
+                    return canonical, "ru_builtin", 0.95, local_reasons
+            for alias, canonical in self._fallback_mapping.english_mapping.items():
+                if self._normalize_header(alias) == candidate_text:
+                    local_reasons.append(candidate_reason)
+                    return canonical, "en_builtin", 0.95, local_reasons
+            # token overlap fallback for long phrases
+            cand_tokens = set(t for t in re.split(r"[^a-zа-я0-9一-龥]+", candidate_text) if len(t) > 2)
+            best_overlap = (None, 0.0)
+            for alias_norm, canonical in self._alias_lookup.items():
+                alias_tokens = set(t for t in re.split(r"[^a-zа-я0-9一-龥]+", alias_norm) if len(t) > 2)
+                if not cand_tokens or not alias_tokens:
+                    continue
+                overlap = len(cand_tokens & alias_tokens) / max(len(alias_tokens), 1)
+                if overlap > best_overlap[1]:
+                    best_overlap = (canonical, overlap)
+            if best_overlap[0] and best_overlap[1] >= 0.66:
+                local_reasons.append(f"token_overlap:{best_overlap[1]:.2f}")
+                return best_overlap[0], "token_overlap", round(0.55 + best_overlap[1] * 0.25, 3), local_reasons
+            return None, "unmapped", 0.0, local_reasons
 
-        return canonical, source, reasons
+        for candidate_text, candidate_reason in compressed:
+            canonical, source, confidence, local_reasons = score_candidate(candidate_text, candidate_reason)
+            if canonical and confidence > best_confidence:
+                if best_canonical and best_canonical != canonical:
+                    conflicts.append(best_canonical)
+                best_canonical = canonical
+                best_source = source
+                best_confidence = confidence
+                best_compressed = candidate_text
+                reasons = local_reasons
+
+        if best_canonical == "sku":
+            allowed = {"sku", "seller sku", "offer id", "артикул", "артикул товара"}
+            if normalized not in {self._normalize_header(x) for x in allowed}:
+                best_canonical = None
+                best_source = "unmapped"
+                best_confidence = 0.0
+                reasons = ["sku_guard_rejected"]
+
+        return {
+            "originalField": original,
+            "normalizedField": normalized,
+            "standardField": best_canonical,
+            "mappingSource": best_source,
+            "confidence": best_confidence,
+            "sampleValues": list(sample_values or []),
+            "isManual": False,
+            "reasons": reasons,
+            "conflicts": conflicts,
+            "dynamicCompanion": dynamic_companion,
+            "compressedHeader": best_compressed,
+            "excludeFromSemanticGate": dynamic_companion,
+        }
+
+    def _map_single_column(self, col: Any) -> Tuple[Optional[str], str, List[str]]:
+        details = self._map_single_column_details(col)
+        return details.get("standardField"), details.get("mappingSource", "unmapped"), list(details.get("reasons") or [])
 
     def map_columns(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[dict]]:
         rename_map: Dict[str, str] = {}
         field_mappings: List[dict] = []
 
         for col in df.columns:
-            canonical, source, reasons = self._map_single_column(col)
-            normalized = self._normalize_header(col)
             sample_values = [self._safe_scalar(v) for v in df[col].head(3).tolist()] if col in df.columns else []
-            confidence = 0.95 if canonical and source.startswith("registry") else (0.9 if canonical else 0.0)
-            field_mappings.append({
-                "originalField": str(col),
-                "normalizedField": normalized,
-                "standardField": canonical,
-                "mappingSource": source,
-                "confidence": confidence,
-                "sampleValues": sample_values,
-                "isManual": False,
-                "reasons": reasons,
-            })
+            details = self._map_single_column_details(col, sample_values=sample_values)
+            field_mappings.append(details)
+            canonical = details.get("standardField")
             if canonical:
                 rename_map[str(col)] = canonical
 
@@ -592,11 +857,17 @@ class ImportService:
         if not core["sku"]:
             reasons.append("missing_sku")
         if not core["orders_or_order_amount"]:
-            reasons.append("missing_orders_or_order_amount")
+            reasons.append("missing_order_signal")
+        if not core["impressions_total"]:
+            reasons.append("missing_top_funnel_signal")
+        if not core["product_card_visits_or_add_to_cart_total"]:
+            reasons.append("missing_mid_funnel_signal")
         if coverage < 0.5:
             reasons.append("mapping_coverage_below_0_5")
         if mapped_count < 4:
             reasons.append("mapped_count_below_4")
+        if core["sku"] is False or core["orders_or_order_amount"] is False or core["impressions_total"] is False or core["product_card_visits_or_add_to_cart_total"] is False:
+            reasons.append("insufficient_core_field_hits")
         if wrongly_mapped_count > 0:
             reasons.append("wrongly_mapped_fields_present")
 
@@ -750,10 +1021,6 @@ class ImportService:
             raw_df = pd.DataFrame([list(default_df.columns)] + default_df.head(50).values.tolist())
             raw_meta = default_meta
 
-        header_block = self._detect_header_block(raw_df)
-        flattened_headers, dropped_placeholder_columns, rescued_placeholder_columns = self._flatten_headers(raw_df, header_block)
-        recovered_df = self._materialize_from_raw(raw_df, header_block, flattened_headers)
-
         pre_bundle = self._build_bundle(
             df=default_df.copy(),
             header_block={"startRow": 0, "endRow": 0, "confidence": 0.5, "signals": []},
@@ -762,23 +1029,21 @@ class ImportService:
             dropped_placeholder_columns=[],
             rescued_placeholder_columns=[],
         )
-        post_bundle = self._build_bundle(
-            df=recovered_df.copy(),
-            header_block=header_block,
-            flattened_headers=flattened_headers,
-            header_recovery_applied=True,
-            dropped_placeholder_columns=dropped_placeholder_columns,
-            rescued_placeholder_columns=rescued_placeholder_columns,
-        )
-
-        pre_cov = float(pre_bundle["semanticMetrics"].get("mappingCoverage") or 0.0)
-        post_cov = float(post_bundle["semanticMetrics"].get("mappingCoverage") or 0.0)
-        pre_core = sum(1 for v in pre_bundle["coreFieldHitSummary"].values() if isinstance(v, bool) and v)
-        post_core = sum(1 for v in post_bundle["coreFieldHitSummary"].values() if isinstance(v, bool) and v)
-        recovery_attempted = header_block.get("endRow", 0) > header_block.get("startRow", 0) or bool(dropped_placeholder_columns)
-        recovery_improved = (post_bundle["mappedCount"] > pre_bundle["mappedCount"]) or (post_cov > pre_cov) or (post_core > pre_core)
-        header_recovery_applied = bool(recovery_attempted and recovery_improved)
-        active_bundle = post_bundle if header_recovery_applied else pre_bundle
+        pre_bundle["candidateScore"] = self._score_candidate_bundle(pre_bundle)
+        recovery_result = self._attempt_candidate_recovery(raw_df, pre_bundle)
+        recovery_attempted = bool(recovery_result["recoveryAttempted"])
+        recovery_improved = bool(recovery_result["recoveryImproved"])
+        header_recovery_applied = bool(recovery_result["headerRecoveryApplied"])
+        active_bundle = recovery_result["activeBundle"]
+        post_bundle = recovery_result["postBundle"]
+        header_block = active_bundle.get("headerBlock") or {"startRow": 0, "endRow": 0, "confidence": 0.5, "signals": []}
+        flattened_headers = list(active_bundle.get("flattenedHeaders") or [str(c) for c in active_bundle["df"].columns])
+        dropped_placeholder_columns = list(active_bundle.get("droppedPlaceholderColumns") or [])
+        rescued_placeholder_columns = list(active_bundle.get("rescuedPlaceholderColumns") or [])
+        pre_cov = float((pre_bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0)
+        post_cov = float((post_bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0)
+        pre_core = sum(1 for v in (pre_bundle.get("coreFieldHitSummary") or {}).values() if isinstance(v, bool) and v)
+        post_core = sum(1 for v in (post_bundle.get("coreFieldHitSummary") or {}).values() if isinstance(v, bool) and v)
 
         cleaned_df = self.clean_data(active_bundle["df"])
         valid_df, row_errors = self.validate_data(cleaned_df)
@@ -805,6 +1070,8 @@ class ImportService:
             "droppedPlaceholderColumns": active_bundle["droppedPlaceholderColumns"],
             "removedSummaryRows": 0,
             "removedDescriptionRows": int(header_block.get("startRow") or 0),
+            "recoveryCandidateCount": int(recovery_result.get("candidateCount") or 0),
+            "recoveryCandidatePreview": list(recovery_result.get("candidatePreview") or []),
         }
         recovery_diff = {
             "mappedCount_before": int(pre_bundle["mappedCount"]),
@@ -868,6 +1135,7 @@ class ImportService:
             "recoveryImproved": recovery_improved,
             "sampleHint": None,
             "recoveryDiff": recovery_diff,
+            "recoveryCandidatePreview": list(recovery_result.get("candidatePreview") or []),
             "status": status_map.get(active_bundle["finalStatus"], "partial"),
             "diagnosis": active_bundle["diagnosis"],
         }

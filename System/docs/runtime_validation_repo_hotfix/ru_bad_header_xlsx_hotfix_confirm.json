@@ -1,0 +1,126 @@
+﻿{
+    "batchId":  1,
+    "errorRows":  1617,
+    "errors":  [
+                   "行1: SKU不能为空",
+                   "行2: SKU不能为空",
+                   "行3: SKU不能为空",
+                   "行4: SKU不能为空",
+                   "行5: SKU不能为空",
+                   "行6: SKU不能为空",
+                   "行7: SKU不能为空",
+                   "行8: SKU不能为空",
+                   "行9: SKU不能为空",
+                   "行10: SKU不能为空",
+                   "行11: SKU不能为空",
+                   "行12: SKU不能为空",
+                   "行13: SKU不能为空",
+                   "行14: SKU不能为空",
+                   "行15: SKU不能为空",
+                   "行16: SKU不能为空",
+                   "行17: SKU不能为空",
+                   "行18: SKU不能为空",
+                   "行19: SKU不能为空",
+                   "行20: SKU不能为空",
+                   "行21: SKU不能为空",
+                   "行22: SKU不能为空",
+                   "行23: SKU不能为空",
+                   "行24: SKU不能为空",
+                   "行25: SKU不能为空",
+                   "行26: SKU不能为空",
+                   "行27: SKU不能为空",
+                   "行28: SKU不能为空",
+                   "行29: SKU不能为空",
+                   "行30: SKU不能为空",
+                   "行31: SKU不能为空",
+                   "行32: SKU不能为空",
+                   "行33: SKU不能为空",
+                   "行34: SKU不能为空",
+                   "行35: SKU不能为空",
+                   "行36: SKU不能为空",
+                   "行37: SKU不能为空",
+                   "行38: SKU不能为空",
+                   "行39: SKU不能为空",
+                   "行40: SKU不能为空",
+                   "行41: SKU不能为空",
+                   "行42: SKU不能为空",
+                   "行43: SKU不能为空",
+                   "行44: SKU不能为空",
+                   "行45: SKU不能为空",
+                   "行46: SKU不能为空",
+                   "行47: SKU不能为空",
+                   "行48: SKU不能为空",
+                   "行49: SKU不能为空",
+                   "行50: SKU不能为空"
+               ],
+    "factLoadErrors":  0,
+    "finalStatus":  "failed",
+    "importedRows":  0,
+    "quarantineCount":  1617,
+    "recoverySummary":  {
+                            "headerRecoveryApplied":  false,
+                            "postRecoveryStatus":  "failed",
+                            "preRecoveryStatus":  "failed",
+                            "recoveryAttempted":  true,
+                            "recoveryDiff":  {
+                                                 "coreFieldHit_after":  0,
+                                                 "coreFieldHit_before":  0,
+                                                 "mappedCount_after":  0,
+                                                 "mappedCount_before":  0,
+                                                 "mappingCoverage_after":  0.0,
+                                                 "mappingCoverage_before":  0.0,
+                                                 "unmappedCount_after":  73,
+                                                 "unmappedCount_before":  73
+                                             },
+                            "recoveryImproved":  false,
+                            "riskOverrideReasons":  [
+
+                                                    ],
+                            "semanticGateReasons":  [
+                                                        "no_mapped_fields"
+                                                    ]
+                        },
+    "riskOverrideReasons":  [
+
+                            ],
+    "rowErrorSummary":  {
+                            "auto_fixed":  0,
+                            "fatal":  0,
+                            "ignorable":  0,
+                            "quarantined":  1617
+                        },
+    "runtimeAudit":  {
+                         "confirmedAt":  "2026-03-15T14:45:56.400475",
+                         "factLoadErrors":  0,
+                         "finalStatus":  "failed",
+                         "operator":  "repo_hotfix_test",
+                         "quarantineCount":  1617,
+                         "recoverySummary":  {
+                                                 "headerRecoveryApplied":  false,
+                                                 "postRecoveryStatus":  "failed",
+                                                 "preRecoveryStatus":  "failed",
+                                                 "recoveryAttempted":  true,
+                                                 "recoveryImproved":  false
+                                             },
+                         "semanticStatus":  "failed",
+                         "sessionId":  1,
+                         "shopId":  1,
+                         "sourceFile":  "20260315_144553_ozon_bad_header_or_missing_sku.xlsx",
+                         "transportStatus":  "passed"
+                     },
+    "semanticAcceptanceReason":  [
+
+                                 ],
+    "semanticGateReasons":  [
+                                "no_mapped_fields"
+                            ],
+    "semanticStatus":  "failed",
+    "sessionId":  1,
+    "stagingRows":  0,
+    "status":  "success",
+    "success":  true,
+    "transportStatus":  "passed",
+    "warnings":  [
+
+                 ]
+}

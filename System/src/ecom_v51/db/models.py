@@ -378,6 +378,20 @@ class ImportBatchFile(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
 
 
+class ImportStagingRow(Base, TimestampMixin):
+    __tablename__ = "import_staging_row"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    batch_id: Mapped[int] = mapped_column(ForeignKey("import_batch.id"), nullable=False)
+    batch_file_id: Mapped[int] = mapped_column(ForeignKey("import_batch_file.id"), nullable=False)
+    row_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default='staged', nullable=False)
+    sku: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    row_data_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    row_error_summary_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
 class ImportErrorLog(Base, TimestampMixin):
     __tablename__ = "import_error_log"
 

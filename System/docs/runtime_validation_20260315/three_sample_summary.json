@@ -1,0 +1,200 @@
+﻿[
+    {
+        "sampleName":  "ru_real_xlsx",
+        "filePath":  "C:\\Operation-system\\System\\data\\analytics_report_2026-03-12_23_49.xlsx",
+        "upload_sessionId":  1,
+        "upload_transportStatus":  "failed",
+        "upload_semanticStatus":  "failed",
+        "upload_finalStatus":  "failed",
+        "upload_semanticGateReasons":  [
+                                           "read_failed"
+                                       ],
+        "upload_riskOverrideReasons":  [
+
+                                       ],
+        "upload_semanticAcceptanceReason":  [
+
+                                            ],
+        "upload_mappedCount":  0,
+        "upload_unmappedCount":  0,
+        "upload_mappingCoverage":  null,
+        "upload_headerStructureScore":  null,
+        "upload_headerStructureRiskSignals":  null,
+        "upload_preRecoveryStatus":  null,
+        "upload_postRecoveryStatus":  null,
+        "upload_recoveryAttempted":  null,
+        "upload_headerRecoveryApplied":  null,
+        "upload_recoveryImproved":  null,
+        "upload_recoveryDiff":  null,
+        "confirm_status":  "failed",
+        "confirm_transportStatus":  "failed",
+        "confirm_semanticStatus":  "failed",
+        "confirm_finalStatus":  "failed",
+        "confirm_semanticGateReasons":  [
+                                            "session_not_found"
+                                        ],
+        "confirm_riskOverrideReasons":  [
+
+                                        ],
+        "confirm_semanticAcceptanceReason":  [
+
+                                             ],
+        "confirm_importedRows":  0,
+        "confirm_errorRows":  0,
+        "confirm_quarantineCount":  null,
+        "confirm_factLoadErrors":  null,
+        "confirm_runtimeAudit":  null
+    },
+    {
+        "sampleName":  "cn_real_xlsx",
+        "filePath":  "C:\\Operation-system\\System\\data\\销售数据分析.xlsx",
+        "upload_sessionId":  2,
+        "upload_transportStatus":  "passed",
+        "upload_semanticStatus":  "passed",
+        "upload_finalStatus":  "passed",
+        "upload_semanticGateReasons":  [
+
+                                       ],
+        "upload_riskOverrideReasons":  [
+
+                                       ],
+        "upload_semanticAcceptanceReason":  [
+                                                "mapping_thresholds_met",
+                                                "core_fields_present"
+                                            ],
+        "upload_mappedCount":  29,
+        "upload_unmappedCount":  3,
+        "upload_mappingCoverage":  null,
+        "upload_headerStructureScore":  0.8,
+        "upload_headerStructureRiskSignals":  [
+
+                                              ],
+        "upload_preRecoveryStatus":  "passed",
+        "upload_postRecoveryStatus":  "passed",
+        "upload_recoveryAttempted":  true,
+        "upload_headerRecoveryApplied":  false,
+        "upload_recoveryImproved":  false,
+        "upload_recoveryDiff":  {
+                                    "coreFieldHit_after":  4,
+                                    "coreFieldHit_before":  4,
+                                    "mappedCount_after":  29,
+                                    "mappedCount_before":  29,
+                                    "mappingCoverage_after":  0.935,
+                                    "mappingCoverage_before":  0.935,
+                                    "unmappedCount_after":  3,
+                                    "unmappedCount_before":  3
+                                },
+        "confirm_status":  "success",
+        "confirm_transportStatus":  "passed",
+        "confirm_semanticStatus":  "passed",
+        "confirm_finalStatus":  "passed",
+        "confirm_semanticGateReasons":  [
+
+                                        ],
+        "confirm_riskOverrideReasons":  [
+
+                                        ],
+        "confirm_semanticAcceptanceReason":  [
+                                                 "mapping_thresholds_met",
+                                                 "core_fields_present"
+                                             ],
+        "confirm_importedRows":  2,
+        "confirm_errorRows":  55,
+        "confirm_quarantineCount":  55,
+        "confirm_factLoadErrors":  0,
+        "confirm_runtimeAudit":  {
+                                     "confirmedAt":  "2026-03-15T01:50:17.417594",
+                                     "factLoadErrors":  0,
+                                     "finalStatus":  "passed",
+                                     "operator":  "local_validation",
+                                     "quarantineCount":  55,
+                                     "recoverySummary":  {
+                                                             "headerRecoveryApplied":  false,
+                                                             "postRecoveryStatus":  "passed",
+                                                             "preRecoveryStatus":  "passed",
+                                                             "recoveryAttempted":  true,
+                                                             "recoveryImproved":  false
+                                                         },
+                                     "semanticStatus":  "passed",
+                                     "sessionId":  2,
+                                     "shopId":  1,
+                                     "sourceFile":  "20260315_015017_xlsx.xlsx",
+                                     "transportStatus":  "passed"
+                                 }
+    },
+    {
+        "sampleName":  "ru_bad_header_xlsx",
+        "filePath":  "C:\\Operation-system\\System\\sample_data\\ozon_bad_header_or_missing_sku.xlsx",
+        "upload_sessionId":  3,
+        "upload_transportStatus":  "passed",
+        "upload_semanticStatus":  "failed",
+        "upload_finalStatus":  "failed",
+        "upload_semanticGateReasons":  [
+                                           "no_mapped_fields"
+                                       ],
+        "upload_riskOverrideReasons":  [
+
+                                       ],
+        "upload_semanticAcceptanceReason":  [
+
+                                            ],
+        "upload_mappedCount":  0,
+        "upload_unmappedCount":  73,
+        "upload_mappingCoverage":  null,
+        "upload_headerStructureScore":  0.62,
+        "upload_headerStructureRiskSignals":  [
+                                                  "short_explainable_column_run"
+                                              ],
+        "upload_preRecoveryStatus":  "failed",
+        "upload_postRecoveryStatus":  "failed",
+        "upload_recoveryAttempted":  true,
+        "upload_headerRecoveryApplied":  false,
+        "upload_recoveryImproved":  false,
+        "upload_recoveryDiff":  {
+                                    "coreFieldHit_after":  0,
+                                    "coreFieldHit_before":  0,
+                                    "mappedCount_after":  0,
+                                    "mappedCount_before":  0,
+                                    "mappingCoverage_after":  0.0,
+                                    "mappingCoverage_before":  0.0,
+                                    "unmappedCount_after":  73,
+                                    "unmappedCount_before":  73
+                                },
+        "confirm_status":  "success",
+        "confirm_transportStatus":  "passed",
+        "confirm_semanticStatus":  "failed",
+        "confirm_finalStatus":  "failed",
+        "confirm_semanticGateReasons":  [
+                                            "no_mapped_fields"
+                                        ],
+        "confirm_riskOverrideReasons":  [
+
+                                        ],
+        "confirm_semanticAcceptanceReason":  [
+
+                                             ],
+        "confirm_importedRows":  0,
+        "confirm_errorRows":  1617,
+        "confirm_quarantineCount":  1617,
+        "confirm_factLoadErrors":  0,
+        "confirm_runtimeAudit":  {
+                                     "confirmedAt":  "2026-03-15T01:50:22.596984",
+                                     "factLoadErrors":  0,
+                                     "finalStatus":  "failed",
+                                     "operator":  "local_validation",
+                                     "quarantineCount":  1617,
+                                     "recoverySummary":  {
+                                                             "headerRecoveryApplied":  false,
+                                                             "postRecoveryStatus":  "failed",
+                                                             "preRecoveryStatus":  "failed",
+                                                             "recoveryAttempted":  true,
+                                                             "recoveryImproved":  false
+                                                         },
+                                     "semanticStatus":  "failed",
+                                     "sessionId":  3,
+                                     "shopId":  1,
+                                     "sourceFile":  "20260315_015017_ozon_bad_header_or_missing_sku.xlsx",
+                                     "transportStatus":  "passed"
+                                 }
+    }
+]

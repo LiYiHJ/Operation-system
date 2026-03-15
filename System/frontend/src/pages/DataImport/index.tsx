@@ -138,9 +138,9 @@ function FileUploadStep({
         message="支持的文件格式"
         description={
           <div>
-            <p>✅ Excel 文件: .xlsx（推荐）</p>
-            <p>✅ CSV 文件: .csv（UTF-8 编码）</p>
-            <p>✅ JSON 文件: .json</p>
+            <p>✅ Excel 文件: .xlsx（当前已完成实证）</p>
+            <p>✅ CSV 文件: .csv（当前已完成实证）</p>
+            <p>⚠️ JSON 文件: .json（能力存在，待真实样本验证）</p>
             <p>📏 最大文件大小: 10MB</p>
             <p>📊 最大行数: 1,000 行（演示限制）</p>
           </div>

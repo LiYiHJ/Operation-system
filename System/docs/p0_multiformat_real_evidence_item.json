@@ -1,0 +1,52 @@
+{
+  "scope": "multiformat_real_evidence_item",
+  "browserEvidence": {
+    "network": "browser:/tmp/codex_browser_invocations/81231d89c7c44f35/artifacts/artifacts/p0_multiformat_browser_network.json",
+    "screenshot": "browser:/tmp/codex_browser_invocations/81231d89c7c44f35/artifacts/artifacts/p0_multiformat_browser_chain.png",
+    "chain": "test-fixture -> /api/import/upload -> /api/import/confirm"
+  },
+  "results": {
+    "analytics_xlsx": {
+      "uploadStatus": 200,
+      "confirmStatus": 200,
+      "confirm": {
+        "status": "success",
+        "importedRows": 1370,
+        "errorRows": 0,
+        "quarantineCount": 0,
+        "ignoredRows": 0,
+        "stagingRows": 1370,
+        "factLoadErrors": 0
+      }
+    },
+    "cn_csv": {
+      "uploadStatus": 200,
+      "confirmStatus": 200,
+      "confirm": {
+        "status": "success",
+        "importedRows": 11,
+        "errorRows": 0,
+        "quarantineCount": 0,
+        "ignoredRows": 32,
+        "stagingRows": 11,
+        "factLoadErrors": 0
+      }
+    }
+  },
+  "coverage": {
+    "with_browser_real_evidence": [
+      "csv",
+      "xlsx"
+    ],
+    "without_browser_real_evidence": [
+      "xls",
+      "xlsm",
+      "xlsb",
+      "json"
+    ]
+  },
+  "boundary": [
+    "test-fixture 仅用于当前环境浏览器取样，不替代生产上传入口。",
+    "本项不代表导入整体通过。"
+  ]
+}

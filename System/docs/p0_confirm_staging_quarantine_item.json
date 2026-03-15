@@ -1,0 +1,53 @@
+{
+  "scope": "cn_real_sample_quality_explainability_item",
+  "sample": "System/data/销售数据分析.xlsx",
+  "parse": {
+    "mappedCount": 29,
+    "unmappedCount": 3
+  },
+  "confirm": {
+    "status": "success",
+    "importedRows": 11,
+    "errorRows": 0,
+    "quarantineCount": 0,
+    "stagingRows": 11,
+    "factLoadErrors": 0,
+    "ignoredRows": 34,
+    "ignoredReasonSummary": {
+      "summary_row": 0,
+      "title_row": 20,
+      "description_row": 1,
+      "empty_row": 11,
+      "non_business_noise_row": 2
+    },
+    "ignoredRowSamplesByReason": {
+      "title_row": [
+        {"rowNo": 4, "rowSummary": "A"},
+        {"rowNo": 5, "rowSummary": "请添加至促销活动"}
+      ],
+      "description_row": [
+        {"rowNo": 1, "rowSummary": "根据金额和数量 | 目前 | 最近 28 天内"}
+      ],
+      "empty_row": [
+        {"rowNo": 6, "rowSummary": ""},
+        {"rowNo": 10, "rowSummary": ""}
+      ],
+      "non_business_noise_row": [
+        {"rowNo": 2, "rowSummary": "1.0 | 213.0 | 0,15%"},
+        {"rowNo": 3, "rowSummary": "0.0"}
+      ],
+      "summary_row": []
+    }
+  },
+  "stabilityProof": {
+    "importedRows_unchanged": true,
+    "errorRows_unchanged": true,
+    "quarantineCount_unchanged": true,
+    "stagingRows_unchanged": true,
+    "factLoadErrors_unchanged": true
+  },
+  "boundary": [
+    "本项仅提升中文真实样本的数据质量解释能力。",
+    "不代表中文真实样本整体通过，更不代表导入整体通过。"
+  ]
+}

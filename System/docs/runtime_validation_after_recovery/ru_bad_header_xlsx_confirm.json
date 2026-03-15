@@ -1,0 +1,141 @@
+﻿{
+    "batchId":  1,
+    "errorRows":  1613,
+    "errors":  [
+                   "行1: SKU不能为空",
+                   "行2: SKU不能为空",
+                   "行3: SKU不能为空",
+                   "行4: SKU不能为空",
+                   "行5: SKU不能为空",
+                   "行6: SKU不能为空",
+                   "行7: SKU不能为空",
+                   "行8: SKU不能为空",
+                   "行9: SKU不能为空",
+                   "行10: SKU不能为空",
+                   "行11: SKU不能为空",
+                   "行12: SKU不能为空",
+                   "行13: SKU不能为空",
+                   "行14: SKU不能为空",
+                   "行15: SKU不能为空",
+                   "行16: SKU不能为空",
+                   "行17: SKU不能为空",
+                   "行18: SKU不能为空",
+                   "行19: SKU不能为空",
+                   "行20: SKU不能为空",
+                   "行21: SKU不能为空",
+                   "行22: SKU不能为空",
+                   "行23: SKU不能为空",
+                   "行24: SKU不能为空",
+                   "行25: SKU不能为空",
+                   "行26: SKU不能为空",
+                   "行27: SKU不能为空",
+                   "行28: SKU不能为空",
+                   "行29: SKU不能为空",
+                   "行30: SKU不能为空",
+                   "行31: SKU不能为空",
+                   "行32: SKU不能为空",
+                   "行33: SKU不能为空",
+                   "行34: SKU不能为空",
+                   "行35: SKU不能为空",
+                   "行36: SKU不能为空",
+                   "行37: SKU不能为空",
+                   "行38: SKU不能为空",
+                   "行39: SKU不能为空",
+                   "行40: SKU不能为空",
+                   "行41: SKU不能为空",
+                   "行42: SKU不能为空",
+                   "行43: SKU不能为空",
+                   "行44: SKU不能为空",
+                   "行45: SKU不能为空",
+                   "行46: SKU不能为空",
+                   "行47: SKU不能为空",
+                   "行48: SKU不能为空",
+                   "行49: SKU不能为空",
+                   "行50: SKU不能为空"
+               ],
+    "factLoadErrors":  0,
+    "finalStatus":  "failed",
+    "importedRows":  0,
+    "quarantineCount":  1613,
+    "recoverySummary":  {
+                            "headerRecoveryApplied":  true,
+                            "postRecoveryStatus":  "failed",
+                            "preRecoveryStatus":  "failed",
+                            "recoveryAttempted":  true,
+                            "recoveryDiff":  {
+                                                 "adopt":  true,
+                                                 "candidateCount":  23,
+                                                 "coreFieldHit_after":  0,
+                                                 "coreFieldHit_before":  0,
+                                                 "improved":  true,
+                                                 "mappedCount_after":  1,
+                                                 "mappedCount_before":  0,
+                                                 "mappingCoverage_after":  1.0,
+                                                 "mappingCoverage_before":  0.0,
+                                                 "score_after":  111.525,
+                                                 "score_before":  4.575,
+                                                 "unmappedCount_after":  72,
+                                                 "unmappedCount_before":  73
+                                             },
+                            "recoveryImproved":  true,
+                            "riskOverrideReasons":  [
+                                                        "low_header_structure_score",
+                                                        "header_structure_risk_signals"
+                                                    ],
+                            "semanticGateReasons":  [
+                                                        "missing_sku",
+                                                        "missing_order_signal",
+                                                        "missing_top_funnel_signal",
+                                                        "missing_mid_funnel_signal",
+                                                        "insufficient_core_field_hits"
+                                                    ]
+                        },
+    "riskOverrideReasons":  [
+                                "low_header_structure_score",
+                                "header_structure_risk_signals"
+                            ],
+    "rowErrorSummary":  {
+                            "auto_fixed":  0,
+                            "fatal":  0,
+                            "ignorable":  0,
+                            "quarantined":  1613
+                        },
+    "runtimeAudit":  {
+                         "confirmedAt":  "2026-03-15T03:34:10.268867",
+                         "factLoadErrors":  0,
+                         "finalStatus":  "failed",
+                         "operator":  "industry_recovery_test",
+                         "quarantineCount":  1613,
+                         "recoverySummary":  {
+                                                 "headerRecoveryApplied":  true,
+                                                 "postRecoveryStatus":  "failed",
+                                                 "preRecoveryStatus":  "failed",
+                                                 "recoveryAttempted":  true,
+                                                 "recoveryImproved":  true
+                                             },
+                         "semanticStatus":  "failed",
+                         "sessionId":  1,
+                         "shopId":  1,
+                         "sourceFile":  "20260315_033357_ozon_bad_header_or_missing_sku.xlsx",
+                         "transportStatus":  "passed"
+                     },
+    "semanticAcceptanceReason":  [
+
+                                 ],
+    "semanticGateReasons":  [
+                                "missing_sku",
+                                "missing_order_signal",
+                                "missing_top_funnel_signal",
+                                "missing_mid_funnel_signal",
+                                "insufficient_core_field_hits"
+                            ],
+    "semanticStatus":  "failed",
+    "sessionId":  1,
+    "stagingRows":  0,
+    "status":  "success",
+    "success":  true,
+    "transportStatus":  "passed",
+    "warnings":  [
+
+                 ]
+}

@@ -805,4 +805,22 @@ export default function DataImportV2() {
 
           <Tabs.TabPane tab="常见问题" key="faq">
             <ul>
-              <li><strong>Q: 文件表头不在第一行怎么办？</strong>
+              <li><strong>Q: 文件表头不在第一行怎么办？</strong><br />
+                A: 系统会自动扫描前 20 行并尝试定位真实表头；若仍未识别，可先整理后再导入。
+              </li>
+              <li><strong>Q: 为什么会出现语义风险提示？</strong><br />
+                A: 这表示链路可达，但关键字段组合、结构风险或映射覆盖度尚未完全满足门禁条件，可查看 semantic gate reasons。
+              </li>
+              <li><strong>Q: recoveryAttempted / headerRecoveryApplied / recoveryImproved 分别是什么意思？</strong><br />
+                A: recoveryAttempted 表示是否执行过表头恢复；headerRecoveryApplied 表示是否采用恢复后的 bundle；recoveryImproved 表示恢复后指标是否量化改善。
+              </li>
+              <li><strong>Q: JSON 是否已经完全验证？</strong><br />
+                A: 当前能力存在，但真实样本验证仍待补齐；现阶段 xlsx / csv 有实证，json 不应对外宣称已全部验证。
+              </li>
+            </ul>
+          </Tabs.TabPane>
+        </Tabs>
+      </Card>
+    </div>
+  )
+}

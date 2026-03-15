@@ -1,0 +1,40 @@
+{
+  "scope": "xlsx_formal_upload_chain_item",
+  "browserEvidence": {
+    "network": "browser:/tmp/codex_browser_invocations/2aae3bb142efd02e/artifacts/artifacts/p0_xlsx_formal_upload_network.json",
+    "screenshot": "browser:/tmp/codex_browser_invocations/2aae3bb142efd02e/artifacts/artifacts/p0_xlsx_formal_upload_chain.png",
+    "note": "浏览器通过 /api/import/test-fixture 获取真实xlsx，再调用正式 /api/import/upload + /api/import/confirm"
+  },
+  "serviceCrossCheck": {
+    "parse": {
+      "mappedCount": 28,
+      "unmappedCount": 19,
+      "candidateColumns": 47,
+      "readerFallbackStage": "fallback_ooxml_repair"
+    },
+    "confirm": {
+      "status": "success",
+      "importedRows": 1370,
+      "errorRows": 0,
+      "stagingRows": 1370,
+      "factLoadErrors": 0,
+      "rowErrorSummary": {
+        "auto_fixed": 0,
+        "ignorable": 0,
+        "quarantined": 0,
+        "fatal": 0
+      }
+    },
+    "factWriteCounts": {
+      "fact_sku_daily": 1370,
+      "fact_orders_daily": 1370,
+      "fact_inventory_daily": 1370,
+      "fact_reviews_daily": 1370
+    }
+  },
+  "boundary": [
+    "本项仅代表 xlsx 正式上传链路清障推进。",
+    "/api/import/test-fixture 仅用于浏览器环境取样，不替代生产上传入口。",
+    "不等于导入整体通过。"
+  ]
+}

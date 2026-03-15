@@ -160,7 +160,7 @@ export default function DataImport() {
 
       <Card>
         <Steps current={currentStep} style={{ marginBottom: '32px' }}>
-          <Steps.Step title="上传文件" description="选择 Excel/CSV 文件" />
+          <Steps.Step title="上传文件" description="选择文件（xlsx/csv 已实证）" />
           <Steps.Step title="智能诊断" description="识别平台和字段" icon={importing ? <LoadingOutlined /> : undefined} />
           <Steps.Step title="完成" description="查看导入结果" />
         </Steps>
@@ -187,7 +187,7 @@ export default function DataImport() {
               </p>
               <p className="ant-upload-text">点击或拖拽文件到此区域</p>
               <p className="ant-upload-hint">
-                支持 Excel (.xlsx, .xls) 和 CSV 文件，可同时上传多个文件
+                支持导入 Excel/CSV（当前已完成实证：.xlsx/.csv）
               </p>
             </Upload.Dragger>
 
@@ -294,7 +294,7 @@ export default function DataImport() {
           </Descriptions.Item>
           <Descriptions.Item label="文件要求">
             <ul style={{ marginBottom: 0 }}>
-              <li>文件格式：Excel (.xlsx, .xls) 或 CSV</li>
+              <li>文件格式：Excel 或 CSV（当前实证覆盖：.xlsx/.csv）</li>
               <li>文件大小：单个文件不超过 50MB</li>
               <li>编码格式：UTF-8 或 GBK</li>
             </ul>
