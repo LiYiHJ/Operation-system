@@ -1,0 +1,191 @@
+[
+  {
+    "sample": "ru_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\analytics_report_2026-03-12_23_49.xlsx",
+    "upload": {
+      "sessionId": 4,
+      "transportStatus": "failed",
+      "semanticStatus": "failed",
+      "finalStatus": "failed",
+      "semanticGateReasons": [
+        "read_failed"
+      ],
+      "riskOverrideReasons": [],
+      "semanticAcceptanceReason": [],
+      "mappedCount": 0,
+      "unmappedCount": 0,
+      "mappingCoverage": null,
+      "headerStructureScore": null,
+      "headerStructureRiskSignals": null,
+      "preRecoveryStatus": null,
+      "postRecoveryStatus": null,
+      "recoveryAttempted": null,
+      "headerRecoveryApplied": null,
+      "recoveryImproved": null,
+      "recoveryDiff": null,
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirm": {
+      "importedRows": 0,
+      "errorRows": 0,
+      "quarantineCount": null,
+      "factLoadErrors": null,
+      "transportStatus": "failed",
+      "semanticStatus": "failed",
+      "finalStatus": "failed",
+      "semanticGateReasons": [
+        "session_not_found"
+      ],
+      "riskOverrideReasons": [],
+      "recoverySummary": {}
+    }
+  },
+  {
+    "sample": "cn_real_xlsx",
+    "path": "C:\\Operation-system\\System\\data\\销售数据分析.xlsx",
+    "upload": {
+      "sessionId": 5,
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticGateReasons": [],
+      "riskOverrideReasons": [],
+      "semanticAcceptanceReason": [
+        "mapping_thresholds_met",
+        "core_fields_present"
+      ],
+      "mappedCount": 29,
+      "unmappedCount": 3,
+      "mappingCoverage": 0.935,
+      "headerStructureScore": 0.8,
+      "headerStructureRiskSignals": [],
+      "preRecoveryStatus": "passed",
+      "postRecoveryStatus": "passed",
+      "recoveryAttempted": true,
+      "headerRecoveryApplied": false,
+      "recoveryImproved": false,
+      "recoveryDiff": {
+        "coreFieldHit_after": 4,
+        "coreFieldHit_before": 4,
+        "mappedCount_after": 29,
+        "mappedCount_before": 29,
+        "mappingCoverage_after": 0.935,
+        "mappingCoverage_before": 0.935,
+        "unmappedCount_after": 3,
+        "unmappedCount_before": 3
+      },
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirm": {
+      "importedRows": 2,
+      "errorRows": 33,
+      "quarantineCount": 33,
+      "factLoadErrors": 0,
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "finalStatus": "passed",
+      "semanticGateReasons": [],
+      "riskOverrideReasons": [],
+      "recoverySummary": {
+        "headerRecoveryApplied": false,
+        "postRecoveryStatus": "passed",
+        "preRecoveryStatus": "passed",
+        "recoveryAttempted": true,
+        "recoveryDiff": {
+          "coreFieldHit_after": 4,
+          "coreFieldHit_before": 4,
+          "mappedCount_after": 29,
+          "mappedCount_before": 29,
+          "mappingCoverage_after": 0.935,
+          "mappingCoverage_before": 0.935,
+          "unmappedCount_after": 3,
+          "unmappedCount_before": 3
+        },
+        "recoveryImproved": false,
+        "riskOverrideReasons": [],
+        "semanticGateReasons": []
+      }
+    }
+  },
+  {
+    "sample": "ru_bad_header_xlsx",
+    "path": "C:\\Operation-system\\System\\sample_data\\ozon_bad_header_or_missing_sku.xlsx",
+    "upload": {
+      "sessionId": 6,
+      "transportStatus": "passed",
+      "semanticStatus": "failed",
+      "finalStatus": "failed",
+      "semanticGateReasons": [
+        "no_mapped_fields"
+      ],
+      "riskOverrideReasons": [],
+      "semanticAcceptanceReason": [],
+      "mappedCount": 0,
+      "unmappedCount": 73,
+      "mappingCoverage": 0.0,
+      "headerStructureScore": 0.62,
+      "headerStructureRiskSignals": [
+        "short_explainable_column_run"
+      ],
+      "preRecoveryStatus": "failed",
+      "postRecoveryStatus": "failed",
+      "recoveryAttempted": true,
+      "headerRecoveryApplied": false,
+      "recoveryImproved": false,
+      "recoveryDiff": {
+        "coreFieldHit_after": 0,
+        "coreFieldHit_before": 0,
+        "mappedCount_after": 0,
+        "mappedCount_before": 0,
+        "mappingCoverage_after": 0.0,
+        "mappingCoverage_before": 0.0,
+        "unmappedCount_after": 73,
+        "unmappedCount_before": 73
+      },
+      "mappedCanonicalFields": null,
+      "topUnmappedHeaders": null,
+      "dynamicMetricColumns": null,
+      "recoveryCandidatePreview": null
+    },
+    "confirm": {
+      "importedRows": 0,
+      "errorRows": 1617,
+      "quarantineCount": 1617,
+      "factLoadErrors": 0,
+      "transportStatus": "passed",
+      "semanticStatus": "failed",
+      "finalStatus": "failed",
+      "semanticGateReasons": [
+        "no_mapped_fields"
+      ],
+      "riskOverrideReasons": [],
+      "recoverySummary": {
+        "headerRecoveryApplied": false,
+        "postRecoveryStatus": "failed",
+        "preRecoveryStatus": "failed",
+        "recoveryAttempted": true,
+        "recoveryDiff": {
+          "coreFieldHit_after": 0,
+          "coreFieldHit_before": 0,
+          "mappedCount_after": 0,
+          "mappedCount_before": 0,
+          "mappingCoverage_after": 0.0,
+          "mappingCoverage_before": 0.0,
+          "unmappedCount_after": 73,
+          "unmappedCount_before": 73
+        },
+        "recoveryImproved": false,
+        "riskOverrideReasons": [],
+        "semanticGateReasons": [
+          "no_mapped_fields"
+        ]
+      }
+    }
+  }
+]
