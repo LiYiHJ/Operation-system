@@ -1,7 +1,7 @@
-    red: number
+red: number
   }
-  totalOrders: number
-  totalProducts: number
+totalOrders: number
+totalProducts: number
 }
 
 // ========== Import 相关类型 ==========
@@ -68,8 +68,6 @@ export interface ImportResult {
   transportStatus?: 'passed' | 'failed'
   semanticStatus?: 'passed' | 'risk' | 'failed'
   finalStatus?: 'passed' | 'risk' | 'failed'
-  importabilityStatus?: 'passed' | 'risk' | 'failed'
-  importabilityReasons?: string[]
   semanticGateReasons?: string[]
   riskOverrideReasons?: string[]
   semanticAcceptanceReason?: string[]

@@ -88,6 +88,7 @@ export default function DataImportV2() {
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  const [confirmResult, setConfirmResult] = useState<ConfirmImportResponse | null>(null)
   const [importing, setImporting] = useState(false)
   const [savedTemplates, setSavedTemplates] = useState<any[]>([])
   const [standardFieldRegistry, setStandardFieldRegistry] = useState(STANDARD_FIELDS)
@@ -105,14 +106,14 @@ export default function DataImportV2() {
     importApi.getFieldRegistry()
       .then((registry) => {
         const next: Record<string, { name: string; category: string; required: boolean; description?: string }> = {}
-        ;(registry.fields || []).forEach((f: FieldRegistryField) => {
-          next[f.canonical] = {
-            name: f.displayLabel || f.canonical,
-            category: f.type || '通用',
-            required: f.canonical === 'sku',
-            description: f.factTarget,
-          }
-        })
+          ; (registry.fields || []).forEach((f: FieldRegistryField) => {
+            next[f.canonical] = {
+              name: f.displayLabel || f.canonical,
+              category: f.type || '通用',
+              required: f.canonical === 'sku',
+              description: f.factTarget,
+            }
+          })
         if (Object.keys(next).length > 0) {
           setStandardFieldRegistry(next as typeof STANDARD_FIELDS)
         }
@@ -156,7 +157,7 @@ export default function DataImportV2() {
 
   const syncSelectedFile = (nextList: UploadFile[]) => {
     setFileList(nextList)
-    setSelectedFile(normalizeRawFile(nextList[0]))
+    setSelectedFile(normalizeRawFile(nextList[0] ?? undefined))
   }
 
   // 处理文件上传
@@ -172,6 +173,7 @@ export default function DataImportV2() {
     try {
       const result = await importApi.uploadFile(selectedFile, 1)
       setImportResult(result)
+      setConfirmResult(null)
       setCurrentStep(2)
       if (result.finalStatus === 'risk') {
         message.warning('文件解析完成，但存在语义风险，请先检查门禁状态再确认导入。')
@@ -276,7 +278,7 @@ export default function DataImportV2() {
         Modal.confirm({
           title: '存在语义风险，确认继续导入？',
           icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
-          content: `finalStatus=risk，原因：${reasons}` ,
+          content: `finalStatus=risk，原因：${reasons}`,
           okText: '仍要继续导入',
           cancelText: '返回检查',
           okButtonProps: { danger: true },
@@ -297,7 +299,17 @@ export default function DataImportV2() {
       })
 
       if (result.status === 'success') {
-        message.success(`成功导入 ${result.importedRows} 条数据！`)
+        setConfirmResult(result)
+
+        if (result.importabilityStatus === 'risk') {
+          message.warning(
+            `文件识别通过，但导入可用性存在风险：${(result.importabilityReasons || []).join('、') || 'importability_risk'
+            }`
+          )
+        } else {
+          message.success(`成功导入 ${result.importedRows} 条数据！`)
+        }
+
         setCurrentStep(3)
       } else {
         throw new Error(result.errors?.[0] || '导入失败')
@@ -732,22 +744,63 @@ export default function DataImportV2() {
   const renderCompleteStep = () => (
     <div style={{ textAlign: 'center', padding: '48px' }}>
       <CheckCircleOutlined style={{ fontSize: '64px', color: '#52c41a' }} />
-      <h2 style={{ marginTop: '24px' }}>导入成功！</h2>
+
+      <h2 style={{ marginTop: '24px' }}>
+        {confirmResult?.importabilityStatus === 'risk' ? '导入完成，但需复核' : '导入成功！'}
+      </h2>
+
       <p style={{ color: '#8c8c8c', fontSize: '16px' }}>
-        已成功导入 {importResult?.totalRows.toLocaleString()} 条数据
+        已处理 {(confirmResult?.stagingRows ?? importResult?.totalRows ?? 0).toLocaleString()} 条数据；
+        成功导入 {confirmResult?.importedRows ?? 0} 条
       </p>
+
+      {confirmResult?.importabilityStatus === 'risk' && (
+        <Alert
+          style={{ marginTop: '16px', textAlign: 'left' }}
+          type="warning"
+          showIcon
+          message="导入可用性风险"
+          description={`当前语义识别已通过，但提交阶段存在风险：${(confirmResult.importabilityReasons || []).join('、') || 'importability_risk'
+            }`}
+        />
+      )}
 
       <Divider />
 
+      <Descriptions bordered column={3} style={{ marginBottom: '24px', textAlign: 'left' }}>
+        <Descriptions.Item label="语义状态">
+          {renderGateTag(confirmResult?.semanticStatus || importResult?.semanticStatus)}
+        </Descriptions.Item>
+        <Descriptions.Item label="导入可用性">
+          {renderGateTag(confirmResult?.importabilityStatus)}
+        </Descriptions.Item>
+        <Descriptions.Item label="最终状态">
+          {renderGateTag(confirmResult?.finalStatus || importResult?.finalStatus)}
+        </Descriptions.Item>
+        <Descriptions.Item label="导入行数">
+          {confirmResult?.importedRows ?? 0}
+        </Descriptions.Item>
+        <Descriptions.Item label="隔离行数">
+          {confirmResult?.quarantineCount ?? 0}
+        </Descriptions.Item>
+        <Descriptions.Item label="事实写入错误">
+          {confirmResult?.factLoadErrors ?? 0}
+        </Descriptions.Item>
+      </Descriptions>
+
       <Space>
-        <Button type="primary" onClick={() => window.location.href = '/dashboard'}>
+        <Button type="primary" onClick={() => (window.location.href = '/dashboard')}>
           查看仪表盘
         </Button>
-        <Button onClick={() => {
-          setCurrentStep(0)
-          setFileList([])
-          setImportResult(null)
-        }}>
+        <Button
+          onClick={() => {
+            setCurrentStep(0)
+            setFileList([])
+            setSelectedFile(null)
+            setImportResult(null)
+            setConfirmResult(null)
+          }}
+        >
           继续导入
         </Button>
       </Space>
