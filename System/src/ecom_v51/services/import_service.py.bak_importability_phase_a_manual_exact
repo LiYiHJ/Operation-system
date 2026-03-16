@@ -1400,8 +1400,6 @@ class ImportService:
                 "transportStatus": "failed",
                 "semanticStatus": "failed",
                 "finalStatus": "failed",
-                "importabilityStatus": "failed",
-                "importabilityReasons": ["session_not_found"],
                 "semanticGateReasons": ["session_not_found"],
                 "riskOverrideReasons": [],
                 "semanticAcceptanceReason": [],
@@ -1437,43 +1435,26 @@ class ImportService:
         if result.get("finalStatus") == "risk":
             warnings.append("当前样本处于 risk 状态，请结合语义门禁原因复核")
 
-        imported_rows = int(len(valid_df))
-        quarantine_count = int(len(row_errors))
-        fact_load_errors = 0
-        importability_reasons: List[str] = []
-        if imported_rows == 0 and quarantine_count > 0 and fact_load_errors == 0:
-            importability_status = "risk"
-            importability_reasons.append("all_rows_quarantined")
-        elif imported_rows > 0 and quarantine_count > 0:
-            importability_status = "risk"
-            importability_reasons.append("partial_quarantine")
-        elif imported_rows > 0 and fact_load_errors == 0:
-            importability_status = "passed"
-        else:
-            importability_status = "failed"
-
         response = {
             "sessionId": session_id,
             "batchId": session_id,
-            "importedRows": imported_rows,
-            "errorRows": quarantine_count,
+            "importedRows": int(len(valid_df)),
+            "errorRows": int(len(row_errors)),
             "status": "success",
             "warnings": warnings,
             "errors": [str(item.get("error")) for item in row_errors[:50]],
             "rowErrorSummary": {
                 "auto_fixed": 0,
                 "ignorable": 0,
-                "quarantined": quarantine_count,
+                "quarantined": int(len(row_errors)),
                 "fatal": 0,
             },
-            "quarantineCount": quarantine_count,
-            "stagingRows": imported_rows,
-            "factLoadErrors": fact_load_errors,
+            "quarantineCount": int(len(row_errors)),
+            "stagingRows": int(len(valid_df)),
+            "factLoadErrors": 0,
             "transportStatus": result.get("transportStatus"),
             "semanticStatus": result.get("semanticStatus"),
             "finalStatus": result.get("finalStatus"),
-            "importabilityStatus": importability_status,
-            "importabilityReasons": importability_reasons,
             "semanticGateReasons": list(result.get("semanticGateReasons") or []),
             "riskOverrideReasons": list(result.get("riskOverrideReasons") or []),
             "semanticAcceptanceReason": list(result.get("semanticAcceptanceReason") or []),
@@ -1496,10 +1477,8 @@ class ImportService:
                 "finalStatus": result.get("finalStatus"),
                 "transportStatus": result.get("transportStatus"),
                 "semanticStatus": result.get("semanticStatus"),
-                "importabilityStatus": importability_status,
-                "importabilityReasons": importability_reasons,
-                "quarantineCount": quarantine_count,
-                "factLoadErrors": fact_load_errors,
+                "quarantineCount": int(len(row_errors)),
+                "factLoadErrors": 0,
                 "recoverySummary": {
                     "headerRecoveryApplied": result.get("headerRecoveryApplied"),
                     "preRecoveryStatus": result.get("preRecoveryStatus"),

@@ -68,8 +68,6 @@ export interface ImportResult {
   transportStatus?: 'passed' | 'failed'
   semanticStatus?: 'passed' | 'risk' | 'failed'
   finalStatus?: 'passed' | 'risk' | 'failed'
-  importabilityStatus?: 'passed' | 'risk' | 'failed'
-  importabilityReasons?: string[]
   semanticGateReasons?: string[]
   riskOverrideReasons?: string[]
   semanticAcceptanceReason?: string[]
@@ -150,8 +148,6 @@ export interface ConfirmImportResponse {
   transportStatus?: 'passed' | 'failed'
   semanticStatus?: 'passed' | 'risk' | 'failed'
   finalStatus?: 'passed' | 'risk' | 'failed'
-  importabilityStatus?: 'passed' | 'risk' | 'failed'
-  importabilityReasons?: string[]
   semanticGateReasons?: string[]
   riskOverrideReasons?: string[]
   semanticAcceptanceReason?: string[]
