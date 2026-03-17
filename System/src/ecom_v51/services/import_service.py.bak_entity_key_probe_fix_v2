@@ -613,8 +613,8 @@ class ImportService:
         }
 
     ENTITY_KEY_TOKEN_PATTERNS = [
-        re.compile(r"(?i)(?<![A-Z0-9])[A-Z0-9]{2,}(?:[-_][A-Z0-9]+){1,}(?![A-Z0-9])"),
-        re.compile(r"(?<!\d)\d{8,14}(?!\d)"),
+        re.compile(r"(?i)\b[A-Z0-9]{2,}[-_][A-Z0-9][A-Z0-9_-]{2,}\b"),
+        re.compile(r"\b\d{8,14}\b"),
     ]
 
 
@@ -679,66 +679,12 @@ class ImportService:
         return round(max(score, 0.0), 4)
 
 
-    def _collect_entity_key_probe_values(
-        self,
-        df: pd.DataFrame,
-        field_mappings: List[dict],
-        limit: int = 12,
-    ) -> List[str]:
-        values: List[str] = []
-
-        unmapped_headers = []
-        for item in field_mappings or []:
-            if item.get("standardField") or item.get("dynamicCompanion"):
-                continue
-            original_field = str(item.get("originalField") or "")
-            if original_field:
-                unmapped_headers.append(original_field)
-
-        preferred_headers = []
-        fallback_headers = []
-
-        for header in unmapped_headers:
-            lower = header.lower()
-            if (
-                header.startswith("Unnamed:")
-                or header.startswith("col_")
-                or "sku" in lower
-                or "货号" in header
-                or "编码" in header
-                or "id" in lower
-                or "артикул" in lower
-            ):
-                preferred_headers.append(header)
-            else:
-                fallback_headers.append(header)
-
-        scan_headers = preferred_headers + fallback_headers
-
-        for header in scan_headers:
-            if header not in df.columns:
-                continue
-            series = df[header]
-            for raw in series.tolist():
-                if raw is None:
-                    continue
-                text = str(raw).strip()
-                if not text or text.lower() == "nan":
-                    continue
-                values.append(text)
-                if len(values) >= limit:
-                    return values
-
-        return values
-
-
     def _build_entity_key_suggestion(
         self,
         top_unmapped_headers: List[str],
         recovery_candidate_preview: List[dict],
         mapped_canonical_fields: List[str],
         field_mappings: Optional[List[dict]] = None,
-        df: Optional[pd.DataFrame] = None,
     ) -> Optional[dict]:
         # 如果当前已经映射出 sku，就不需要 suggestion
         if "sku" in {str(x) for x in (mapped_canonical_fields or [])}:
@@ -761,10 +707,6 @@ class ImportService:
                 candidate_pool.append(("fieldMappings.originalField", original_field))
             for value in item.get("sampleValues") or []:
                 candidate_pool.append(("fieldMappings.sampleValues", str(value)))
-
-        if df is not None:
-            for value in self._collect_entity_key_probe_values(df, field_mappings or []):
-                candidate_pool.append(("dataProbeValues", value))
 
         best = None
         best_score = 0.0
@@ -1875,7 +1817,6 @@ class ImportService:
             recovery_candidate_preview=recovery_candidate_preview,
             mapped_canonical_fields=mapped_canonical_fields,
             field_mappings=active_bundle.get("fieldMappings") or [],
-            df=df,
         )
 
         result = {
