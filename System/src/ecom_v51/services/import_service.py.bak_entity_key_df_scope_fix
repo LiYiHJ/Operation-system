@@ -617,6 +617,7 @@ class ImportService:
         re.compile(r"(?<!\d)\d{8,14}(?!\d)"),
     ]
 
+
     ENTITY_KEY_HEADER_HINTS = [
         "sku",
         "seller_sku",
@@ -798,7 +799,6 @@ class ImportService:
             "detectedBy": "value_pattern" if best_token else "header_hint",
             "rawCandidate": best_text,
         }
-
 
     # ---------- 读取 / 表头恢复 ----------
 
@@ -1873,7 +1873,7 @@ class ImportService:
             recovery_candidate_preview=recovery_candidate_preview,
             mapped_canonical_fields=mapped_canonical_fields,
             field_mappings=active_bundle.get("fieldMappings") or [],
-            df=active_bundle["df"],
+            df=df,
         )
 
         result = {

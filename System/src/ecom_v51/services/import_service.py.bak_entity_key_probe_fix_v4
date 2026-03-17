@@ -617,6 +617,7 @@ class ImportService:
         re.compile(r"(?<!\d)\d{8,14}(?!\d)"),
     ]
 
+
     ENTITY_KEY_HEADER_HINTS = [
         "sku",
         "seller_sku",
@@ -739,6 +740,7 @@ class ImportService:
         field_mappings: Optional[List[dict]] = None,
         df: Optional[pd.DataFrame] = None,
     ) -> Optional[dict]:
+        # 如果当前已经映射出 sku，就不需要 suggestion
         if "sku" in {str(x) for x in (mapped_canonical_fields or [])}:
             return None
 
@@ -774,6 +776,7 @@ class ImportService:
             score = self._score_entity_key_candidate(raw)
             token = self._extract_entity_key_token(raw)
 
+            # 优先使用真正提取到 token 的候选
             if token and score >= best_score:
                 best = raw
                 best_score = score
@@ -798,7 +801,6 @@ class ImportService:
             "detectedBy": "value_pattern" if best_token else "header_hint",
             "rawCandidate": best_text,
         }
-
 
     # ---------- 读取 / 表头恢复 ----------
 
@@ -1873,7 +1875,7 @@ class ImportService:
             recovery_candidate_preview=recovery_candidate_preview,
             mapped_canonical_fields=mapped_canonical_fields,
             field_mappings=active_bundle.get("fieldMappings") or [],
-            df=active_bundle["df"],
+            df=df,
         )
 
         result = {

@@ -96,7 +96,6 @@ def main() -> None:
             "topUnmappedHeaders": upload.get("topUnmappedHeaders"),
             "dynamicMetricColumns": (upload.get("stats") or {}).get("dynamicMetricColumns"),
             "recoveryCandidatePreview": upload.get("recoveryCandidatePreview"),
-            "entityKeySuggestion": upload.get("entityKeySuggestion"),
             "entityKeyAudit": upload.get("entityKeyAudit"),
         }
 
