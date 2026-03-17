@@ -1363,22 +1363,10 @@ class ImportService:
         for idx, row in df.iterrows():
             row_dict = {k: self._safe_scalar(v) for k, v in row.to_dict().items()}
             is_valid, row_errors = self.validator.validate_row(row_dict, idx + 1)
-
-            filtered_row_errors: List[str] = []
-            for err in row_errors:
-                if "评分必须在0-5之间" in err:
-                    rating_value = row_dict.get("rating_value")
-                    if rating_value is None or (
-                        isinstance(rating_value, float) and pd.isna(rating_value)
-                    ):
-                        # rating_value 改为“可空但若存在必须合法”
-                        continue
-                filtered_row_errors.append(err)
-
-            if not filtered_row_errors:
+            if is_valid:
                 valid_rows.append(row_dict)
             else:
-                for err in filtered_row_errors:
+                for err in row_errors:
                     detail: Dict[str, Any] = {"row": idx + 1, "error": err}
                     if "评分必须在0-5之间" in err:
                         detail["field"] = "rating_value"
@@ -1387,12 +1375,10 @@ class ImportService:
                         detail["field"] = "sku"
                         detail["rawValue"] = row_dict.get("sku")
                     errors.append(detail)
-
         valid_df = (
             pd.DataFrame(valid_rows) if valid_rows else pd.DataFrame(columns=df.columns)
         )
         return valid_df, errors
-
 
     def remove_duplicates(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
         if "sku" not in df.columns:
@@ -2073,48 +2059,15 @@ class ImportService:
         else:
             importability_status = "failed"
 
-        rating_source_column = None
-        for mapping in session.get("stagingFieldMappings") or []:
-            if str(mapping.get("standardField") or "") == "rating_value":
-                rating_source_column = str(mapping.get("originalField") or "") or None
-                break
-
-        staging_df_for_audit = session.get("stagingDf")
-        rating_issue_samples = []
-        for item in row_errors:
-            if str(item.get("field") or "") != "rating_value":
-                continue
-
-            row_no = item.get("row")
-            rating_source_raw_value = None
-            if (
-                isinstance(row_no, int)
-                and row_no >= 1
-                and rating_source_column
-                and hasattr(staging_df_for_audit, "columns")
-                and rating_source_column in staging_df_for_audit.columns
-                and row_no - 1 < len(staging_df_for_audit)
-            ):
-                raw = staging_df_for_audit.iloc[row_no - 1][rating_source_column]
-                if raw is not None and str(raw).strip().lower() != "nan":
-                    rating_source_raw_value = self._safe_scalar(raw)
-
-            rating_issue_samples.append(
-                {
-                    "row": row_no,
-                    "ratingValue": item.get("rawValue"),
-                    "ratingSourceColumn": rating_source_column,
-                    "ratingSourceRawValue": rating_source_raw_value,
-                    "error": item.get("error"),
-                }
-            )
-
-            if len(rating_issue_samples) >= 10:
-                break
-
-        missing_rating_count = 0
-        if isinstance(valid_df, pd.DataFrame) and "rating_value" in valid_df.columns:
-            missing_rating_count = int(valid_df["rating_value"].isna().sum())
+        rating_issue_samples = [
+            {
+                "row": item.get("row"),
+                "rawValue": item.get("rawValue"),
+                "error": item.get("error"),
+            }
+            for item in row_errors
+            if str(item.get("field") or "") == "rating_value"
+        ][:10]
 
         response = {
             "sessionId": session_id,
@@ -2134,7 +2087,6 @@ class ImportService:
             "quarantineCount": quarantine_count,
             "stagingRows": imported_rows,
             "factLoadErrors": fact_load_errors,
-            "missingRatingCount": missing_rating_count,
             "transportStatus": result.get("transportStatus"),
             "semanticStatus": result.get("semanticStatus"),
             "finalStatus": result.get("finalStatus"),
@@ -2168,7 +2120,6 @@ class ImportService:
                 "importabilityReasons": importability_reasons,
                 "quarantineCount": quarantine_count,
                 "factLoadErrors": fact_load_errors,
-                "missingRatingCount": missing_rating_count,
                 "ratingIssueCount": len(rating_issue_samples),
                 "recoverySummary": {
                     "headerRecoveryApplied": result.get("headerRecoveryApplied"),

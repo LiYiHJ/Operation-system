@@ -1,0 +1,14 @@
+﻿{
+    "shopId":  1,
+    "operator":  "manual_override_confirm",
+    "manualOverrides":  [
+                            {
+                                "standardField":  "sku",
+                                "originalField":  "Unnamed: 0",
+                                "sampleToken":  "HAA132-02-Y1",
+                                "reason":  "entity_key_suggestion_confirmed",
+                                "normalizedField":  "unnamed: 0"
+                            }
+                        ],
+    "sessionId":  1
+}

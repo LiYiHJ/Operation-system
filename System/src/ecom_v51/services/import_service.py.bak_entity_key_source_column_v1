@@ -639,6 +639,7 @@ class ImportService:
         "код товара",
     ]
 
+
     def _extract_entity_key_token(self, value: Any) -> Optional[str]:
         text = str(value or "").strip()
         if not text:
@@ -650,6 +651,7 @@ class ImportService:
                 return match.group(0)
 
         return None
+
 
     def _score_entity_key_candidate(self, text: str) -> float:
         raw = str(text or "").strip()
@@ -675,13 +677,14 @@ class ImportService:
 
         return round(max(score, 0.0), 4)
 
+
     def _collect_entity_key_probe_values(
         self,
         df: pd.DataFrame,
         field_mappings: List[dict],
         limit: int = 12,
-    ) -> List[tuple[str, str]]:
-        values: List[tuple[str, str]] = []
+    ) -> List[str]:
+        values: List[str] = []
 
         unmapped_headers = []
         for item in field_mappings or []:
@@ -721,11 +724,12 @@ class ImportService:
                 text = str(raw).strip()
                 if not text or text.lower() == "nan":
                     continue
-                values.append((header, text))
+                values.append(text)
                 if len(values) >= limit:
                     return values
 
         return values
+
 
     def _build_entity_key_suggestion(
         self,
@@ -738,42 +742,35 @@ class ImportService:
         if "sku" in {str(x) for x in (mapped_canonical_fields or [])}:
             return None
 
-        candidate_pool: List[tuple[str, Optional[str], str]] = []
+        candidate_pool: List[tuple[str, str]] = []
 
         for item in top_unmapped_headers or []:
-            candidate_pool.append(("topUnmappedHeaders", None, str(item)))
+            candidate_pool.append(("topUnmappedHeaders", str(item)))
 
         for candidate in recovery_candidate_preview or []:
             for example in candidate.get("flattenedHeaderExamples") or []:
-                candidate_pool.append(("recoveryCandidatePreview", None, str(example)))
+                candidate_pool.append(("recoveryCandidatePreview", str(example)))
 
         for item in field_mappings or []:
             if item.get("standardField") or item.get("dynamicCompanion"):
                 continue
             original_field = str(item.get("originalField") or "")
             if original_field:
-                candidate_pool.append(
-                    ("fieldMappings.originalField", original_field, original_field)
-                )
+                candidate_pool.append(("fieldMappings.originalField", original_field))
             for value in item.get("sampleValues") or []:
-                candidate_pool.append(
-                    ("fieldMappings.sampleValues", original_field or None, str(value))
-                )
+                candidate_pool.append(("fieldMappings.sampleValues", str(value)))
 
         if df is not None:
-            for column_name, value in self._collect_entity_key_probe_values(
-                df, field_mappings or []
-            ):
-                candidate_pool.append(("dataProbeValues", column_name, value))
+            for value in self._collect_entity_key_probe_values(df, field_mappings or []):
+                candidate_pool.append(("dataProbeValues", value))
 
         best = None
         best_score = 0.0
         best_token = None
         best_source = None
-        best_column = None
         best_text = None
 
-        for source, column_name, raw in candidate_pool:
+        for source, raw in candidate_pool:
             score = self._score_entity_key_candidate(raw)
             token = self._extract_entity_key_token(raw)
 
@@ -782,14 +779,12 @@ class ImportService:
                 best_score = score
                 best_token = token
                 best_source = source
-                best_column = column_name
                 best_text = raw
             elif best is None and score > best_score:
                 best = raw
                 best_score = score
                 best_token = token
                 best_source = source
-                best_column = column_name
                 best_text = raw
 
         if best_score < 0.45:
@@ -799,11 +794,11 @@ class ImportService:
             "field": "sku",
             "confidence": best_score,
             "sourceHeader": best_source,
-            "sourceColumn": best_column,
             "sampleToken": best_token,
             "detectedBy": "value_pattern" if best_token else "header_hint",
             "rawCandidate": best_text,
         }
+
 
     # ---------- 读取 / 表头恢复 ----------
 
@@ -1363,36 +1358,15 @@ class ImportService:
         for idx, row in df.iterrows():
             row_dict = {k: self._safe_scalar(v) for k, v in row.to_dict().items()}
             is_valid, row_errors = self.validator.validate_row(row_dict, idx + 1)
-
-            filtered_row_errors: List[str] = []
-            for err in row_errors:
-                if "评分必须在0-5之间" in err:
-                    rating_value = row_dict.get("rating_value")
-                    if rating_value is None or (
-                        isinstance(rating_value, float) and pd.isna(rating_value)
-                    ):
-                        # rating_value 改为“可空但若存在必须合法”
-                        continue
-                filtered_row_errors.append(err)
-
-            if not filtered_row_errors:
+            if is_valid:
                 valid_rows.append(row_dict)
             else:
-                for err in filtered_row_errors:
-                    detail: Dict[str, Any] = {"row": idx + 1, "error": err}
-                    if "评分必须在0-5之间" in err:
-                        detail["field"] = "rating_value"
-                        detail["rawValue"] = row_dict.get("rating_value")
-                    elif "SKU不能为空" in err:
-                        detail["field"] = "sku"
-                        detail["rawValue"] = row_dict.get("sku")
-                    errors.append(detail)
-
+                for err in row_errors:
+                    errors.append({"row": idx + 1, "error": err})
         valid_df = (
             pd.DataFrame(valid_rows) if valid_rows else pd.DataFrame(columns=df.columns)
         )
         return valid_df, errors
-
 
     def remove_duplicates(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
         if "sku" not in df.columns:
@@ -1880,15 +1854,11 @@ class ImportService:
             "pass": active_bundle["semanticStatus"] != "failed",
             "details": [],
         }
-        mapped_canonical_fields = list(
-            dict.fromkeys(
-                [
-                    str(item.get("standardField"))
-                    for item in (active_bundle.get("fieldMappings") or [])
-                    if item.get("standardField")
-                ]
-            )
-        )[:20]
+        mapped_canonical_fields = list(dict.fromkeys([
+            str(item.get("standardField"))
+            for item in (active_bundle.get("fieldMappings") or [])
+            if item.get("standardField")
+        ]))[:20]
 
         top_unmapped_headers = [
             str(item.get("originalField"))
@@ -1979,10 +1949,6 @@ class ImportService:
             "rowErrors": row_errors,
             "duplicateCount": duplicate_count,
             "createdAt": datetime.now().isoformat(),
-            "stagingDf": active_bundle["df"].copy(),
-            "stagingFieldMappings": copy.deepcopy(
-                active_bundle.get("fieldMappings") or []
-            ),
         }
         self.batches.append(
             {
@@ -2023,34 +1989,31 @@ class ImportService:
             }
 
         session = self._sessions[session_id]
-        result = copy.deepcopy(session["result"])
-
+        result = session["result"]
         valid_df: pd.DataFrame = session["df"]
         row_errors: List[Dict[str, Any]] = session["rowErrors"]
         manual_overrides = manual_overrides or []
 
         if manual_overrides:
-            staging_df: pd.DataFrame = session.get("stagingDf")
-            staging_field_mappings: List[dict] = session.get("stagingFieldMappings") or []
-
-            if isinstance(staging_df, pd.DataFrame):
-                override_df, override_field_mappings = (
-                    self._apply_manual_overrides_to_staging(
-                        staging_df=staging_df,
-                        field_mappings=staging_field_mappings,
-                        manual_overrides=manual_overrides,
-                    )
-                )
-
-                cleaned_override_df = self.clean_data(override_df)
-                valid_df, row_errors = self.validate_data(cleaned_override_df)
-                valid_df, duplicate_count = self.remove_duplicates(valid_df)
-
-                session["df"] = valid_df
-                session["rowErrors"] = row_errors
-                session["duplicateCount"] = duplicate_count
-
-                result["fieldMappings"] = override_field_mappings
+            # 仅记录，不在当前轻量版中二次重写 DataFrame。
+            result = copy.deepcopy(result)
+            result["fieldMappings"] = list(result.get("fieldMappings") or []) + [
+                {
+                    "originalField": str(
+                        item.get("originalField") or "manual_override"
+                    ),
+                    "normalizedField": str(
+                        item.get("normalizedField") or "manual_override"
+                    ),
+                    "standardField": item.get("standardField"),
+                    "mappingSource": "manual_override",
+                    "confidence": 1.0,
+                    "sampleValues": [],
+                    "isManual": True,
+                    "reasons": ["manual_override_applied"],
+                }
+                for item in manual_overrides
+            ]
 
         warnings: List[str] = []
         if session.get("duplicateCount"):
@@ -2073,49 +2036,6 @@ class ImportService:
         else:
             importability_status = "failed"
 
-        rating_source_column = None
-        for mapping in session.get("stagingFieldMappings") or []:
-            if str(mapping.get("standardField") or "") == "rating_value":
-                rating_source_column = str(mapping.get("originalField") or "") or None
-                break
-
-        staging_df_for_audit = session.get("stagingDf")
-        rating_issue_samples = []
-        for item in row_errors:
-            if str(item.get("field") or "") != "rating_value":
-                continue
-
-            row_no = item.get("row")
-            rating_source_raw_value = None
-            if (
-                isinstance(row_no, int)
-                and row_no >= 1
-                and rating_source_column
-                and hasattr(staging_df_for_audit, "columns")
-                and rating_source_column in staging_df_for_audit.columns
-                and row_no - 1 < len(staging_df_for_audit)
-            ):
-                raw = staging_df_for_audit.iloc[row_no - 1][rating_source_column]
-                if raw is not None and str(raw).strip().lower() != "nan":
-                    rating_source_raw_value = self._safe_scalar(raw)
-
-            rating_issue_samples.append(
-                {
-                    "row": row_no,
-                    "ratingValue": item.get("rawValue"),
-                    "ratingSourceColumn": rating_source_column,
-                    "ratingSourceRawValue": rating_source_raw_value,
-                    "error": item.get("error"),
-                }
-            )
-
-            if len(rating_issue_samples) >= 10:
-                break
-
-        missing_rating_count = 0
-        if isinstance(valid_df, pd.DataFrame) and "rating_value" in valid_df.columns:
-            missing_rating_count = int(valid_df["rating_value"].isna().sum())
-
         response = {
             "sessionId": session_id,
             "batchId": session_id,
@@ -2124,7 +2044,6 @@ class ImportService:
             "status": "success",
             "warnings": warnings,
             "errors": [str(item.get("error")) for item in row_errors[:50]],
-            "ratingIssueSamples": rating_issue_samples,
             "rowErrorSummary": {
                 "auto_fixed": 0,
                 "ignorable": 0,
@@ -2134,7 +2053,6 @@ class ImportService:
             "quarantineCount": quarantine_count,
             "stagingRows": imported_rows,
             "factLoadErrors": fact_load_errors,
-            "missingRatingCount": missing_rating_count,
             "transportStatus": result.get("transportStatus"),
             "semanticStatus": result.get("semanticStatus"),
             "finalStatus": result.get("finalStatus"),
@@ -2168,8 +2086,6 @@ class ImportService:
                 "importabilityReasons": importability_reasons,
                 "quarantineCount": quarantine_count,
                 "factLoadErrors": fact_load_errors,
-                "missingRatingCount": missing_rating_count,
-                "ratingIssueCount": len(rating_issue_samples),
                 "recoverySummary": {
                     "headerRecoveryApplied": result.get("headerRecoveryApplied"),
                     "preRecoveryStatus": result.get("preRecoveryStatus"),
@@ -2177,7 +2093,6 @@ class ImportService:
                     "recoveryAttempted": result.get("recoveryAttempted"),
                     "recoveryImproved": result.get("recoveryImproved"),
                 },
-                "manualOverrides": copy.deepcopy(manual_overrides),
             },
         }
         return response
@@ -2244,59 +2159,3 @@ class ImportService:
             payload["metadata"] = metadata
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
-
-    # ---------- 新增helper ----------
-    def _apply_manual_overrides_to_staging(
-        self,
-        staging_df: pd.DataFrame,
-        field_mappings: List[dict],
-        manual_overrides: List[dict],
-    ) -> tuple[pd.DataFrame, List[dict]]:
-        next_df = staging_df.copy()
-        next_field_mappings = copy.deepcopy(field_mappings or [])
-
-        for item in manual_overrides or []:
-            original_field = str(item.get("originalField") or "").strip()
-            standard_field = str(item.get("standardField") or "").strip()
-
-            if not original_field or not standard_field:
-                continue
-            if original_field not in next_df.columns:
-                continue
-
-            # 把原列值映射到目标 canonical 列
-            next_df[standard_field] = next_df[original_field]
-
-            matched = False
-            for mapping in next_field_mappings:
-                if str(mapping.get("originalField") or "") == original_field:
-                    mapping["standardField"] = standard_field
-                    mapping["mappingSource"] = "manual_override"
-                    mapping["confidence"] = 1.0
-                    mapping["isManual"] = True
-                    mapping["reasons"] = list(
-                        dict.fromkeys(
-                            list(mapping.get("reasons") or [])
-                            + ["manual_override_applied"]
-                        )
-                    )
-                    matched = True
-                    break
-
-            if not matched:
-                next_field_mappings.append(
-                    {
-                        "originalField": original_field,
-                        "normalizedField": str(
-                            item.get("normalizedField") or original_field
-                        ),
-                        "standardField": standard_field,
-                        "mappingSource": "manual_override",
-                        "confidence": 1.0,
-                        "sampleValues": [],
-                        "isManual": True,
-                        "reasons": ["manual_override_applied"],
-                    }
-                )
-
-        return next_df, next_field_mappings
