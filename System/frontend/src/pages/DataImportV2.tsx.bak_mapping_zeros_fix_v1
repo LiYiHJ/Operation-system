@@ -110,21 +110,6 @@ const getSuggestionOverride = (
 }
 
 
-const tryParseJson = (value: any) => {
-  if (typeof value !== 'string') return value
-  try {
-    return JSON.parse(value)
-  } catch {
-    return value
-  }
-}
-
-const unwrapPayload = (raw: any) => {
-  const parsedRaw = tryParseJson(raw)
-  const candidate = parsedRaw?.data ?? parsedRaw?.result ?? parsedRaw ?? {}
-  return tryParseJson(candidate)
-}
-
 const normalizeFieldMappings = (value: any): FieldMapping[] => {
   if (!Array.isArray(value)) return []
   return value.map((item: any) => ({
@@ -138,7 +123,7 @@ const normalizeFieldMappings = (value: any): FieldMapping[] => {
       : Array.isArray(item?.sample_values)
       ? item.sample_values
       : [],
-    isManual: Boolean(item?.isManual ?? item?.is_manual ?? false),
+    isManual: Boolean(item?.isManual ?? item?.is_manual ?? False),
     reasons: Array.isArray(item?.reasons) ? item.reasons : [],
     reason: item?.reason ?? undefined,
     sampleToken: item?.sampleToken ?? item?.sample_token ?? undefined,
@@ -146,7 +131,7 @@ const normalizeFieldMappings = (value: any): FieldMapping[] => {
 }
 
 const normalizeImportResult = (raw: any): ImportResult => {
-  const payload = unwrapPayload(raw)
+  const payload = raw?.data ?? raw?.result ?? raw ?? {}
   return {
     status: payload?.status ?? 'success',
     sessionId: Number(payload?.sessionId ?? payload?.session_id ?? 0),
@@ -164,15 +149,12 @@ const normalizeImportResult = (raw: any): ImportResult => {
     semanticGateReasons: payload?.semanticGateReasons ?? payload?.semantic_gate_reasons ?? [],
     semanticAcceptanceReason: payload?.semanticAcceptanceReason ?? payload?.semantic_acceptance_reason ?? [],
     entityKeySuggestion: payload?.entityKeySuggestion ?? payload?.entity_key_suggestion ?? null,
-    mappedCount: Number(payload?.mappedCount ?? payload?.mapped_count ?? 0),
-    unmappedCount: Number(payload?.unmappedCount ?? payload?.unmapped_count ?? 0),
-    mappingCoverage: Number(payload?.mappingCoverage ?? payload?.mapping_coverage ?? 0),
     ...payload,
   } as ImportResult
 }
 
 const normalizeConfirmResult = (raw: any): ConfirmImportResponse => {
-  const payload = unwrapPayload(raw)
+  const payload = raw?.data ?? raw?.result ?? raw ?? {}
   return {
     status: payload?.status ?? 'success',
     importedRows: Number(payload?.importedRows ?? payload?.imported_rows ?? 0),
@@ -200,42 +182,22 @@ const buildDisplayStats = (result: ImportResult | null) => {
   const candidateMappings = mappings.filter(
     (m) => !(isIgnoredField(m) || ignoredFields.has(m.originalField)),
   )
-  const mappedCountFromMappings = candidateMappings.filter(isMappedField).length
-  const unmappedCountFromMappings = candidateMappings.length - mappedCountFromMappings
-  const coverageFromMappings =
-    mappedCountFromMappings / Math.max(candidateMappings.length, 1)
+  const mappedCount = candidateMappings.filter(isMappedField).length
+  const unmappedCount = candidateMappings.length - mappedCount
+  const coverage = mappedCount / Math.max(candidateMappings.length, 1)
   const mappedConfidence =
-    mappedCountFromMappings > 0
+    mappedCount > 0
       ? candidateMappings
           .filter(isMappedField)
-          .reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCountFromMappings
+          .reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCount
       : 0
-
-  const mappedCount =
-    candidateMappings.length > 0
-      ? mappedCountFromMappings
-      : Number((result as any)?.mappedCount ?? (result as any)?.mapped_count ?? 0)
-
-  const unmappedCount =
-    candidateMappings.length > 0
-      ? unmappedCountFromMappings
-      : Number((result as any)?.unmappedCount ?? (result as any)?.unmapped_count ?? 0)
-
-  const mappingCoverage =
-    candidateMappings.length > 0
-      ? Number(coverageFromMappings.toFixed(3))
-      : Number(
-          Number(
-            (result as any)?.mappingCoverage ?? (result as any)?.mapping_coverage ?? 0,
-          ).toFixed(3),
-        )
 
   return {
     mappedCount,
     unmappedCount,
-    mappingCoverage,
+    mappingCoverage: Number(coverage.toFixed(3)),
     mappedConfidence: Number(mappedConfidence.toFixed(3)),
-    rawColumns: Number(result?.rawColumns ?? result?.totalColumns ?? 0),
+    rawColumns: result?.rawColumns ?? result?.totalColumns ?? 0,
   }
 }
 
@@ -290,12 +252,8 @@ export default function DataImportV2() {
     try {
       const raw = await importApi.uploadFile(selectedFile, SHOP_ID)
       const result = normalizeImportResult(raw)
-      if (!result.fileName && selectedFile?.name) {
-        result.fileName = selectedFile.name
-      }
       console.log('upload raw ->', raw)
       console.log('upload normalized ->', result)
-      console.log('upload fieldMappings length ->', Array.isArray(result.fieldMappings) ? result.fieldMappings.length : 'n/a')
       setImportResult(result)
       setConfirmResult(null)
       setAcceptedEntityKeySuggestion(false)
@@ -585,22 +543,6 @@ export default function DataImportV2() {
 
     return (
       <div>
-        {mappings.length === 0 && (
-          <Alert
-            type="warning"
-            showIcon
-            style={{ marginBottom: 16 }}
-            message="后端未返回 fieldMappings，当前按回退模式展示统计与建议"
-            description={
-              <div>
-                <div>已映射字段：{displayStats.mappedCount}</div>
-                <div>待处理字段：{displayStats.unmappedCount}</div>
-                <div>映射覆盖率：{(displayStats.mappingCoverage * 100).toFixed(1)}%</div>
-                <div>若下方出现 SKU 建议，可直接接受建议后确认导入。</div>
-              </div>
-            }
-          />
-        )}
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={6}>
             <Card><Statistic title="已映射字段" value={displayStats.mappedCount} /></Card>
@@ -622,7 +564,7 @@ export default function DataImportV2() {
 
         <Card style={{ marginBottom: 16 }}>
           <Descriptions bordered column={3} size="small">
-            <Descriptions.Item label="文件名">{importResult.fileName || selectedFile?.name || 'n/a'}</Descriptions.Item>
+            <Descriptions.Item label="文件名">{importResult.fileName}</Descriptions.Item>
             <Descriptions.Item label="平台">{importResult.platform}</Descriptions.Item>
             <Descriptions.Item label="表头行">第 {importResult.headerRow} 行</Descriptions.Item>
             <Descriptions.Item label="传输状态">{renderGateTag(importResult.transportStatus)}</Descriptions.Item>

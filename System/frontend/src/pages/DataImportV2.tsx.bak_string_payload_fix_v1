@@ -110,21 +110,6 @@ const getSuggestionOverride = (
 }
 
 
-const tryParseJson = (value: any) => {
-  if (typeof value !== 'string') return value
-  try {
-    return JSON.parse(value)
-  } catch {
-    return value
-  }
-}
-
-const unwrapPayload = (raw: any) => {
-  const parsedRaw = tryParseJson(raw)
-  const candidate = parsedRaw?.data ?? parsedRaw?.result ?? parsedRaw ?? {}
-  return tryParseJson(candidate)
-}
-
 const normalizeFieldMappings = (value: any): FieldMapping[] => {
   if (!Array.isArray(value)) return []
   return value.map((item: any) => ({
@@ -146,7 +131,7 @@ const normalizeFieldMappings = (value: any): FieldMapping[] => {
 }
 
 const normalizeImportResult = (raw: any): ImportResult => {
-  const payload = unwrapPayload(raw)
+  const payload = raw?.data ?? raw?.result ?? raw ?? {}
   return {
     status: payload?.status ?? 'success',
     sessionId: Number(payload?.sessionId ?? payload?.session_id ?? 0),
@@ -164,15 +149,12 @@ const normalizeImportResult = (raw: any): ImportResult => {
     semanticGateReasons: payload?.semanticGateReasons ?? payload?.semantic_gate_reasons ?? [],
     semanticAcceptanceReason: payload?.semanticAcceptanceReason ?? payload?.semantic_acceptance_reason ?? [],
     entityKeySuggestion: payload?.entityKeySuggestion ?? payload?.entity_key_suggestion ?? null,
-    mappedCount: Number(payload?.mappedCount ?? payload?.mapped_count ?? 0),
-    unmappedCount: Number(payload?.unmappedCount ?? payload?.unmapped_count ?? 0),
-    mappingCoverage: Number(payload?.mappingCoverage ?? payload?.mapping_coverage ?? 0),
     ...payload,
   } as ImportResult
 }
 
 const normalizeConfirmResult = (raw: any): ConfirmImportResponse => {
-  const payload = unwrapPayload(raw)
+  const payload = raw?.data ?? raw?.result ?? raw ?? {}
   return {
     status: payload?.status ?? 'success',
     importedRows: Number(payload?.importedRows ?? payload?.imported_rows ?? 0),
