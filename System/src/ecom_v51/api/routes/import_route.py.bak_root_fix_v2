@@ -2,13 +2,13 @@
 数据导入API路由
 """
 
+from flask import Blueprint, jsonify, request, send_file
 import ast
 import json
-from flask import Blueprint, jsonify, request, send_file
+import math
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from pathlib import Path
-import math
 
 from ecom_v51.services.import_service import ImportService
 
@@ -101,7 +101,7 @@ def upload_file():
         shop_id = int(request.form.get('shop_id') or 1)
         operator = request.form.get('operator') or 'frontend_user'
         result = import_service.parse_import_file(str(filepath), shop_id=shop_id, operator=operator)
-        result = _sanitize_for_json(result)
+        
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -149,7 +149,6 @@ def upload_server_file():
         operator = data.get('operator') or 'frontend_user'
         result = import_service.parse_import_file(file_path, shop_id=shop_id, operator=operator)
         result['sourceMode'] = 'server_file'
-        result = _sanitize_for_json(result)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

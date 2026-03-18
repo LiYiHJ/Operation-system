@@ -2,13 +2,12 @@
 数据导入API路由
 """
 
+from flask import Blueprint, jsonify, request, send_file
 import ast
 import json
-from flask import Blueprint, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from pathlib import Path
-import math
 
 from ecom_v51.services.import_service import ImportService
 
@@ -20,38 +19,6 @@ UPLOAD_FOLDER.mkdir(exist_ok=True)
 import_service = ImportService()
 
 
-def _sanitize_for_json(value):
-    try:
-        import numpy as np  # type: ignore
-    except Exception:
-        np = None
-
-    if np is not None:
-        if isinstance(value, np.generic):
-            value = value.item()
-        elif isinstance(value, np.ndarray):
-            value = value.tolist()
-
-    if isinstance(value, float):
-        if math.isnan(value) or math.isinf(value):
-            return None
-        return value
-
-    if isinstance(value, dict):
-        return {k: _sanitize_for_json(v) for k, v in value.items()}
-
-    if isinstance(value, (list, tuple)):
-        return [_sanitize_for_json(v) for v in value]
-
-    if hasattr(value, "isoformat") and not isinstance(value, (str, bytes)):
-        try:
-            return value.isoformat()
-        except Exception:
-            pass
-
-    return value
-
-
 def _ensure_json_object(value, *, label: str):
     if isinstance(value, str):
         try:
@@ -61,8 +28,6 @@ def _ensure_json_object(value, *, label: str):
                 value = ast.literal_eval(value)
             except Exception:
                 return None, (jsonify({'error': f'{label} is string and cannot be parsed'}), 500)
-
-    value = _sanitize_for_json(value)
 
     if not isinstance(value, dict):
         return None, (jsonify({'error': f'{label} must be dict, got {type(value).__name__}'}), 500)
@@ -101,7 +66,7 @@ def upload_file():
         shop_id = int(request.form.get('shop_id') or 1)
         operator = request.form.get('operator') or 'frontend_user'
         result = import_service.parse_import_file(str(filepath), shop_id=shop_id, operator=operator)
-        result = _sanitize_for_json(result)
+        
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -149,7 +114,6 @@ def upload_server_file():
         operator = data.get('operator') or 'frontend_user'
         result = import_service.parse_import_file(file_path, shop_id=shop_id, operator=operator)
         result['sourceMode'] = 'server_file'
-        result = _sanitize_for_json(result)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

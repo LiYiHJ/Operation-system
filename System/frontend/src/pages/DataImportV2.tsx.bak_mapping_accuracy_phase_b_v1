@@ -48,34 +48,7 @@ type StandardFieldConfig = {
   description?: string
 }
 
-
-const PROTECTED_TARGETS = new Set([
-  'sku',
-  'orders',
-  'order_amount',
-  'impressions_total',
-  'impressions_search_catalog',
-  'product_card_visits',
-  'add_to_cart_total',
-  'stock_total',
-  'rating_value',
-  'review_count',
-  'price_index_status',
-])
-
-const findProtectedTargetConflicts = (mappings: FieldMapping[]) => {
-  const grouped = new Map<string, FieldMapping[]>()
-  for (const item of mappings || []) {
-    const target = item?.standardField || null
-    if (!target || !PROTECTED_TARGETS.has(target)) continue
-    if (!grouped.has(target)) grouped.set(target, [])
-    grouped.get(target)!.push(item)
-  }
-  return [...grouped.entries()].filter(([, items]) => items.length > 1)
-}
-
 const STANDARD_FIELDS: Record<string, StandardFieldConfig> = {
-
   sku: { name: 'SKU', category: '基础', required: true, description: '商品唯一标识' },
   product_name: { name: '商品名称', category: '基础' },
   category: { name: '类目', category: '基础' },
@@ -233,31 +206,6 @@ const normalizeConfirmResult = (raw: any): ConfirmImportResponse => {
   } as ConfirmImportResponse
 }
 
-
-
-const protectedTargets = new Set([
-  'sku',
-  'orders',
-  'order_amount',
-  'impressions_total',
-  'impressions_search_catalog',
-  'product_card_visits',
-  'add_to_cart_total',
-  'stock_total',
-  'rating_value',
-  'review_count',
-  'price_index_status',
-])
-
-const detectProtectedConflicts = (mappings: FieldMapping[]) => {
-  const grouped = new Map<string, FieldMapping[]>()
-  for (const item of mappings) {
-    if (!item.standardField || !protectedTargets.has(item.standardField)) continue
-    if (!grouped.has(item.standardField)) grouped.set(item.standardField, [])
-    grouped.get(item.standardField)!.push(item)
-  }
-  return [...grouped.entries()].filter(([, arr]) => arr.length > 1)
-}
 
 const buildDisplayStats = (result: ImportResult | null) => {
   const mappings = Array.isArray(result?.fieldMappings) ? result!.fieldMappings : []
@@ -445,94 +393,63 @@ export default function DataImportV2() {
     return [...manualMappings, suggestionOverride]
   }
 
+  const confirmImport = async () => {
+    if (!importResult) return
 
-const confirmImport = async () => {
-  if (!importResult) return
+    if (importResult.finalStatus === 'risk') {
+      const reasons =
+        (importResult.semanticGateReasons || importResult.semanticAcceptanceReason || []).join('、') ||
+        'semantic_gate_not_met'
 
-  const confirmedOverrides = buildConfirmedOverrides()
-  const effectiveByOriginal = new Map<string, FieldMapping>()
-  for (const item of importResult.fieldMappings || []) {
-    effectiveByOriginal.set(item.originalField, { ...item })
-  }
-  for (const item of confirmedOverrides) {
-    effectiveByOriginal.set(item.originalField, {
-      ...(effectiveByOriginal.get(item.originalField) || item),
-      ...item,
-      isManual: true,
-    })
-  }
-
-  const protectedConflicts = findProtectedTargetConflicts([...effectiveByOriginal.values()])
-  if (protectedConflicts.length > 0) {
-    Modal.error({
-      title: '存在重复目标字段映射',
-      content: (
-        <div>
-          {protectedConflicts.map(([target, items]) => (
-            <div key={target}>
-              {target}: {items.map((x) => x.originalField).join('、')}
-            </div>
-          ))}
-        </div>
-      ),
-    })
-    return
-  }
-
-  if (importResult.finalStatus === 'risk') {
-    const reasons =
-      (importResult.semanticGateReasons || importResult.semanticAcceptanceReason || []).join('、') ||
-      'semantic_gate_not_met'
-
-    const proceed = await new Promise<boolean>((resolve) => {
-      Modal.confirm({
-        title: '存在语义风险，确认继续导入？',
-        icon: <ExclamationCircleOutlined />,
-        content: `finalStatus=risk，原因：${reasons}`,
-        okText: '继续导入',
-        cancelText: '返回检查',
-        okButtonProps: { danger: true },
-        onOk: () => resolve(true),
-        onCancel: () => resolve(false),
+      const proceed = await new Promise<boolean>((resolve) => {
+        Modal.confirm({
+          title: '存在语义风险，确认继续导入？',
+          icon: <ExclamationCircleOutlined />,
+          content: `finalStatus=risk，原因：${reasons}`,
+          okText: '继续导入',
+          cancelText: '返回检查',
+          okButtonProps: { danger: true },
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        })
       })
-    })
 
-    if (!proceed) return
-  }
-
-  setImporting(true)
-  try {
-    const raw = await importApi.confirmImport({
-      sessionId: importResult.sessionId,
-      shopId: SHOP_ID,
-      operator: 'ui_manual_confirmation',
-      manualOverrides: confirmedOverrides,
-    })
-
-    const result = normalizeConfirmResult(raw)
-    console.log('confirm raw ->', raw)
-    console.log('confirm normalized ->', result)
-    if (result?.status !== 'success') {
-      throw new Error(result?.errors?.[0] || '导入失败')
+      if (!proceed) return
     }
 
-    setConfirmResult(result)
+    setImporting(true)
+    try {
+      const raw = await importApi.confirmImport({
+        sessionId: importResult.sessionId,
+        shopId: SHOP_ID,
+        operator: 'ui_manual_confirmation',
+        manualOverrides: buildConfirmedOverrides(),
+      })
 
-    if (result.importabilityStatus === 'risk') {
-      message.warning(
-        `导入完成，但仍存在可提交性风险：${(result.importabilityReasons || []).join('、') || 'importability_risk'}`,
-      )
-    } else {
-      message.success(`成功导入 ${result.importedRows || 0} 条数据`)
+      const result = normalizeConfirmResult(raw)
+      console.log('confirm raw ->', raw)
+      console.log('confirm normalized ->', result)
+      if (result?.status !== 'success') {
+        throw new Error(result?.errors?.[0] || '导入失败')
+      }
+
+      setConfirmResult(result)
+
+      if (result.importabilityStatus === 'risk') {
+        message.warning(
+          `导入完成，但仍存在可提交性风险：${(result.importabilityReasons || []).join('、') || 'importability_risk'}`,
+        )
+      } else {
+        message.success(`成功导入 ${result.importedRows || 0} 条数据`)
+      }
+
+      setCurrentStep(3)
+    } catch (error: any) {
+      message.error(`导入失败: ${error?.message || '未知错误'}`)
+    } finally {
+      setImporting(false)
     }
-
-    setCurrentStep(3)
-  } catch (error: any) {
-    message.error(`导入失败: ${error?.message || '未知错误'}`)
-  } finally {
-    setImporting(false)
   }
-}
 
   const renderUploadStep = () => (
     <Card>

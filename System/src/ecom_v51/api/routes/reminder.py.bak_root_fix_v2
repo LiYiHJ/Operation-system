@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func, inspect
@@ -13,13 +13,6 @@ from ecom_v51.services.auth_service import AuthService
 
 reminder_bp = Blueprint('reminder', __name__)
 _auth_service = AuthService()
-
-def _to_utc_naive(dt: datetime | None) -> datetime | None:
-    if dt is None:
-        return None
-    if dt.tzinfo is None:
-        return dt
-    return dt.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def _table_exists(table_name: str) -> bool:
@@ -144,20 +137,7 @@ def reminder_list():
         ])
 
         items = sorted(items, key=lambda x: x.get('time') or '', reverse=True)
-        
-        read_at_cmp = _to_utc_naive(read_at)
-        unread_count = len(
-            [
-                x
-                for x in items
-                if not read_at_cmp
-                or (
-                    x.get('time')
-                    and _to_utc_naive(datetime.fromisoformat(x['time']))
-                    and _to_utc_naive(datetime.fromisoformat(x['time'])) > read_at_cmp
-                )
-            ]
-        )
+        unread_count = len([x for x in items if not read_at or (x.get('time') and datetime.fromisoformat(x['time']) > read_at)])
 
         summary = {
             'new_orders': new_orders,

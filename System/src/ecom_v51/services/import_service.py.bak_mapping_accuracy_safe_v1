@@ -236,29 +236,6 @@ class ImportService:
         "рост",
         "снижение",
     ]
-    SOFT_EXCLUDE_PATTERNS = {
-        "динамик",
-        "доля",
-        "abc-анализ",
-        "abc анализ",
-        "рекомендац",
-        "сколько товаров",
-        "среднее время доставки",
-        "по сравнению с предыдущим периодом",
-    }
-    PROTECTED_UNIQUE_TARGETS = {
-        "sku",
-        "orders",
-        "order_amount",
-        "impressions_total",
-        "impressions_search_catalog",
-        "product_card_visits",
-        "add_to_cart_total",
-        "stock_total",
-        "rating_value",
-        "review_count",
-        "price_index_status",
-    }
     GENERIC_HEADER_PIECES = {
         "товар",
         "товары",
@@ -287,11 +264,13 @@ class ImportService:
         (["offer id"], "sku"),
         (["показы в поиске", "каталоге"], "impressions_search_catalog"),
         (["показы", "всего"], "impressions_total"),
+        (["показы"], "impressions_total"),
         (["посещ", "карточк"], "product_card_visits"),
         (["переход", "карточк"], "product_card_visits"),
         (["добав", "корзин"], "add_to_cart_total"),
         (["заказано на сумму"], "order_amount"),
         (["сумма заказ"], "order_amount"),
+        (["заказ"], "orders"),
         (["остат", "склад"], "stock_total"),
         (["в наличии"], "stock_total"),
         (["рейтинг"], "rating_value"),
@@ -553,39 +532,32 @@ class ImportService:
         if col not in df.columns:
             return []
         selected = df.loc[:, col]
-        raw_values: List[Any] = []
-        scan_limit = max(limit * 8, 24)
+        values: List[Any] = []
 
         if isinstance(selected, pd.DataFrame):
-            for row in selected.head(scan_limit).itertuples(index=False, name=None):
+            for row in selected.head(limit).itertuples(index=False, name=None):
                 for item in row if isinstance(row, tuple) else (row,):
-                    raw_values.append(self._safe_scalar(item))
-        else:
-            try:
-                raw_values = selected.head(scan_limit).tolist()
-            except Exception:
-                raw_values = (
-                    selected.head(scan_limit).values.tolist()
-                    if hasattr(selected.head(scan_limit), "values")
-                    else []
-                )
+                    values.append(self._safe_scalar(item))
+                    if len(values) >= limit:
+                        return values[:limit]
+            return values[:limit]
 
-        values: List[Any] = []
-        seen: set[str] = set()
+        try:
+            raw_values = selected.head(limit).tolist()
+        except Exception:
+            raw_values = (
+                selected.head(limit).values.tolist()
+                if hasattr(selected.head(limit), "values")
+                else []
+            )
         for item in raw_values:
-            nested_items = item if isinstance(item, list) else [item]
-            for nested in nested_items:
-                scalar = self._safe_scalar(nested)
-                text = str(scalar or "").strip()
-                if not text or text.lower() == "nan":
-                    continue
-                if self._looks_like_explainer_text(text):
-                    continue
-                key = text
-                if key in seen:
-                    continue
-                seen.add(key)
-                values.append(scalar)
+            if isinstance(item, list):
+                for nested in item:
+                    values.append(self._safe_scalar(nested))
+                    if len(values) >= limit:
+                        return values[:limit]
+            else:
+                values.append(self._safe_scalar(item))
                 if len(values) >= limit:
                     return values[:limit]
         return values[:limit]
@@ -1219,57 +1191,12 @@ class ImportService:
         normalized = self._normalize_header(text)
         return any(token in normalized for token in self.DYNAMIC_PATTERNS)
 
-    def _is_soft_excluded_header(self, text: str) -> bool:
-        normalized = self._normalize_header(text)
-        return any(token in normalized for token in self.SOFT_EXCLUDE_PATTERNS)
-
-    def _looks_like_explainer_text(self, text: str) -> bool:
-        raw = str(text or "").strip().lower()
-        if not raw:
-            return False
-        return (
-            len(raw) >= 40
-            or "оцениваем" in raw
-            or "считаем" in raw
-            or "для этого" in raw
-            or "динамика по сравнению" in raw
-            or "товары a приносят" in raw
-        )
-
-    def _postprocess_field_mappings(self, field_mappings: List[dict]) -> List[dict]:
-        grouped: Dict[str, List[dict]] = {}
-        for item in field_mappings or []:
-            target = str(item.get("standardField") or "").strip()
-            if not target:
-                continue
-            grouped.setdefault(target, []).append(item)
-
-        for target, items in grouped.items():
-            if target not in self.PROTECTED_UNIQUE_TARGETS or len(items) <= 1:
-                continue
-
-            def sort_key(item: dict) -> tuple:
-                original = self._normalize_header(item.get("originalField") or "")
-                article_bonus = 1 if "артикул" in original else 0
-                return (float(item.get("confidence") or 0.0), article_bonus)
-
-            ranked = sorted(items, key=sort_key, reverse=True)
-            for loser in ranked[1:]:
-                loser["standardField"] = None
-                loser["mappingSource"] = "conflict_dropped"
-                loser["confidence"] = 0.0
-                loser["reasons"] = list(
-                    dict.fromkeys(list(loser.get("reasons") or []) + [f"duplicate_target:{target}"])
-                )
-        return field_mappings
-
     def _compress_header_phrase(self, original: Any) -> List[Tuple[str, str]]:
         text = str(original or "").strip()
         normalized = self._normalize_header(text)
         normalized_wo_unit = self._normalize_header_without_unit(text)
         candidates: List[Tuple[str, str]] = []
         seen: set[str] = set()
-        soft_excluded = self._is_soft_excluded_header(text)
 
         def push(value: str, reason: str) -> None:
             value = value.strip()
@@ -1281,10 +1208,9 @@ class ImportService:
         if normalized_wo_unit != normalized:
             push(normalized_wo_unit, "without_unit")
 
-        if not soft_excluded:
-            for needles, canonical in self.RU_PHRASE_CANONICAL_RULES:
-                if all(needle in normalized_wo_unit for needle in needles):
-                    push(canonical, f"phrase_rule:{canonical}")
+        for needles, canonical in self.RU_PHRASE_CANONICAL_RULES:
+            if all(needle in normalized_wo_unit for needle in needles):
+                push(canonical, f"phrase_rule:{canonical}")
 
         tokens = [
             tok for tok in re.split(r"[^a-zа-я0-9一-龥]+", normalized_wo_unit) if tok
@@ -1294,7 +1220,7 @@ class ImportService:
             for tok in tokens
             if tok not in self.GENERIC_HEADER_PIECES and len(tok) > 2
         ]
-        if meaningful and not soft_excluded:
+        if meaningful:
             push(" ".join(dict.fromkeys(meaningful)), "token_compaction")
         return candidates
 
@@ -1305,45 +1231,12 @@ class ImportService:
         normalized = self._normalize_header(original)
         compressed = self._compress_header_phrase(original)
         dynamic_companion = self._is_dynamic_companion(original)
-        soft_excluded = self._is_soft_excluded_header(original)
         reasons: List[str] = []
         conflicts: List[str] = []
         best_canonical: Optional[str] = None
         best_source = "unmapped"
         best_confidence = 0.0
         best_compressed = None
-
-        if dynamic_companion:
-            return {
-                "originalField": original,
-                "normalizedField": normalized,
-                "standardField": None,
-                "mappingSource": "dynamic_companion",
-                "confidence": 0.0,
-                "sampleValues": list(sample_values or []),
-                "isManual": False,
-                "reasons": ["dynamic_companion"],
-                "conflicts": conflicts,
-                "dynamicCompanion": True,
-                "compressedHeader": None,
-                "excludeFromSemanticGate": True,
-            }
-
-        if soft_excluded:
-            return {
-                "originalField": original,
-                "normalizedField": normalized,
-                "standardField": None,
-                "mappingSource": "soft_excluded",
-                "confidence": 0.0,
-                "sampleValues": list(sample_values or []),
-                "isManual": False,
-                "reasons": ["soft_excluded_header"],
-                "conflicts": conflicts,
-                "dynamicCompanion": False,
-                "compressedHeader": None,
-                "excludeFromSemanticGate": False,
-            }
 
         def score_candidate(
             candidate_text: str, candidate_reason: str
@@ -1441,14 +1334,9 @@ class ImportService:
             sample_values = self._preview_values_for_column(df, col, limit=3)
             details = self._map_single_column_details(col, sample_values=sample_values)
             field_mappings.append(details)
-
-        field_mappings = self._postprocess_field_mappings(field_mappings)
-
-        for details in field_mappings:
             canonical = details.get("standardField")
-            original_field = str(details.get("originalField") or "")
-            if canonical and original_field:
-                rename_map[original_field] = str(canonical)
+            if canonical:
+                rename_map[str(col)] = canonical
 
         mapped_df = df.rename(columns=rename_map)
         mapped_df = self._collapse_duplicate_columns(mapped_df)

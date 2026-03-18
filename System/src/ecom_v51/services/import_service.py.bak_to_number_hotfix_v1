@@ -236,7 +236,7 @@ class ImportService:
         "рост",
         "снижение",
     ]
-    SOFT_EXCLUDE_PATTERNS = {
+    SOFT_EXCLUDE_PATTERNS = [
         "динамик",
         "доля",
         "abc-анализ",
@@ -245,20 +245,7 @@ class ImportService:
         "сколько товаров",
         "среднее время доставки",
         "по сравнению с предыдущим периодом",
-    }
-    PROTECTED_UNIQUE_TARGETS = {
-        "sku",
-        "orders",
-        "order_amount",
-        "impressions_total",
-        "impressions_search_catalog",
-        "product_card_visits",
-        "add_to_cart_total",
-        "stock_total",
-        "rating_value",
-        "review_count",
-        "price_index_status",
-    }
+    ]
     GENERIC_HEADER_PIECES = {
         "товар",
         "товары",
@@ -280,6 +267,19 @@ class ImportService:
         "summary",
         "section",
         "metric",
+    }
+    PROTECTED_UNIQUE_TARGETS = {
+        "sku",
+        "orders",
+        "order_amount",
+        "impressions_total",
+        "impressions_search_catalog",
+        "product_card_visits",
+        "add_to_cart_total",
+        "stock_total",
+        "review_count",
+        "rating_value",
+        "price_index_status",
     }
     RU_PHRASE_CANONICAL_RULES = [
         (["артикул"], "sku"),
@@ -548,31 +548,35 @@ class ImportService:
             return None, f"读取文件失败：{exc}", meta
 
     def _preview_values_for_column(
-        self, df: pd.DataFrame, col: Any, limit: int = 3
+        self,
+        df: pd.DataFrame,
+        col: Any,
+        limit: int = 3,
+        canonical_hint: Optional[str] = None,
     ) -> List[Any]:
         if col not in df.columns:
             return []
         selected = df.loc[:, col]
-        raw_values: List[Any] = []
+        raw_candidates: List[Any] = []
         scan_limit = max(limit * 8, 24)
 
         if isinstance(selected, pd.DataFrame):
-            for row in selected.head(scan_limit).itertuples(index=False, name=None):
+            rows = selected.head(scan_limit).itertuples(index=False, name=None)
+            for row in rows:
                 for item in row if isinstance(row, tuple) else (row,):
-                    raw_values.append(self._safe_scalar(item))
+                    raw_candidates.append(self._safe_scalar(item))
         else:
             try:
-                raw_values = selected.head(scan_limit).tolist()
+                raw_candidates = selected.head(scan_limit).tolist()
             except Exception:
-                raw_values = (
+                raw_candidates = (
                     selected.head(scan_limit).values.tolist()
                     if hasattr(selected.head(scan_limit), "values")
                     else []
                 )
 
-        values: List[Any] = []
-        seen: set[str] = set()
-        for item in raw_values:
+        scored: List[Tuple[float, int, Any]] = []
+        for idx, item in enumerate(raw_candidates):
             nested_items = item if isinstance(item, list) else [item]
             for nested in nested_items:
                 scalar = self._safe_scalar(nested)
@@ -581,13 +585,22 @@ class ImportService:
                     continue
                 if self._looks_like_explainer_text(text):
                     continue
-                key = text
-                if key in seen:
-                    continue
-                seen.add(key)
-                values.append(scalar)
-                if len(values) >= limit:
-                    return values[:limit]
+                score = self._sample_quality_score(canonical_hint, scalar)
+                scored.append((score, idx, scalar))
+
+        scored.sort(key=lambda x: (x[0], -x[1]), reverse=True)
+        values: List[Any] = []
+        seen: set[str] = set()
+        for score, _, scalar in scored:
+            if score < 0:
+                continue
+            key = str(scalar)
+            if key in seen:
+                continue
+            seen.add(key)
+            values.append(scalar)
+            if len(values) >= limit:
+                break
         return values[:limit]
 
     @staticmethod
@@ -1006,33 +1019,28 @@ class ImportService:
         dropped: List[str] = []
         rescued: List[str] = []
         for col_idx in range(raw_df.shape[1]):
-            pieces: List[str] = []
+            specific_pieces: List[str] = []
+            fallback_pieces: List[str] = []
             for _, row in header_rows.iterrows():
                 value = str(self._safe_scalar(row.iloc[col_idx]) or "").strip()
                 norm = self._normalize_header(value)
-                if (
-                    value
-                    and norm not in {"nan", "none"}
-                    and norm not in self.GENERIC_HEADER_PIECES
-                ):
-                    pieces.append(value)
-            deduped = list(dict.fromkeys(pieces))
-            joined = " / ".join(deduped).strip()
-            if not joined:
-                # fallback to first non-empty even if generic
-                fallback_pieces = []
-                for _, row in header_rows.iterrows():
-                    value = str(self._safe_scalar(row.iloc[col_idx]) or "").strip()
-                    if value and value.lower() not in {"nan", "none"}:
-                        fallback_pieces.append(value)
-                joined = (
-                    " / ".join(list(dict.fromkeys(fallback_pieces))).strip()
-                    if fallback_pieces
-                    else f"col_{col_idx + 1}"
-                )
+                if value and norm not in {"nan", "none"}:
+                    fallback_pieces.append(value)
+                    if norm not in self.GENERIC_HEADER_PIECES:
+                        specific_pieces.append(value)
+            deduped_specific = list(dict.fromkeys(specific_pieces))
+            deduped_fallback = list(dict.fromkeys(fallback_pieces))
+
+            if deduped_specific:
+                joined = " / ".join(deduped_specific[-2:]).strip()
+            elif deduped_fallback:
+                joined = deduped_fallback[-1].strip()
+            else:
+                joined = f"col_{col_idx + 1}"
+
             if self._is_placeholder_col(joined):
                 dropped.append(joined)
-            elif len(deduped) > 1:
+            elif len(deduped_specific) > 1:
                 rescued.append(joined)
             flattened.append(joined)
         return flattened, dropped, rescued
@@ -1236,7 +1244,36 @@ class ImportService:
             or "товары a приносят" in raw
         )
 
-    def _postprocess_field_mappings(self, field_mappings: List[dict]) -> List[dict]:
+    def _to_number_like(self, value: Any) -> Optional[float]:
+        text = str(value or "").strip()
+        if not text:
+            return None
+        text = text.replace("\u00a0", " ").replace("₽", "")
+        text = text.replace("%", "").replace(" ", "")
+        text = text.replace(",", ".")
+        try:
+            return float(text)
+        except Exception:
+            return None
+
+    def _sample_quality_score(self, canonical: Optional[str], value: Any) -> float:
+        text = str(value or "").strip()
+        if not text or text.lower() == "nan":
+            return -1.0
+        if self._looks_like_explainer_text(text):
+            return -5.0
+        if canonical == "sku":
+            if len(text) <= 40 and any(ch.isalpha() for ch in text):
+                return 3.0
+            if text.isdigit():
+                return 0.5
+            return 0.0
+        if canonical in self.NUMERIC_CANONICALS or (canonical or "").endswith("_cvr"):
+            parsed = self._to_number_like(text)
+            return 2.0 if parsed is not None else -2.0
+        return 1.0
+
+    def _dedupe_auto_targets(self, field_mappings: List[dict]) -> List[dict]:
         grouped: Dict[str, List[dict]] = {}
         for item in field_mappings or []:
             target = str(item.get("standardField") or "").strip()
@@ -1249,9 +1286,18 @@ class ImportService:
                 continue
 
             def sort_key(item: dict) -> tuple:
+                reasons = item.get("reasons") or []
                 original = self._normalize_header(item.get("originalField") or "")
-                article_bonus = 1 if "артикул" in original else 0
-                return (float(item.get("confidence") or 0.0), article_bonus)
+                sample_values = item.get("sampleValues") or []
+                sample_bonus = 0.0
+                if sample_values:
+                    sample_bonus = self._sample_quality_score(target, sample_values[0])
+                ru_article_bonus = 1 if "артикул" in original else 0
+                alias_bonus = 1 if any(
+                    str(r).startswith("normalized") or str(r).startswith("without_unit")
+                    for r in reasons
+                ) else 0
+                return (float(item.get("confidence") or 0.0), ru_article_bonus, alias_bonus, sample_bonus)
 
             ranked = sorted(items, key=sort_key, reverse=True)
             for loser in ranked[1:]:
@@ -1365,7 +1411,6 @@ class ImportService:
                 if self._normalize_header(alias) == candidate_text:
                     local_reasons.append(candidate_reason)
                     return canonical, "en_builtin", 0.95, local_reasons
-            # token overlap fallback for long phrases
             cand_tokens = set(
                 t for t in re.split(r"[^a-zа-я0-9一-龥]+", candidate_text) if len(t) > 2
             )
@@ -1422,7 +1467,7 @@ class ImportService:
             "conflicts": conflicts,
             "dynamicCompanion": dynamic_companion,
             "compressedHeader": best_compressed,
-            "excludeFromSemanticGate": dynamic_companion,
+            "excludeFromSemanticGate": False,
         }
 
     def _map_single_column(self, col: Any) -> Tuple[Optional[str], str, List[str]]:
@@ -1434,16 +1479,23 @@ class ImportService:
         )
 
     def map_columns(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[dict]]:
-        rename_map: Dict[str, str] = {}
         field_mappings: List[dict] = []
 
         for col in df.columns:
-            sample_values = self._preview_values_for_column(df, col, limit=3)
+            seed_details = self._map_single_column_details(col, sample_values=[])
+            canonical_hint = seed_details.get("standardField")
+            sample_values = self._preview_values_for_column(
+                df,
+                col,
+                limit=3,
+                canonical_hint=str(canonical_hint) if canonical_hint else None,
+            )
             details = self._map_single_column_details(col, sample_values=sample_values)
             field_mappings.append(details)
 
-        field_mappings = self._postprocess_field_mappings(field_mappings)
+        field_mappings = self._dedupe_auto_targets(field_mappings)
 
+        rename_map: Dict[str, str] = {}
         for details in field_mappings:
             canonical = details.get("standardField")
             original_field = str(details.get("originalField") or "")
@@ -2096,6 +2148,10 @@ class ImportService:
                 active_bundle.get("fieldMappings") or []
             ),
         }
+        result["fieldMappings"] = self._postprocess_field_mappings(result.get("fieldMappings") or [])
+        result["mappedCount"] = len([x for x in result["fieldMappings"] if x.get("standardField")])
+        result["unmappedCount"] = len([x for x in result["fieldMappings"] if not x.get("standardField")])
+
         self.batches.append(
             {
                 "sessionId": session_id,
@@ -2106,6 +2162,175 @@ class ImportService:
             }
         )
         return result
+
+
+    def _looks_like_explainer_text(self, text) -> bool:
+        s = str(text or "").strip()
+        if not s:
+            return False
+        lowered = s.lower()
+        if len(lowered) >= 40:
+            return True
+        patterns = [
+            "оцениваем",
+            "считаем",
+            "для этого",
+            "динамика по сравнению",
+            "товары a приносят",
+            "по общей стоимости",
+            "по общему количеству",
+            "проверяем остатки",
+            "средний срок доставки",
+        ]
+        return any(p in lowered for p in patterns)
+
+    def _header_soft_excluded(self, header: str) -> bool:
+        lowered = str(header or "").strip().lower()
+        if not lowered:
+            return False
+        patterns = [
+            "динамик",
+            "abc-анализ",
+            "abc анализ",
+            "доля ",
+            "доля в ",
+            "рекомендац",
+            "сколько товаров",
+            "среднее время доставки",
+            "по сравнению с предыдущим периодом",
+        ]
+        return any(p in lowered for p in patterns)
+
+    def _sample_quality_score(self, canonical, value) -> float:
+        s = str(value or "").strip()
+        if not s:
+            return -1.0
+        if self._looks_like_explainer_text(s):
+            return -5.0
+
+        canonical = str(canonical or "").strip()
+
+        if canonical == "sku":
+            if len(s) <= 40 and any(ch.isalpha() for ch in s):
+                return 3.0
+            if s.isdigit():
+                return 0.5
+            return 0.0
+
+        if canonical in {"orders", "order_amount", "impressions_total", "impressions_search_catalog",
+                         "product_card_visits", "add_to_cart_total", "stock_total",
+                         "review_count", "rating_value"}:
+            parsed = self._to_number(s)
+            return 2.0 if parsed is not None else -2.0
+
+        if canonical.endswith("_cvr") or canonical.endswith("_share") or canonical in {"discount_pct"}:
+            parsed = self._to_number(s)
+            return 2.0 if parsed is not None else -2.0
+
+        return 1.0
+
+    def _clean_preview_samples(self, header: str, canonical, values):
+        result = []
+        seen = set()
+        values = values or []
+        for raw in values:
+            s = str(raw or "").strip()
+            if not s:
+                continue
+            if self._looks_like_explainer_text(s):
+                continue
+            if s in seen:
+                continue
+            seen.add(s)
+            result.append((self._sample_quality_score(canonical, s), s))
+
+        if not result and values:
+            for raw in values:
+                s = str(raw or "").strip()
+                if not s:
+                    continue
+                if s in seen:
+                    continue
+                seen.add(s)
+                result.append((self._sample_quality_score(canonical, s), s))
+
+        result.sort(key=lambda x: x[0], reverse=True)
+        cleaned = [s for _, s in result[:3]]
+
+        if self._header_soft_excluded(header):
+            cleaned = cleaned[:1]
+
+        return cleaned
+
+    def _postprocess_field_mappings(self, field_mappings):
+        items = []
+        for item in list(field_mappings or []):
+            row = dict(item)
+            header = str(row.get("originalField") or "")
+            canonical = row.get("standardField")
+            row["sampleValues"] = self._clean_preview_samples(header, canonical, row.get("sampleValues") or [])
+
+            lowered_header = header.lower()
+
+            if self._header_soft_excluded(header):
+                row["standardField"] = None
+                row["confidence"] = 0.0
+                row["mappingSource"] = "postprocess_unmapped"
+                reasons = list(row.get("reasons") or [])
+                reasons.append("soft_excluded_header")
+                row["reasons"] = sorted(set(reasons))
+                row["isManual"] = False
+
+            items.append(row)
+
+        # Prefer Артикул over SKU for business sku
+        sku_candidates = [x for x in items if x.get("standardField") == "sku"]
+        article_like = [
+            x for x in sku_candidates
+            if "артикул" in str(x.get("originalField") or "").lower()
+        ]
+        plain_sku = [
+            x for x in sku_candidates
+            if str(x.get("originalField") or "").strip().lower() == "sku"
+        ]
+        if article_like and plain_sku:
+            article_best = sorted(article_like, key=lambda x: x.get("confidence", 0), reverse=True)[0]
+            for loser in plain_sku:
+                if loser is article_best:
+                    continue
+                loser["standardField"] = None
+                loser["confidence"] = 0.0
+                loser["mappingSource"] = "conflict_dropped"
+                reasons = list(loser.get("reasons") or [])
+                reasons.append("prefer_artikul_over_platform_sku")
+                loser["reasons"] = sorted(set(reasons))
+
+        protected = {
+            "sku", "orders", "order_amount", "impressions_total", "impressions_search_catalog",
+            "product_card_visits", "add_to_cart_total", "stock_total", "rating_value",
+            "review_count", "price_index_status"
+        }
+        grouped = {}
+        for row in items:
+            target = row.get("standardField")
+            if not target or target not in protected:
+                continue
+            grouped.setdefault(target, []).append(row)
+
+        for target, group in grouped.items():
+            if len(group) <= 1:
+                continue
+            group.sort(key=lambda x: x.get("confidence", 0), reverse=True)
+            winner = group[0]
+            for loser in group[1:]:
+                loser["standardField"] = None
+                loser["confidence"] = 0.0
+                loser["mappingSource"] = "conflict_dropped"
+                reasons = list(loser.get("reasons") or [])
+                reasons.append(f"duplicate_target:{target}")
+                loser["reasons"] = sorted(set(reasons))
+
+        return items
 
     def confirm_import(
         self,
