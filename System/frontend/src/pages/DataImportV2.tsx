@@ -367,9 +367,6 @@ export default function DataImportV2() {
       if (!result.fileName && selectedFile?.name) {
         result.fileName = selectedFile.name
       }
-      console.log('upload raw ->', raw)
-      console.log('upload normalized ->', result)
-      console.log('upload fieldMappings length ->', Array.isArray(result.fieldMappings) ? result.fieldMappings.length : 'n/a')
       setImportResult(result)
       setConfirmResult(null)
       setAcceptedEntityKeySuggestion(false)
@@ -519,8 +516,6 @@ const confirmImport = async () => {
     })
 
     const result = normalizeConfirmResult(raw)
-    console.log('confirm raw ->', raw)
-    console.log('confirm normalized ->', result)
     if (result?.status !== 'success') {
       throw new Error(result?.errors?.[0] || '导入失败')
     }

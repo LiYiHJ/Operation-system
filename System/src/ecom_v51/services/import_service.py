@@ -1808,7 +1808,7 @@ class ImportService:
             diagnosis = {
                 "suggestions": [],
                 "keyField": None,
-                "unmappedFields": unmapped_fields,
+                "unmappedFields": list(mapping_summary["topUnmappedHeaders"]),
                 "status": "partial",
             }
             platform = "generic"
@@ -1910,73 +1910,6 @@ class ImportService:
                 "wronglyMappedCount": wrong_mapped_count,
             },
             "coreFieldHitSummary": self._build_core_field_hit_summary(mapped_targets),
-        }
-
-    def _summarize_field_mappings_for_result(
-        self,
-        field_mappings: List[dict],
-        header_block: dict,
-        flattened_headers: List[str],
-        dropped_placeholder_columns: List[str],
-    ) -> dict:
-        semantic_field_mappings = [
-            item for item in (field_mappings or []) if not item.get("excludeFromSemanticGate")
-        ]
-        mapped_targets = [
-            str(item.get("standardField"))
-            for item in semantic_field_mappings
-            if item.get("standardField")
-        ]
-        candidate_columns = sum(
-            1
-            for item in semantic_field_mappings
-            if not self._is_placeholder_col(item.get("originalField"))
-        )
-        mapped_count = len(mapped_targets)
-        unmapped_headers = [
-            str(item.get("originalField"))
-            for item in semantic_field_mappings
-            if not item.get("standardField")
-        ]
-        header_structure_score, header_structure_signals = (
-            self._compute_header_structure_score(
-                header_block, flattened_headers, dropped_placeholder_columns
-            )
-        )
-        (
-            semantic_status,
-            semantic_gate_reasons,
-            risk_override_reasons,
-            acceptance_reason,
-            semantic_metrics,
-        ) = self._semantic_gate(
-            mapped_targets=mapped_targets,
-            candidate_columns=candidate_columns,
-            mapped_count=mapped_count,
-            wrongly_mapped_count=0,
-            header_signals=header_structure_signals,
-            header_structure_score=header_structure_score,
-        )
-        return {
-            "mappedCanonicalFields": list(dict.fromkeys(mapped_targets))[:20],
-            "topUnmappedHeaders": unmapped_headers[:20],
-            "mappedCount": mapped_count,
-            "unmappedCount": len(unmapped_headers),
-            "semanticMetrics": {
-                **semantic_metrics,
-                "candidateColumns": candidate_columns,
-                "mappedConfidence": round(
-                    sum(float(item.get("confidence") or 0.0) for item in (field_mappings or []))
-                    / max(len(field_mappings or []), 1),
-                    3,
-                ),
-                "wronglyMappedCount": 0,
-            },
-            "coreFieldHitSummary": self._build_core_field_hit_summary(mapped_targets),
-            "semanticStatus": semantic_status,
-            "semanticGateReasons": semantic_gate_reasons,
-            "riskOverrideReasons": risk_override_reasons,
-            "semanticAcceptanceReason": acceptance_reason,
         }
 
     def parse_import_file(
@@ -2145,21 +2078,9 @@ class ImportService:
             "pass": active_bundle["semanticStatus"] != "failed",
             "details": [],
         }
-        mapped_canonical_fields = list(
-            dict.fromkeys(
-                [
-                    str(item.get("standardField"))
-                    for item in (active_bundle.get("fieldMappings") or [])
-                    if item.get("standardField")
-                ]
-            )
-        )[:20]
+        mapped_canonical_fields = list(active_bundle.get("mappedCanonicalFields") or [])
 
-        top_unmapped_headers = [
-            str(item.get("originalField"))
-            for item in (active_bundle.get("fieldMappings") or [])
-            if not item.get("standardField") and not item.get("dynamicCompanion")
-        ][:20]
+        top_unmapped_headers = list(active_bundle.get("topUnmappedHeaders") or [])
 
         recovery_candidate_preview = list(recovery_result.get("candidatePreview") or [])
 
