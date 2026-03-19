@@ -103,7 +103,13 @@ const isMappedField = (m?: Pick<FieldMapping, 'standardField'> | null) =>
   !!m?.standardField && m.standardField !== 'unmapped'
 
 const isIgnoredField = (m?: FieldMapping | null) =>
-  !!m?.reasons?.includes('dynamic_column_ignored')
+  !!(
+    m?.dynamicCompanion === true ||
+    m?.excludeFromSemanticGate === true ||
+    m?.reasons?.includes('dynamic_column_ignored') ||
+    m?.reasons?.includes('dynamic_companion') ||
+    m?.mappingSource === 'dynamic_companion'
+  )
 
 const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
   if (status === 'passed') return <Tag color="success">passed</Tag>
@@ -169,6 +175,9 @@ const normalizeFieldMappings = (value: any): FieldMapping[] => {
     reasons: Array.isArray(item?.reasons) ? item.reasons : [],
     reason: item?.reason ?? undefined,
     sampleToken: item?.sampleToken ?? item?.sample_token ?? undefined,
+    dynamicCompanion: item?.dynamicCompanion ?? item?.dynamic_companion ?? false,
+    excludeFromSemanticGate:
+      item?.excludeFromSemanticGate ?? item?.exclude_from_semantic_gate ?? false,
   }))
 }
 
@@ -358,9 +367,6 @@ export default function DataImportV2() {
       if (!result.fileName && selectedFile?.name) {
         result.fileName = selectedFile.name
       }
-      console.log('upload raw ->', raw)
-      console.log('upload normalized ->', result)
-      console.log('upload fieldMappings length ->', Array.isArray(result.fieldMappings) ? result.fieldMappings.length : 'n/a')
       setImportResult(result)
       setConfirmResult(null)
       setAcceptedEntityKeySuggestion(false)
@@ -510,8 +516,6 @@ const confirmImport = async () => {
     })
 
     const result = normalizeConfirmResult(raw)
-    console.log('confirm raw ->', raw)
-    console.log('confirm normalized ->', result)
     if (result?.status !== 'success') {
       throw new Error(result?.errors?.[0] || '导入失败')
     }

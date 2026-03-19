@@ -3,3 +3,12 @@ frontend/node_modules/
 frontend/dist/
 __pycache__/
 *.pyc
+
+.venv/
+.venv_broken_*/
+src/uploads/
+uploads/
+*.db
+upload_response_debug.txt
+docs/current_audit_snapshot/
+docs/*.local.diff.txt
