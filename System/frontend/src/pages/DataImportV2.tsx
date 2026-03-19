@@ -270,45 +270,65 @@ const detectProtectedConflicts = (mappings: FieldMapping[]) => {
 
 const buildDisplayStats = (result: ImportResult | null) => {
   const mappings = Array.isArray(result?.fieldMappings) ? result!.fieldMappings : []
-  const ignoredFields = new Set(result?.stats?.ignoredFields || [])
-  const candidateMappings = mappings.filter(
-    (m) => !(isIgnoredField(m) || ignoredFields.has(m.originalField)),
-  )
+  const candidateMappings = mappings.filter((m) => !isIgnoredField(m))
   const mappedCountFromMappings = candidateMappings.filter(isMappedField).length
   const unmappedCountFromMappings = candidateMappings.length - mappedCountFromMappings
   const coverageFromMappings =
     mappedCountFromMappings / Math.max(candidateMappings.length, 1)
-  const mappedConfidence =
+  const mappedConfidenceFromMappings =
     mappedCountFromMappings > 0
       ? candidateMappings
           .filter(isMappedField)
           .reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCountFromMappings
       : 0
+  const hasManualEdits = mappings.some((m) => m.isManual)
+  const isValidNumber = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value)
+
+  const backendMappedCount = Number(
+    (result as any)?.mappedCount ?? (result as any)?.mapped_count ?? Number.NaN,
+  )
+  const backendUnmappedCount = Number(
+    (result as any)?.unmappedCount ?? (result as any)?.unmapped_count ?? Number.NaN,
+  )
+  const backendMappingCoverage = Number(
+    (result as any)?.mappingCoverage ?? (result as any)?.mapping_coverage ?? Number.NaN,
+  )
+  const backendMappedConfidence = Number(
+    (result as any)?.semanticMetrics?.mappedConfidence ?? Number.NaN,
+  )
 
   const mappedCount =
-    candidateMappings.length > 0
-      ? mappedCountFromMappings
-      : Number((result as any)?.mappedCount ?? (result as any)?.mapped_count ?? 0)
+    !hasManualEdits && isValidNumber(backendMappedCount)
+      ? backendMappedCount
+      : mappedCountFromMappings
 
   const unmappedCount =
-    candidateMappings.length > 0
-      ? unmappedCountFromMappings
-      : Number((result as any)?.unmappedCount ?? (result as any)?.unmapped_count ?? 0)
+    !hasManualEdits && isValidNumber(backendUnmappedCount)
+      ? backendUnmappedCount
+      : unmappedCountFromMappings
 
-  const mappingCoverage =
-    candidateMappings.length > 0
-      ? Number(coverageFromMappings.toFixed(3))
-      : Number(
-          Number(
-            (result as any)?.mappingCoverage ?? (result as any)?.mapping_coverage ?? 0,
-          ).toFixed(3),
-        )
+  const mappingCoverage = Number(
+    (
+      !hasManualEdits && isValidNumber(backendMappingCoverage)
+        ? backendMappingCoverage
+        : coverageFromMappings
+    ).toFixed(3),
+  )
+
+  const mappedConfidence = Number(
+    (
+      !hasManualEdits && isValidNumber(backendMappedConfidence)
+        ? backendMappedConfidence
+        : mappedConfidenceFromMappings
+    ).toFixed(3),
+  )
 
   return {
     mappedCount,
     unmappedCount,
     mappingCoverage,
-    mappedConfidence: Number(mappedConfidence.toFixed(3)),
+    mappedConfidence,
     rawColumns: Number(result?.rawColumns ?? result?.totalColumns ?? 0),
   }
 }
