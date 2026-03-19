@@ -1,0 +1,10 @@
+diff a/System/frontend/src/types/index.ts b/System/frontend/src/types/index.ts	(rejected hunks)
+@@ -270,6 +270,8 @@
+   reasons?: string[]
+   reason?: string
+   sampleToken?: string
++  dynamicCompanion?: boolean
++  excludeFromSemanticGate?: boolean
+ }
+ 
+ export interface FieldRegistryField {

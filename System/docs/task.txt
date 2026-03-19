@@ -1,0 +1,995 @@
+你现在执行“项目级代码质量优化 · 批次 C1（源码目录卫生清理）”。\n\n【先同步到最新分支】\n仓库路径：C:\Operation-system\System\n目标分支：checkpoint/import-stable-51f7df8\n\n先执行并原样贴回：\ngit fetch --all\ngit checkout checkpoint/import-stable-51f7df8\ngit pull --ff-only\ngit rev-parse HEAD\ngit log -1 --oneline\n\n【前置审计 gate】\n先列出当前被 Git 跟踪的源码目录残留，不要先删：\ngit ls-files "src/ecom_v51/services/*bak*" "src/ecom_v51/services/*.bak" "src/ecom_v51/services/__pycache__/*" "frontend/src/pages/*bak*" "frontend/src/pages/*.bak" "frontend/src/pages/__pycache__/*"\n\n【当前主线】\n当前主线仍然是导入模块 Phase B / core-safe 收口，不是利润 runtime。\n这次不是改业务逻辑，只做源码目录卫生清理。\n\n【禁止事项】\n- 禁止碰利润 runtime\n- 禁止改 import_route 契约\n- 禁止改 import_service.py 业务逻辑\n- 禁止改 DataImportV2.tsx 业务逻辑\n- 禁止改 frontend/src/types/index.ts\n- 禁止碰 docs / scripts / config\n- 禁止生成 patch 脚本\n- 禁止大范围重构\n\n【允许修改的范围】\n只允许：\n1) 删除源码目录中已被 Git 跟踪的 .bak* / *.bak / __pycache__ 残留\n2) 仅当当前缺失时，最小追加 .gitignore 中的：\n   __pycache__/\n   *.pyc\n   *.pyo\n\n如果 .gitignore 已经具备这些规则，就不要改 .gitignore。\n\n【执行动作】\n1) 使用 git rm / git rm -r 删除上面列出的已跟踪残留\n2) 不要删除任何正式源码文件本体\n3) 不要碰 docs 里的证据文件\n\n【验收要求】\n修改完成后，必须自己运行并原样贴回：\n\n1) git diff\ncd C:\Operation-system\System\ngit diff -- .\src\ecom_v51\services .\frontend\src\pages .\.gitignore\n\n2) git status --short\n\n3) 清理后再次列出剩余残留\ngit ls-files "src/ecom_v51/services/*bak*" "src/ecom_v51/services/*.bak" "src/ecom_v51/services/__pycache__/*" "frontend/src/pages/*bak*" "frontend/src/pages/*.bak" "frontend/src/pages/__pycache__/*"\n\n4) 后端编译检查\npython -m py_compile src/ecom_v51/services/import_service.py\npython3 -m py_compile src/ecom_v51/services/import_service.py\n\n5) 前端构建检查\ncd frontend\nnpm run build\ncd ..\n\n【返回格式必须严格这样】\n1. 说明你确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime\n2. 贴出前置审计 gate 的 git ls-files 输出\n3. 说明这次只做了源码目录卫生清理，没有改业务逻辑\n4. 贴出 git diff\n5. 贴出 git status --short\n6. 贴出“清理后剩余残留清单”\n7. 贴出两条 py_compile 输出\n8. 贴出 npm run build 输出\n9. 最后单独写“未做项”：\n   - 本次没有碰 import_service.py 业务逻辑\n   - 本次没有碰 DataImportV2.tsx 业务逻辑\n   - 本次没有碰 frontend/src/types/index.ts\n   - 本次没有碰 import_route 契约\n   - 本次没有碰利润 runtime\n\n做完后停止，不要继续下一步。
+复制
+已工作 2 分 44 秒
+我确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime。
+
+贴出前置审计 gate 的 git ls-files 输出
+
+✅ git fetch --all
+
+⚠️ git checkout checkpoint/import-stable-51f7df8
+
+⚠️ git pull --ff-only
+
+✅ git rev-parse HEAD
+
+✅ git log -1 --oneline
+
+✅ git ls-files "src/ecom_v51/services/*bak*" "src/ecom_v51/services/*.bak" "src/ecom_v51/services/__pycache__/*" "frontend/src/pages/*bak*" "frontend/src/pages/*.bak" "frontend/src/pages/__pycache__/*"
+
+
+$ git fetch --all
+$ git checkout checkpoint/import-stable-51f7df8
+error: pathspec 'checkpoint/import-stable-51f7df8' did not match any file(s) known to git
+$ git pull --ff-only
+There is no tracking information for the current branch.
+Please specify which branch you want to merge with.
+See git-pull(1) for details.
+
+    git pull <remote> <branch>
+
+If you wish to set tracking information for this branch you can do so with:
+
+    git branch --set-upstream-to=<remote>/<branch> work
+
+$ git rev-parse HEAD
+a38b421b6e56ebc67e29a03a81c694947d0ff96d
+$ git log -1 --oneline
+a38b421 Expose `mappedConfidence` in mapping summaries and responses; add contract tests
+$ git ls-files "src/ecom_v51/services/*bak*" "src/ecom_v51/services/*.bak" "src/ecom_v51/services/__pycache__/*" "frontend/src/pages/*bak*" "frontend/src/pages/*.bak" "frontend/src/pages/__pycache__/*"
+这次只做了源码目录卫生清理，没有改业务逻辑。前置审计结果显示目标源码目录下当前没有任何被 Git 跟踪的 .bak* / *.bak / __pycache__ 残留，因此不需要执行 git rm。同时，.gitignore 已经具备你要求的 __pycache__/、*.pyc、*.pyo 规则，所以也不需要修改 .gitignore。相关规则见 .gitignore 当前内容。.
+
+贴出 git diff
+
+✅ git diff -- ./src/ecom_v51/services ./frontend/src/pages ./.gitignore
+
+
+$ git diff -- ./src/ecom_v51/services ./frontend/src/pages ./.gitignore
+贴出 git status --short
+
+✅ git status --short
+
+
+$ git status --short
+贴出“清理后剩余残留清单”
+
+✅ git ls-files "src/ecom_v51/services/*bak*" "src/ecom_v51/services/*.bak" "src/ecom_v51/services/__pycache__/*" "frontend/src/pages/*bak*" "frontend/src/pages/*.bak" "frontend/src/pages/__pycache__/*"
+
+
+$ git ls-files "src/ecom_v51/services/*bak*" "src/ecom_v51/services/*.bak" "src/ecom_v51/services/__pycache__/*" "frontend/src/pages/*bak*" "frontend/src/pages/*.bak" "frontend/src/pages/__pycache__/*"
+贴出两条 py_compile 输出
+
+✅ python -m py_compile src/ecom_v51/services/import_service.py
+
+✅ python3 -m py_compile src/ecom_v51/services/import_service.py
+
+
+$ python -m py_compile src/ecom_v51/services/import_service.py
+$ python3 -m py_compile src/ecom_v51/services/import_service.py
+贴出 npm run build 输出
+
+✅ cd frontend && npm run build
+
+
+$ cd frontend && npm run build
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ecom-v51-frontend@5.1.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3737 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.47 kB │ gzip:   0.35 kB
+dist/assets/index-DHC8dPHR.css      1.65 kB │ gzip:   0.83 kB
+dist/assets/index-DStImNse.js   2,493.95 kB │ gzip: 802.86 kB │ map: 12,002.93 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 46.14s
+未做项
+
+本次没有碰 import_service.py 业务逻辑
+
+本次没有碰 DataImportV2.tsx 业务逻辑
+
+本次没有碰 frontend/src/types/index.ts
+
+本次没有碰 import_route 契约
+
+本次没有碰利润 runtime
+
+批次 C2：根目录运行时产物退仓 + .gitignore 加固\n\n你现在执行“项目级代码质量优化 · 批次 C2（根目录运行时产物退仓）”。\n\n【先同步到最新分支】\n仓库路径：C:\Operation-system\System\n目标分支：checkpoint/import-stable-51f7df8\n\n先执行并原样贴回：\ngit fetch --all\ngit checkout checkpoint/import-stable-51f7df8\ngit pull --ff-only\ngit rev-parse HEAD\ngit log -1 --oneline\n\n【前置审计 gate】\n先列出这些路径当前是否被 Git 跟踪：\ngit ls-files .venv .venv_broken_* ecom_v51.db upload_response_debug.txt frontend/dist src/uploads uploads\n\n【当前主线】\n当前主线仍然是导入模块 Phase B / core-safe 收口，不是利润 runtime。\n这次不是改业务逻辑，只做根目录运行时产物退仓与忽略规则加固。\n\n【禁止事项】\n- 禁止碰任何业务源码\n- 禁止碰利润 runtime\n- 禁止改 import_route 契约\n- 禁止碰 docs / scripts / config\n- 禁止生成 patch 脚本\n\n【允许修改的范围】\n只允许：\n1) 对已跟踪的运行时产物执行 git rm --cached / git rm -r --cached\n2) 修改 .gitignore，最小追加缺失规则\n\n【必须具备的 .gitignore 规则】\n如果缺失才追加，不要重复：\n.venv/\n.venv_broken_*/\nfrontend/dist/\nsrc/uploads/\nuploads/\n*.db\nupload_response_debug.txt\n\n【执行动作】\n1) 对仍被跟踪的运行时产物执行退仓（只从 Git 移除，不要求删本地）\n2) 补齐上述 .gitignore 规则\n3) 不要顺手改别的文件\n\n【验收要求】\n修改完成后，必须自己运行并原样贴回：\n\n1) git diff\ncd C:\Operation-system\System\ngit diff -- .\.gitignore\n\n2) git status --short\n\n3) 再次列出这些路径是否还被 Git 跟踪\ngit ls-files .venv .venv_broken_* ecom_v51.db upload_response_debug.txt frontend/dist src/uploads uploads\n\n4) 后端编译检查\npython -m py_compile src/ecom_v51/services/import_service.py\npython3 -m py_compile src/ecom_v51/services/import_service.py\n\n5) 前端构建检查\ncd frontend\nnpm run build\ncd ..\n\n【返回格式必须严格这样】\n1. 说明你确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime\n2. 贴出前置审计 gate 的 git ls-files 输出\n3. 说明这次只做了运行时产物退仓与 .gitignore 加固，没有改业务源码\n4. 贴出 git diff -- .gitignore\n5. 贴出 git status --short\n6. 贴出“退仓后剩余跟踪清单”\n7. 贴出两条 py_compile 输出\n8. 贴出 npm run build 输出\n9. 最后单独写“未做项”：\n   - 本次没有碰任何业务源码\n   - 本次没有碰 import_route 契约\n   - 本次没有碰利润 runtime\n\n做完后停止，不要继续下一步。
+复制
+已取消
+你现在执行“项目级代码质量优化 · 批次 C2（根目录运行时产物退仓）”。\n\n【先同步到最新分支】\n仓库路径：C:\Operation-system\System\n目标分支：checkpoint/import-stable-51f7df8\n\n先执行并原样贴回：\ngit fetch --all\ngit checkout checkpoint/import-stable-51f7df8\ngit pull --ff-only\ngit rev-parse HEAD\ngit log -1 --oneline\n\n【前置审计 gate】\n先列出这些路径当前是否被 Git 跟踪：\ngit ls-files .venv .venv_broken_* ecom_v51.db upload_response_debug.txt frontend/dist src/uploads uploads\n\n【当前主线】\n当前主线仍然是导入模块 Phase B / core-safe 收口，不是利润 runtime。\n这次不是改业务逻辑，只做根目录运行时产物退仓与忽略规则加固。\n\n【禁止事项】\n- 禁止碰任何业务源码\n- 禁止碰利润 runtime\n- 禁止改 import_route 契约\n- 禁止碰 docs / scripts / config\n- 禁止生成 patch 脚本\n\n【允许修改的范围】\n只允许：\n1) 对已跟踪的运行时产物执行 git rm --cached / git rm -r --cached\n2) 修改 .gitignore，最小追加缺失规则\n\n【必须具备的 .gitignore 规则】\n如果缺失才追加，不要重复：\n.venv/\n.venv_broken_*/\nfrontend/dist/\nsrc/uploads/\nuploads/\n*.db\nupload_response_debug.txt\n\n【执行动作】\n1) 对仍被跟踪的运行时产物执行退仓（只从 Git 移除，不要求删本地）\n2) 补齐上述 .gitignore 规则\n3) 不要顺手改别的文件\n\n【验收要求】\n修改完成后，必须自己运行并原样贴回：\n\n1) git diff\ncd C:\Operation-system\System\ngit diff -- .\.gitignore\n\n2) git status --short\n\n3) 再次列出这些路径是否还被 Git 跟踪\ngit ls-files .venv .venv_broken_* ecom_v51.db upload_response_debug.txt frontend/dist src/uploads uploads\n\n4) 后端编译检查\npython -m py_compile src/ecom_v51/services/import_service.py\npython3 -m py_compile src/ecom_v51/services/import_service.py\n\n5) 前端构建检查\ncd frontend\nnpm run build\ncd ..\n\n【返回格式必须严格这样】\n1. 说明你确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime\n2. 贴出前置审计 gate 的 git ls-files 输出\n3. 说明这次只做了运行时产物退仓与 .gitignore 加固，没有改业务源码\n4. 贴出 git diff -- .gitignore\n5. 贴出 git status --short\n6. 贴出“退仓后剩余跟踪清单”\n7. 贴出两条 py_compile 输出\n8. 贴出 npm run build 输出\n9. 最后单独写“未做项”：\n   - 本次没有碰任何业务源码\n   - 本次没有碰 import_route 契约\n   - 本次没有碰利润 runtime\n\n做完后停止，不要继续下一步。
+复制
+已取消
+你现在执行“项目级代码质量优化 · 批次 D1（导入 API 合同烟测）”。\n\n【先同步到最新分支】\n仓库路径：C:\Operation-system\System\n目标分支：checkpoint/import-stable-51f7df8\n\n先执行并原样贴回：\ngit fetch --all\ngit checkout checkpoint/import-stable-51f7df8\ngit pull --ff-only\ngit rev-parse HEAD\ngit log -1 --oneline\n\n【前置审计 gate】\n先确认当前服务契约代码已具备：\ngit grep -n "_build_field_mapping_summary" -- src/ecom_v51/services/import_service.py\ngit grep -n "mappingCoverage" -- src/ecom_v51/services/import_service.py\ngit grep -n "mappedConfidence" -- src/ecom_v51/services/import_service.py\n\n【当前主线】\n当前主线仍然是导入模块 Phase B / core-safe 收口，不是利润 runtime。\n这次不是改业务逻辑，而是给 /api/import/upload 与 /api/import/confirm 加路由级合同烟测。\n\n【禁止事项】\n- 禁止碰利润 runtime\n- 禁止改 import_route 契约\n- 禁止改前端业务逻辑\n- 禁止改 import_service.py 业务逻辑\n- 禁止开新实验\n- 禁止生成 patch 脚本\n- 只允许改 1 个文件\n\n【只允许改 1 个文件】\n- tests/test_import_api_contract_smoke.py\n\n如果文件不存在，就创建它；不要改别的文件。\n\n【必须补的测试】\n写 2 组 smoke tests，使用当前真实 app / blueprint / Flask test client。\n如果需要稳定测试，可 monkeypatch service 层返回，但不要改生产代码。\n\n一、test_import_upload_route_surfaces_top_level_mapping_metrics\n目标：\n- 调用 /api/import/upload\n- 响应 JSON 中包含：\n  mappedCount\n  unmappedCount\n  mappingCoverage\n  mappedConfidence\n  semanticMetrics\n- 如果响应里存在 confidence 旧字段，则它与 mappedConfidence 同源\n\n二、test_import_confirm_route_keeps_top_level_mapping_metrics_after_manual_override\n目标：\n- 调用 /api/import/confirm\n- mock/patch 当前最小必要依赖\n- 响应 JSON 中包含：\n  mappedCount\n  unmappedCount\n  mappingCoverage\n  mappedConfidence\n  mappedCanonicalFields\n  topUnmappedHeaders\n- 如果响应里存在 confidence 旧字段，则它与 mappedConfidence 同源\n\n要求：\n- 只锁接口合同，不锁业务公式\n- 不要改生产代码\n- 不要写依赖真实上传文件的大集成测试\n\n【验收要求】\n修改完成后，必须自己运行并原样贴回：\n\n1) 只跑这一个测试文件\ncd C:\Operation-system\System\npython -m pytest tests/test_import_api_contract_smoke.py -q\npython3 -m pytest tests/test_import_api_contract_smoke.py -q\n\n2) 后端编译检查\npython -m py_compile src/ecom_v51/services/import_service.py\npython3 -m py_compile src/ecom_v51/services/import_service.py\n\n3) 前端构建检查\ncd frontend\nnpm run build\ncd ..\n\n4) git diff\ncd C:\Operation-system\System\ngit diff -- .\tests\test_import_api_contract_smoke.py\n\n5) git status --short\n\n【返回格式必须严格这样】\n1. 说明你确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime\n2. 贴出前置审计 gate 的 3 条 grep 输出\n3. 说明这次只新增/修改了 tests/test_import_api_contract_smoke.py 一个文件\n4. 说明 2 组 smoke tests 各自锁住了什么接口契约\n5. 贴出两条 pytest 输出\n6. 贴出两条 py_compile 输出\n7. 贴出 npm run build 输出\n8. 贴出 git diff -- tests/test_import_api_contract_smoke.py\n9. 贴出 git status --short\n10. 最后单独写“未做项”：\n   - 本次没有碰 import_service.py 业务逻辑\n   - 本次没有碰前端文件\n   - 本次没有碰 import_route 契约\n   - 本次没有碰利润 runtime\n\n做完后停止，不要继续下一步。
+复制
+已工作 53 分
+我确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime。
+另外，我按要求先执行了分支同步命令；当前仓库里仍然不存在 checkpoint/import-stable-51f7df8 这个本地分支，git pull --ff-only 也因无 tracking 信息而无法完成，但后续审计与测试是在当前真实代码基线上完成的。
+
+贴出前置审计 gate 的 3 条 grep 输出
+
+✅ git grep -n "_build_field_mapping_summary" -- src/ecom_v51/services/import_service.py
+
+✅ git grep -n "mappingCoverage" -- src/ecom_v51/services/import_service.py
+
+✅ git grep -n "mappedConfidence" -- src/ecom_v51/services/import_service.py
+
+
+src/ecom_v51/services/import_service.py:1790:        mapping_summary = self._build_field_mapping_summary(
+src/ecom_v51/services/import_service.py:1868:    def _build_field_mapping_summary(
+src/ecom_v51/services/import_service.py:2260:                override_summary = self._build_field_mapping_summary(
+
+src/ecom_v51/services/import_service.py:1139:        top_level = payload.get("mappingCoverage")
+src/ecom_v51/services/import_service.py:1147:            return float(metrics.get("mappingCoverage") or 0.0)
+src/ecom_v51/services/import_service.py:1212:                "mappingCoverage": self._bundle_mapping_coverage(bundle),
+src/ecom_v51/services/import_service.py:1709:            "mappingCoverage": coverage,
+src/ecom_v51/services/import_service.py:1853:            "mappingCoverage": mapping_summary["mappingCoverage"],
+src/ecom_v51/services/import_service.py:1920:            float(semantic_metrics.get("mappingCoverage") or 0.0),
+src/ecom_v51/services/import_service.py:1936:            "mappingCoverage": mapping_coverage,
+src/ecom_v51/services/import_service.py:1940:                "mappingCoverage": mapping_coverage,
+src/ecom_v51/services/import_service.py:2057:            "mappingCoverage": self._bundle_mapping_coverage(active_bundle),
+src/ecom_v51/services/import_service.py:2084:            "mappingCoverage_before": round(pre_cov, 3),
+src/ecom_v51/services/import_service.py:2085:            "mappingCoverage_after": round(post_cov, 3),
+src/ecom_v51/services/import_service.py:2146:            "mappingCoverage": self._bundle_mapping_coverage(active_bundle),
+src/ecom_v51/services/import_service.py:2272:                result["mappingCoverage"] = override_summary["mappingCoverage"]
+src/ecom_v51/services/import_service.py:2379:            "mappingCoverage": result.get("mappingCoverage"),
+
+src/ecom_v51/services/import_service.py:1154:        top_level = payload.get("mappedConfidence")
+src/ecom_v51/services/import_service.py:1162:            return float(metrics.get("mappedConfidence") or 0.0)
+src/ecom_v51/services/import_service.py:1854:            "mappedConfidence": mapping_summary["mappedConfidence"],
+src/ecom_v51/services/import_service.py:1937:            "mappedConfidence": mapped_confidence,
+src/ecom_v51/services/import_service.py:1942:                "mappedConfidence": mapped_confidence,
+src/ecom_v51/services/import_service.py:2056:            "mappedConfidence": self._bundle_mapped_confidence(active_bundle),
+src/ecom_v51/services/import_service.py:2147:            "mappedConfidence": confidence,
+src/ecom_v51/services/import_service.py:2273:                result["mappedConfidence"] = override_summary["mappedConfidence"]
+src/ecom_v51/services/import_service.py:2289:                    result["confidence"] = override_summary["mappedConfidence"]
+src/ecom_v51/services/import_service.py:2380:            "mappedConfidence": result.get("mappedConfidence"),
+这次只新增/修改了 tests/test_import_api_contract_smoke.py 一个文件。该文件新增了一个最小 Flask test client 构造器，并补了两条只锁 API 合同、不锁业务公式的路由级 smoke tests。.
+
+2 组 smoke tests 各自锁住了这些接口契约：
+
+test_import_upload_route_surfaces_top_level_mapping_metrics：通过真实 /api/import/upload 路由发起 multipart 请求，并 monkeypatch service 返回，锁住响应必须包含 mappedCount、unmappedCount、mappingCoverage、mappedConfidence、semanticMetrics，且若存在旧 confidence 字段则需与 mappedConfidence 同源。.
+
+test_import_confirm_route_keeps_top_level_mapping_metrics_after_manual_override：通过真实 /api/import/confirm 路由发起 JSON 请求，并 monkeypatch confirm 返回，锁住 manual override 后响应必须保留 mappedCount、unmappedCount、mappingCoverage、mappedConfidence、mappedCanonicalFields、topUnmappedHeaders，且若存在旧 confidence 字段则需与 mappedConfidence 同源。.
+
+贴出两条 pytest 输出
+
+✅ python -m pytest tests/test_import_api_contract_smoke.py -q
+
+
+..                                                                       [100%]
+2 passed in 0.99s
+✅ python3 -m pytest tests/test_import_api_contract_smoke.py -q
+
+
+..                                                                       [100%]
+2 passed in 1.81s
+贴出两条 py_compile 输出
+
+✅ python -m py_compile src/ecom_v51/services/import_service.py
+
+
+✅ python3 -m py_compile src/ecom_v51/services/import_service.py
+
+
+贴出 npm run build 输出
+
+✅ cd frontend && npm run build
+
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ecom-v51-frontend@5.1.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3737 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.47 kB │ gzip:   0.35 kB
+dist/assets/index-DHC8dPHR.css      1.65 kB │ gzip:   0.83 kB
+dist/assets/index-DStImNse.js   2,493.95 kB │ gzip: 802.86 kB │ map: 12,002.93 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 21.34s
+贴出 git diff -- tests/test_import_api_contract_smoke.py
+
+✅ git diff -- tests/test_import_api_contract_smoke.py
+
+Diff
+
+diff --git a/System/tests/test_import_api_contract_smoke.py b/System/tests/test_import_api_contract_smoke.py
+new file mode 100644
+index 0000000..882bba9
+--- /dev/null
++++ b/System/tests/test_import_api_contract_smoke.py
+@@ -0,0 +1,95 @@
++from __future__ import annotations
++
++import io
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++SRC = ROOT / 'src'
++if str(SRC) not in sys.path:
++    sys.path.insert(0, str(SRC))
++
++from ecom_v51.api.app import create_app
++from ecom_v51.api.routes import import_route
++
++
++def _make_client():
++    app = create_app('development')
++    app.config['TESTING'] = True
++    return app.test_client()
++
++
++def test_import_upload_route_surfaces_top_level_mapping_metrics(monkeypatch):
++    client = _make_client()
++    upload_result = {
++        'sessionId': 11,
++        'mappedCount': 3,
++        'unmappedCount': 1,
++        'mappingCoverage': 0.75,
++        'mappedConfidence': 0.88,
++        'confidence': 0.88,
++        'semanticMetrics': {
++            'mappingCoverage': 0.75,
++            'mappedConfidence': 0.88,
++        },
++    }
++
++    monkeypatch.setattr(import_route.import_service, 'parse_import_file', lambda *args, **kwargs: upload_result)
++
++    response = client.post(
++        '/api/import/upload',
++        data={
++            'file': (io.BytesIO(b'fake,xlsx,content'), 'contract.xlsx'),
++            'shop_id': '7',
++            'operator': 'pytest',
++        },
++        content_type='multipart/form-data',
++    )
++
++    assert response.status_code == 200
++    payload = response.get_json()
++    assert payload['mappedCount'] == upload_result['mappedCount']
++    assert payload['unmappedCount'] == upload_result['unmappedCount']
++    assert payload['mappingCoverage'] == upload_result['mappingCoverage']
++    assert payload['mappedConfidence'] == upload_result['mappedConfidence']
++    assert payload['semanticMetrics'] == upload_result['semanticMetrics']
++    if 'confidence' in payload:
++        assert payload['confidence'] == payload['mappedConfidence']
++
++
++def test_import_confirm_route_keeps_top_level_mapping_metrics_after_manual_override(monkeypatch):
++    client = _make_client()
++    confirm_result = {
++        'status': 'success',
++        'batchId': 22,
++        'mappedCount': 4,
++        'unmappedCount': 0,
++        'mappingCoverage': 1.0,
++        'mappedConfidence': 0.97,
++        'confidence': 0.97,
++        'mappedCanonicalFields': ['sku', 'price'],
++        'topUnmappedHeaders': [],
++    }
++
++    monkeypatch.setattr(import_route.import_service, 'confirm_import', lambda *args, **kwargs: dict(confirm_result))
++
++    response = client.post(
++        '/api/import/confirm',
++        json={
++            'sessionId': 22,
++            'shopId': 7,
++            'manualOverrides': [{'originalField': 'SKU', 'standardField': 'sku'}],
++            'operator': 'pytest',
++        },
++    )
++
++    assert response.status_code == 200
++    payload = response.get_json()
++    assert payload['mappedCount'] == confirm_result['mappedCount']
++    assert payload['unmappedCount'] == confirm_result['unmappedCount']
++    assert payload['mappingCoverage'] == confirm_result['mappingCoverage']
++    assert payload['mappedConfidence'] == confirm_result['mappedConfidence']
++    assert payload['mappedCanonicalFields'] == confirm_result['mappedCanonicalFields']
++    assert payload['topUnmappedHeaders'] == confirm_result['topUnmappedHeaders']
++    if 'confidence' in payload:
++        assert payload['confidence'] == payload['mappedConfidence']
+贴出 git status --short
+
+✅ git status --short
+
+
+未做项
+
+本次没有碰 import_service.py 业务逻辑
+
+本次没有碰前端文件
+
+本次没有碰 import_route 契约
+
+本次没有碰利润 runtime
+
+补充：本次已按要求提交并记录 PR 信息。最新提交为 72f7d23 Add import API contract smoke tests。
+
+
+文件 (3)
+你现在执行“原有工作回归 · O1（Phase B 样本回归矩阵）”。\n\n【先同步到最新分支】\n仓库路径：C:\Operation-system\System\n目标分支：checkpoint/import-stable-51f7df8\n\n先执行并原样贴回：\ngit fetch --all\ngit checkout checkpoint/import-stable-51f7df8\ngit pull --ff-only\ngit rev-parse HEAD\ngit log -1 --oneline\n\n【前置审计 gate】\n先确认当前仓库中以下契约已存在：\ngit grep -n "_build_field_mapping_summary" -- src/ecom_v51/services/import_service.py\ngit grep -n "mappingCoverage" -- src/ecom_v51/services/import_service.py\ngit grep -n "mappedConfidence" -- src/ecom_v51/services/import_service.py\ngit grep -n "hasManualEdits" -- frontend/src/pages/DataImportV2.tsx\n\n【当前主线】\n当前主线仍然是导入模块 Phase B / core-safe 收口，不是利润 runtime。\n这次不是新功能开发，而是把当前 Phase B 行为固化为样本回归矩阵。\n\n【禁止事项】\n- 禁止碰利润 runtime\n- 禁止改 import_route 契约\n- 禁止改前端业务逻辑\n- 禁止改 import_service.py 业务逻辑\n- 只允许改 1 个文件\n\n【只允许改 1 个文件】\n- tests/test_import_phase_b_fixture_regression.py\n\n如果文件不存在，就创建它；不要改别的文件。\n\n【必须补的测试】\n前提：使用仓库现有样本/fixture 路径；如果样本文件名与你预期不一致，先审计实际路径再适配，不要改生产代码。\n\n至少补 3 组回归测试：\n\n一、RU Ozon 基线样本\n- 目标：锁住解析结果存在\n  mappedCount / unmappedCount / mappingCoverage / mappedConfidence\n- 断言 topUnmappedHeaders 不包含 dynamic companion 列\n\n二、中文控制样本\n- 目标：锁住当前中文样本在同一合同下不过度退化\n- 断言返回包含同样的顶层摘要字段\n\n三、bad-header / missing-sku 压力样本\n- 目标：锁住即使是坏表头样本，返回仍保持导入摘要合同完整\n- 断言返回仍有 mappedCount / unmappedCount / mappingCoverage / mappedConfidence\n- 不锁具体业务阈值，不发明新规则\n\n【验收要求】\n修改完成后，必须自己运行并原样贴回：\n\n1) 只跑这一个测试文件\ncd C:\Operation-system\System\npython -m pytest tests/test_import_phase_b_fixture_regression.py -q\npython3 -m pytest tests/test_import_phase_b_fixture_regression.py -q\n\n2) 后端编译检查\npython -m py_compile src/ecom_v51/services/import_service.py\npython3 -m py_compile src/ecom_v51/services/import_service.py\n\n3) 前端构建检查\ncd frontend\nnpm run build\ncd ..\n\n4) git diff\ncd C:\Operation-system\System\ngit diff -- .\tests\test_import_phase_b_fixture_regression.py\n\n5) git status --short\n\n【返回格式必须严格这样】\n1. 说明你确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime\n2. 贴出前置审计 gate 的 grep 输出\n3. 说明这次只新增/修改了 tests/test_import_phase_b_fixture_regression.py 一个文件\n4. 说明 3 组样本回归各自锁住了什么\n5. 贴出两条 pytest 输出\n6. 贴出两条 py_compile 输出\n7. 贴出 npm run build 输出\n8. 贴出 git diff -- tests/test_import_phase_b_fixture_regression.py\n9. 贴出 git status --short\n10. 最后单独写“未做项”：\n   - 本次没有碰 import_service.py 业务逻辑\n   - 本次没有碰前端文件\n   - 本次没有碰 import_route 契约\n   - 本次没有碰利润 runtime\n\n做完后停止，不要继续下一步。
+复制
+已工作 4 分 35 秒
+我确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime。
+另外，我先按要求执行了分支同步命令；当前仓库里仍然不存在 checkpoint/import-stable-51f7df8 这个本地分支，且 git pull --ff-only 因无 tracking 信息无法完成，但后续回归测试固化是在当前真实代码基线上完成的。
+
+贴出前置审计 gate 的 grep 输出
+
+✅ git grep -n "_build_field_mapping_summary" -- src/ecom_v51/services/import_service.py
+
+✅ git grep -n "mappingCoverage" -- src/ecom_v51/services/import_service.py
+
+✅ git grep -n "mappedConfidence" -- src/ecom_v51/services/import_service.py
+
+✅ git grep -n "hasManualEdits" -- frontend/src/pages/DataImportV2.tsx
+
+
+src/ecom_v51/services/import_service.py:1790:        mapping_summary = self._build_field_mapping_summary(
+src/ecom_v51/services/import_service.py:1868:    def _build_field_mapping_summary(
+src/ecom_v51/services/import_service.py:2260:                override_summary = self._build_field_mapping_summary(
+
+src/ecom_v51/services/import_service.py:1139:        top_level = payload.get("mappingCoverage")
+src/ecom_v51/services/import_service.py:1147:            return float(metrics.get("mappingCoverage") or 0.0)
+src/ecom_v51/services/import_service.py:1212:                "mappingCoverage": self._bundle_mapping_coverage(bundle),
+src/ecom_v51/services/import_service.py:1709:            "mappingCoverage": coverage,
+src/ecom_v51/services/import_service.py:1853:            "mappingCoverage": mapping_summary["mappingCoverage"],
+src/ecom_v51/services/import_service.py:1920:            float(semantic_metrics.get("mappingCoverage") or 0.0),
+src/ecom_v51/services/import_service.py:1936:            "mappingCoverage": mapping_coverage,
+src/ecom_v51/services/import_service.py:1940:                "mappingCoverage": mapping_coverage,
+src/ecom_v51/services/import_service.py:2057:            "mappingCoverage": self._bundle_mapping_coverage(active_bundle),
+src/ecom_v51/services/import_service.py:2084:            "mappingCoverage_before": round(pre_cov, 3),
+src/ecom_v51/services/import_service.py:2085:            "mappingCoverage_after": round(post_cov, 3),
+src/ecom_v51/services/import_service.py:2146:            "mappingCoverage": self._bundle_mapping_coverage(active_bundle),
+src/ecom_v51/services/import_service.py:2272:                result["mappingCoverage"] = override_summary["mappingCoverage"]
+src/ecom_v51/services/import_service.py:2379:            "mappingCoverage": result.get("mappingCoverage"),
+
+src/ecom_v51/services/import_service.py:1154:        top_level = payload.get("mappedConfidence")
+src/ecom_v51/services/import_service.py:1162:            return float(metrics.get("mappedConfidence") or 0.0)
+src/ecom_v51/services/import_service.py:1854:            "mappedConfidence": mapping_summary["mappedConfidence"],
+src/ecom_v51/services/import_service.py:1937:            "mappedConfidence": mapped_confidence,
+src/ecom_v51/services/import_service.py:1942:                "mappedConfidence": mapped_confidence,
+src/ecom_v51/services/import_service.py:2056:            "mappedConfidence": self._bundle_mapped_confidence(active_bundle),
+src/ecom_v51/services/import_service.py:2147:            "mappedConfidence": confidence,
+src/ecom_v51/services/import_service.py:2273:                result["mappedConfidence"] = override_summary["mappedConfidence"]
+src/ecom_v51/services/import_service.py:2289:                    result["confidence"] = override_summary["mappedConfidence"]
+src/ecom_v51/services/import_service.py:2380:            "mappedConfidence": result.get("mappedConfidence"),
+
+frontend/src/pages/DataImportV2.tsx:284:  const hasManualEdits = mappings.some((m) => m.isManual)
+frontend/src/pages/DataImportV2.tsx:302:    !hasManualEdits && isValidNumber(backendMappedCount)
+frontend/src/pages/DataImportV2.tsx:307:    !hasManualEdits && isValidNumber(backendUnmappedCount)
+frontend/src/pages/DataImportV2.tsx:313:      !hasManualEdits && isValidNumber(backendMappingCoverage)
+frontend/src/pages/DataImportV2.tsx:321:      !hasManualEdits && isValidNumber(backendMappedConfidence)
+这次只新增/修改了 tests/test_import_phase_b_fixture_regression.py 一个文件。该文件使用仓库现有的 RU Ozon、中文控制样本、bad-header/missing-sku 压力样本路径，补了一个共享解析 helper 和一个共享顶层摘要合同断言 helper，用真实样本解析结果来固化 Phase B 回归矩阵。.
+
+3 组样本回归各自锁住了这些内容：
+
+RU Ozon 基线样本：锁住真实解析结果仍然包含 mappedCount、unmappedCount、mappingCoverage、mappedConfidence，并额外断言 topUnmappedHeaders 不包含 dynamic companion 头 Динамика。.
+
+中文控制样本：锁住当前中文样本在同一顶层摘要合同下不会退化，继续要求返回 mappedCount、unmappedCount、mappingCoverage、mappedConfidence。.
+
+bad-header / missing-sku 压力样本：锁住即使是坏表头样本，返回仍保持完整的顶层导入摘要合同，而不去锁死业务阈值或新规则。.
+
+贴出两条 pytest 输出
+
+✅ python -m pytest tests/test_import_phase_b_fixture_regression.py -q
+
+
+...                                                                      [100%]
+=============================== warnings summary ===============================
+tests/test_import_phase_b_fixture_regression.py: 34 warnings
+  /workspace/Operation-system/System/src/ecom_v51/services/import_service.py:1042: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+    header_rows = raw_df.iloc[start : end + 1].fillna("")
+
+tests/test_import_phase_b_fixture_regression.py: 12 warnings
+  /workspace/Operation-system/System/src/ecom_v51/services/import_service.py:612: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+    collapsed[col_name] = selected.bfill(axis=1).iloc[:, 0]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 46 warnings in 17.02s
+✅ python3 -m pytest tests/test_import_phase_b_fixture_regression.py -q
+
+
+...                                                                      [100%]
+=============================== warnings summary ===============================
+tests/test_import_phase_b_fixture_regression.py: 34 warnings
+  /workspace/Operation-system/System/src/ecom_v51/services/import_service.py:1042: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+    header_rows = raw_df.iloc[start : end + 1].fillna("")
+
+tests/test_import_phase_b_fixture_regression.py: 12 warnings
+  /workspace/Operation-system/System/src/ecom_v51/services/import_service.py:612: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+    collapsed[col_name] = selected.bfill(axis=1).iloc[:, 0]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 46 warnings in 21.88s
+贴出两条 py_compile 输出
+
+✅ python -m py_compile src/ecom_v51/services/import_service.py
+
+
+✅ python3 -m py_compile src/ecom_v51/services/import_service.py
+
+
+贴出 npm run build 输出
+
+✅ cd frontend && npm run build
+
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ecom-v51-frontend@5.1.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3737 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.47 kB │ gzip:   0.35 kB
+dist/assets/index-DHC8dPHR.css      1.65 kB │ gzip:   0.83 kB
+dist/assets/index-DStImNse.js   2,493.95 kB │ gzip: 802.86 kB │ map: 12,002.93 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 23.80s
+贴出 git diff -- tests/test_import_phase_b_fixture_regression.py
+
+✅ git diff -- tests/test_import_phase_b_fixture_regression.py
+
+Diff
+
+diff --git a/System/tests/test_import_phase_b_fixture_regression.py b/System/tests/test_import_phase_b_fixture_regression.py
+new file mode 100644
+index 0000000..8dfdcc0
+--- /dev/null
++++ b/System/tests/test_import_phase_b_fixture_regression.py
+@@ -0,0 +1,57 @@
++from __future__ import annotations
++
++import sys
++import warnings
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++SRC = ROOT / 'src'
++if str(SRC) not in sys.path:
++    sys.path.insert(0, str(SRC))
++
++from ecom_v51.services.import_service import ImportService
++
++warnings.filterwarnings(
++    'ignore',
++    message='Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated',
++    category=FutureWarning,
++)
++
++
++FIXTURES = {
++    'ru_ozon': ROOT / 'data' / 'analytics_report_2026-03-12_23_49.xlsx',
++    'cn_control': ROOT / 'data' / '销售数据分析.xlsx',
++    'bad_header_missing_sku': ROOT / 'sample_data' / 'ozon_bad_header_or_missing_sku.xlsx',
++}
++
++
++def _parse_fixture(path: Path) -> dict:
++    service = ImportService()
++    return service.parse_import_file(str(path), shop_id=1, operator='pytest')
++
++
++def _assert_top_level_mapping_contract(result: dict) -> None:
++    assert 'mappedCount' in result
++    assert 'unmappedCount' in result
++    assert 'mappingCoverage' in result
++    assert 'mappedConfidence' in result
++
++
++def test_ru_ozon_fixture_keeps_phase_b_mapping_contract():
++    result = _parse_fixture(FIXTURES['ru_ozon'])
++
++    _assert_top_level_mapping_contract(result)
++    top_unmapped_headers = result.get('topUnmappedHeaders') or []
++    assert 'Динамика' not in top_unmapped_headers
++
++
++def test_cn_control_fixture_keeps_phase_b_mapping_contract():
++    result = _parse_fixture(FIXTURES['cn_control'])
++
++    _assert_top_level_mapping_contract(result)
++
++
++def test_bad_header_missing_sku_fixture_still_returns_mapping_contract():
++    result = _parse_fixture(FIXTURES['bad_header_missing_sku'])
++
++    _assert_top_level_mapping_contract(result)
+贴出 git status --short
+
+✅ git status --short
+
+
+未做项
+
+本次没有碰 import_service.py 业务逻辑
+
+本次没有碰前端文件
+
+本次没有碰 import_route 契约
+
+本次没有碰利润 runtime
+
+补充：本次已按要求提交并记录 PR 信息。最新提交为 61b77ec Add Phase B fixture regression tests。
+
+
+文件 (4)
+你现在执行“前端工程质量优化 · 批次 E1（只做 lazy-load / route split）”。\n\n【先同步到最新分支】\n仓库路径：C:\Operation-system\System\n目标分支：checkpoint/import-stable-51f7df8\n\n先执行并原样贴回：\ngit fetch --all\ngit checkout checkpoint/import-stable-51f7df8\ngit pull --ff-only\ngit rev-parse HEAD\ngit log -1 --oneline\n\n【前置审计 gate：先确认当前代码的真实入口结构】\n先执行并原样贴回：\ngit grep -n "import Dashboard from './pages/Dashboard'" -- frontend/src/App.tsx\ngit grep -n "import DataImport from './pages/DataImportV2'" -- frontend/src/App.tsx\ngit grep -n "import ProfitCalculator from './pages/ProfitCalculator'" -- frontend/src/App.tsx\ngit grep -n "<Route path=\"dashboard\"" -- frontend/src/App.tsx\ngit grep -n "<Route path=\"profit\"" -- frontend/src/App.tsx\n\n如果这些 import/route 不存在，再停止并说明，不要自由发挥。\n\n【当前主线】\n当前主线仍然是导入模块 Phase B / core-safe 收口，不是利润 runtime。\n这次不是改业务逻辑，只做前端路由级代码分割（lazy-load / route split）。\n\n【禁止事项】\n- 禁止改 import_service.py\n- 禁止改 import_route.py\n- 禁止改 frontend/src/types/index.ts\n- 禁止改任何页面业务逻辑\n- 禁止改利润 runtime\n- 禁止改 docs / scripts / config / .gitignore\n- 禁止做 bundle analyzer、新建复杂基础设施、重写路由体系\n- 禁止超过 1 个文件\n\n【这次只允许改 1 个文件】\n- frontend/src/App.tsx\n\n【必须完成的精确修改】\n一、只在 App.tsx 做 route-level lazy loading：\n1) 把当前同步页面 import 改成 React.lazy 动态导入：\n   - Dashboard\n   - DataImportV2\n   - ABCAnalysis\n   - PriceCompetitiveness\n   - FunnelAnalysis\n   - InventoryAlert\n   - AdsManagement\n   - StrategyList\n   - DecisionEngine\n   - ProfitCalculator\n   - LoginPage\n   - SystemSettings\n\n2) 不要 lazy-load 这些：\n   - Layout\n   - AuthProvider\n   - useAuth\n   - BrowserRouter / Routes / Route / Navigate\n\n3) 在 App.tsx 内新增一个最小加载占位组件，样式保持极简，例如：\n   页面加载中...\n   不要引入新组件文件。\n\n4) 使用 Suspense 包住所有 lazy 页面元素。\n   要求：\n   - /login 路由单独包\n   - 受保护路由下的每个页面 element 都通过 Suspense 渲染\n   - 不要改 ProtectedLayout 的鉴权逻辑\n   - 不要改路由 path\n   - 不要改页面文案和功能逻辑\n\n5) 不要把整个 BrowserRouter 或整个 Routes 一锅端地包成一个大 Suspense。\n   目标是 route-level split，不是全局粗暴包裹。\n\n二、这次只做代码分割，不做业务修复：\n- 不要改 DataImportV2 页面内部\n- 不要改 Dashboard/Profit/Decision 等页面内部\n- 不要抽新 hooks\n- 不要新建 pages loader 文件\n- 不要改 Layout\n\n【你必须执行的验收】\n修改完成后，必须自己运行并原样贴回：\n\n1) 前端构建检查\ncd C:\Operation-system\System\frontend\nnpm run build\ncd ..\n\n2) 后端基础检查（虽然没改后端，也照样跑，证明项目没被前端改动带挂）\ncd C:\Operation-system\System\npython -m py_compile src/ecom_v51/services/import_service.py\npython3 -m py_compile src/ecom_v51/services/import_service.py\n\n3) 启动后端并验证健康接口\n在仓库根目录执行（可以分两个终端/会话）：\n- 后端：\n  python -m ecom_v51.api.app\n  或\n  python3 -m ecom_v51.api.app\n\n然后用另一个终端执行：\ncurl http://127.0.0.1:5000/api/health\n\n要求把健康接口原始输出贴回。\n\n4) 启动前端预览并验证页面可访问\n在 frontend 目录执行：\nnpm run preview -- --host 127.0.0.1 --port 4173\n\n然后用另一个终端执行：\ncurl -I http://127.0.0.1:4173/login\ncurl -I http://127.0.0.1:4173/dashboard\n\n要求把原始输出贴回。\n\n5) 如果你的环境支持本地浏览器截图，再额外提供 1 张截图作为证明：\n- 打开 http://127.0.0.1:4173/login\n- 截图保存为：\n  codex_lazyload_preview_login.png\n\n如果你的环境不支持截图，必须明确写：\n“当前环境不支持截图，已用 build + health API + preview HTTP 200 作为运行证明。”\n\n6) 精确 diff\ncd C:\Operation-system\System\ngit diff -- .\frontend\src\App.tsx\n\n7) grep 验证\ngit grep -n "React.lazy" -- frontend/src/App.tsx\ngit grep -n "Suspense" -- frontend/src/App.tsx\ngit grep -n "import Dashboard from './pages/Dashboard'" -- frontend/src/App.tsx\ngit grep -n "import ProfitCalculator from './pages/ProfitCalculator'" -- frontend/src/App.tsx\n\n8) git status --short\n\n【你返回给我的格式必须严格这样】\n1. 先说明你确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime\n2. 贴出前置审计 gate 的 5 条 grep 输出，并说明当前 App.tsx 确实还是同步页面 import\n3. 说明这次只改了 frontend/src/App.tsx，一个文件\n4. 说明你具体把哪些页面改成了 lazy import，Suspense 是怎么放置的\n5. 贴出 npm run build 输出\n6. 贴出两条 py_compile 输出\n7. 贴出后端启动与 curl http://127.0.0.1:5000/api/health 的输出\n8. 贴出前端 preview 启动与 curl -I /login、curl -I /dashboard 的输出\n9. 如果支持截图，贴出截图文件名；如果不支持，明确说明并给出替代证明\n10. 贴出 git diff -- frontend/src/App.tsx\n11. 贴出 4 条 grep 输出\n12. 贴出 git status --short\n13. 最后单独写“未做项”：\n   - 本次没有碰 import_service.py\n   - 本次没有碰 import_route.py\n   - 本次没有碰 frontend/src/types/index.ts\n   - 本次没有碰任何页面业务逻辑\n   - 本次没有碰利润 runtime\n\n做完后停止，不要继续下一步。
+复制
+已工作 5 分 34 秒
+我确认当前主线仍然是导入模块 Phase B / core-safe 收口，而不是利润 runtime。
+我也先按要求执行了分支同步命令；当前仓库里仍然不存在 checkpoint/import-stable-51f7df8 这个本地分支，且 git pull --ff-only 因无 tracking 信息无法完成，所以本次修改与验证是在当前真实代码基线上完成的。
+
+贴出前置审计 gate 的 5 条 grep 输出，并说明当前 App.tsx 确实还是同步页面 import
+
+✅ git grep -n "import Dashboard from './pages/Dashboard'" -- frontend/src/App.tsx
+
+✅ git grep -n "import DataImport from './pages/DataImportV2'" -- frontend/src/App.tsx
+
+✅ git grep -n "import ProfitCalculator from './pages/ProfitCalculator'" -- frontend/src/App.tsx
+
+✅ git grep -n "<Route path=\"dashboard\"" -- frontend/src/App.tsx
+
+✅ git grep -n "<Route path=\"profit\"" -- frontend/src/App.tsx
+
+
+frontend/src/App.tsx:3:import Dashboard from './pages/Dashboard'
+frontend/src/App.tsx:4:import DataImport from './pages/DataImportV2'
+frontend/src/App.tsx:12:import ProfitCalculator from './pages/ProfitCalculator'
+frontend/src/App.tsx:38:            <Route path="dashboard" element={<Dashboard />} />
+frontend/src/App.tsx:48:            <Route path="profit" element={<ProfitCalculator />} />
+当前 App.tsx 在修改前确实还是同步页面 import，并且路由 element 也是直接同步渲染。
+
+说明这次只改了 frontend/src/App.tsx，一个文件。
+我只在这个文件里把目标页面改成 route-level lazy() 动态导入，并新增了一个最小占位组件 PageLoading，没有改动任何页面内部业务逻辑、路由 path、鉴权逻辑或其他文件。.
+
+说明你具体把哪些页面改成了 lazy import，Suspense 是怎么放置的
+
+改成 lazy import 的页面有：Dashboard、DataImportV2、ABCAnalysis、PriceCompetitiveness、FunnelAnalysis、InventoryAlert、AdsManagement、StrategyList、DecisionEngine、ProfitCalculator、LoginPage、SystemSettings。.
+
+没有 lazy-load Layout、AuthProvider、useAuth、BrowserRouter、Routes、Route、Navigate；这些仍然保持同步导入。.
+
+Suspense 的放置方式是：
+
+/login 路由单独包了一层 Suspense。.
+
+受保护路由下的每个页面 route 都各自通过自己的 Suspense 渲染，而不是把整个 BrowserRouter 或整个 Routes 一锅端包成一个全局大边界。.
+
+ProtectedLayout 的鉴权逻辑保持不变。.
+
+贴出 npm run build 输出
+
+✅ cd frontend && npm run build
+
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ecom-v51-frontend@5.1.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3738 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                   0.47 kB │ gzip:   0.35 kB
+dist/assets/index-DHC8dPHR.css                    1.65 kB │ gzip:   0.83 kB
+dist/assets/ClockCircleOutlined-COZNjK54.js       0.72 kB │ gzip:   0.48 kB │ map:     2.89 kB
+dist/assets/CheckCircleOutlined-Cg8pY04T.js       0.75 kB │ gzip:   0.50 kB │ map:     2.95 kB
+dist/assets/SendOutlined-DnyTma52.js              0.80 kB │ gzip:   0.55 kB │ map:     2.99 kB
+dist/assets/EyeOutlined-j9fvQPk1.js               0.82 kB │ gzip:   0.54 kB │ map:     2.97 kB
+dist/assets/format-DAlrLKmu.js                    0.87 kB │ gzip:   0.35 kB │ map:     3.14 kB
+dist/assets/ReloadOutlined-CofNQ5mg.js            1.04 kB │ gzip:   0.65 kB │ map:     3.51 kB
+dist/assets/ShoppingCartOutlined-DrKMy-DS.js      1.19 kB │ gzip:   0.64 kB │ map:     3.94 kB
+dist/assets/ProductSection-CaTtz89K.js            1.58 kB │ gzip:   0.82 kB │ map:     4.51 kB
+dist/assets/Login-tXEYvz3I.js                     2.17 kB │ gzip:   1.45 kB │ map:     6.13 kB
+dist/assets/useMutation-DBiHfvnq.js               3.15 kB │ gzip:   1.31 kB │ map:     9.65 kB
+dist/assets/FunnelAnalysis-BFqnaQmT.js            4.41 kB │ gzip:   2.09 kB │ map:    10.93 kB
+dist/assets/index-DIe8PwPd.js                     4.42 kB │ gzip:   1.71 kB │ map:    15.38 kB
+dist/assets/AdsManagement-BIjg4Fac.js             4.42 kB │ gzip:   2.19 kB │ map:    11.08 kB
+dist/assets/index-CmWoQAOC.js                     4.75 kB │ gzip:   2.05 kB │ map:    19.85 kB
+dist/assets/InventoryAlert-UK6185sj.js            4.94 kB │ gzip:   2.49 kB │ map:    13.25 kB
+dist/assets/ABCAnalysis-BCSHCw4h.js               5.89 kB │ gzip:   2.74 kB │ map:    15.85 kB
+dist/assets/index-CNVJSmte.js                     6.43 kB │ gzip:   2.72 kB │ map:    25.74 kB
+dist/assets/PriceCompetitiveness-BvA5Q07p.js      7.75 kB │ gzip:   3.63 kB │ map:    20.49 kB
+dist/assets/index-BLxAcbj2.js                    10.84 kB │ gzip:   4.49 kB │ map:    45.49 kB
+dist/assets/StrategyList-DRUHszml.js             12.91 kB │ gzip:   4.20 kB │ map:    38.48 kB
+dist/assets/index-DelgYKTq.js                    16.31 kB │ gzip:   6.31 kB │ map:    78.89 kB
+dist/assets/progress-DGha8XqR.js                 16.36 kB │ gzip:   6.00 kB │ map:    66.39 kB
+dist/assets/Dashboard-BuvOkzmm.js                16.54 kB │ gzip:   7.25 kB │ map:    44.85 kB
+dist/assets/DecisionEngine-CRrsMGP0.js           19.12 kB │ gzip:   7.18 kB │ map:    64.62 kB
+dist/assets/SystemSettings-B3irdZY0.js           19.52 kB │ gzip:   7.12 kB │ map:    60.47 kB
+dist/assets/index-DVO9iod4.js                    24.46 kB │ gzip:   8.79 kB │ map:   105.43 kB
+dist/assets/index-HYNqXwQN.js                    28.63 kB │ gzip:   9.57 kB │ map:   124.18 kB
+dist/assets/Input--jMOOTZm.js                    60.90 kB │ gzip:  19.23 kB │ map:   252.29 kB
+dist/assets/ProfitCalculator-CfbRiM2N.js         67.92 kB │ gzip:  22.62 kB │ map:   260.57 kB
+dist/assets/DataImportV2-Dl2l1-AU.js             89.57 kB │ gzip:  27.73 kB │ map:   332.64 kB
+dist/assets/Table-C_0Y263q.js                   168.98 kB │ gzip:  54.18 kB │ map:   771.77 kB
+dist/assets/index-DtKmfwN4.js                   843.01 kB │ gzip: 272.47 kB │ map: 3,628.52 kB
+dist/assets/index-DjAJj83C.js                 1,054.04 kB │ gzip: 349.91 kB │ map: 5,939.82 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 17.15s
+贴出两条 py_compile 输出
+
+✅ python -m py_compile src/ecom_v51/services/import_service.py
+
+
+✅ python3 -m py_compile src/ecom_v51/services/import_service.py
+
+
+贴出后端启动与 curl http://127.0.0.1:5000/api/health 的输出
+
+✅ PYTHONPATH=src python -m ecom_v51.api.app
+
+
+⚠️ 警告: flask-cors 未安装，跨域功能已禁用
+安装: pip install flask-cors
+/root/.pyenv/versions/3.10.19/lib/python3.10/runpy.py:126: RuntimeWarning: 'ecom_v51.api.app' found in sys.modules after import of package 'ecom_v51.api', but prior to execution of 'ecom_v51.api.app'; this may result in unpredictable behaviour
+  warn(RuntimeWarning(msg))
+⚠️ 警告: flask-cors 未安装，跨域功能已禁用
+安装: pip install flask-cors
+
+======================================================================
+运营系统 Flask API (前后端分离)
+======================================================================
+API地址: http://localhost:5000/api
+健康检查: http://localhost:5000/api/health
+前端地址: http://localhost:5173
+======================================================================
+
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+⚠️ 警告: flask-cors 未安装，跨域功能已禁用
+安装: pip install flask-cors
+/root/.pyenv/versions/3.10.19/lib/python3.10/runpy.py:126: RuntimeWarning: 'ecom_v51.api.app' found in sys.modules after import of package 'ecom_v51.api', but prior to execution of 'ecom_v51.api.app'; this may result in unpredictable behaviour
+  warn(RuntimeWarning(msg))
+⚠️ 警告: flask-cors 未安装，跨域功能已禁用
+安装: pip install flask-cors
+
+======================================================================
+运营系统 Flask API (前后端分离)
+======================================================================
+API地址: http://localhost:5000/api
+健康检查: http://localhost:5000/api/health
+前端地址: http://localhost:5173
+======================================================================
+
+ * Debugger is active!
+ * Debugger PIN: 273-443-712
+✅ curl http://127.0.0.1:5000/api/health
+
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    72  100    72    0     0  21647      0 --:--:-- --:--:-- {
+  "service": "ecom_v51_api",
+  "status": "ok",
+  "version": "1.0.0"
+}
+--:--:-- 24000
+贴出前端 preview 启动与 curl -I /login、curl -I /dashboard 的输出
+
+✅ cd frontend && npm run preview -- --host 127.0.0.1 --port 4173
+
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ecom-v51-frontend@5.1.0 preview
+> vite preview --host 127.0.0.1 --port 4173
+
+  ➜  Local:   http://127.0.0.1:4173/
+  ➜  press h + enter to show help
+✅ curl -I http://127.0.0.1:4173/login
+
+
+HTTP/1.1 200 OK
+Vary: Origin
+Content-Type: text/html
+Cache-Control: no-cache
+Etag: W/"1e5-Z8UDKkaMk6LST2UvvbTNwIAmd7U"
+Date: Thu, 19 Mar 2026 18:17:05 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+✅ curl -I http://127.0.0.1:4173/dashboard
+
+
+HTTP/1.1 200 OK
+Vary: Origin
+Content-Type: text/html
+Cache-Control: no-cache
+Etag: W/"1e5-Z8UDKkaMk6LST2UvvbTNwIAmd7U"
+Date: Thu, 19 Mar 2026 18:17:05 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+如果支持截图，贴出截图文件名；如果不支持，明确说明并给出替代证明
+
+当前环境不支持截图，已用 build + health API + preview HTTP 200 作为运行证明。
+
+贴出 git diff -- frontend/src/App.tsx
+
+✅ git diff -- frontend/src/App.tsx
+
+Diff
+
+diff --git a/System/frontend/src/App.tsx b/System/frontend/src/App.tsx
+index 02255d1..b2ff32b 100644
+--- a/System/frontend/src/App.tsx
++++ b/System/frontend/src/App.tsx
+@@ -1,20 +1,26 @@
++import { lazy, Suspense } from 'react'
+ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+ import Layout from './layout/Layout'
+-import Dashboard from './pages/Dashboard'
+-import DataImport from './pages/DataImportV2'
+-import ABCAnalysis from './pages/ABCAnalysis'
+-import PriceCompetitiveness from './pages/PriceCompetitiveness'
+-import FunnelAnalysis from './pages/FunnelAnalysis'
+-import InventoryAlert from './pages/InventoryAlert'
+-import AdsManagement from './pages/AdsManagement'
+-import StrategyList from './pages/StrategyList'
+-import DecisionEngine from './pages/DecisionEngine'
+-import ProfitCalculator from './pages/ProfitCalculator'
+-import LoginPage from './pages/Login'
+-import SystemSettings from './pages/SystemSettings'
+ import { AuthProvider, useAuth } from './auth'
+ import './App.css'
+ 
++const Dashboard = lazy(() => import('./pages/Dashboard'))
++const DataImport = lazy(() => import('./pages/DataImportV2'))
++const ABCAnalysis = lazy(() => import('./pages/ABCAnalysis'))
++const PriceCompetitiveness = lazy(() => import('./pages/PriceCompetitiveness'))
++const FunnelAnalysis = lazy(() => import('./pages/FunnelAnalysis'))
++const InventoryAlert = lazy(() => import('./pages/InventoryAlert'))
++const AdsManagement = lazy(() => import('./pages/AdsManagement'))
++const StrategyList = lazy(() => import('./pages/StrategyList'))
++const DecisionEngine = lazy(() => import('./pages/DecisionEngine'))
++const ProfitCalculator = lazy(() => import('./pages/ProfitCalculator'))
++const LoginPage = lazy(() => import('./pages/Login'))
++const SystemSettings = lazy(() => import('./pages/SystemSettings'))
++
++function PageLoading() {
++  return <div style={{ padding: 24 }}>页面加载中...</div>
++}
++
+ function ProtectedLayout() {
+   const { user, loading } = useAuth()
+   if (loading) return <div style={{ padding: 24 }}>加载中...</div>
+@@ -32,20 +38,104 @@ function App() {
+         }}
+       >
+         <Routes>
+-          <Route path="/login" element={<LoginPage />} />
++          <Route
++            path="/login"
++            element={
++              <Suspense fallback={<PageLoading />}>
++                <LoginPage />
++              </Suspense>
++            }
++          />
+           <Route path="/" element={<ProtectedLayout />}>
+             <Route index element={<Navigate to="/dashboard" replace />} />
+-            <Route path="dashboard" element={<Dashboard />} />
+-            <Route path="import" element={<DataImport />} />
+-            <Route path="settings" element={<SystemSettings />} />
+-            <Route path="abc" element={<ABCAnalysis />} />
+-            <Route path="price" element={<PriceCompetitiveness />} />
+-            <Route path="funnel" element={<FunnelAnalysis />} />
+-            <Route path="inventory" element={<InventoryAlert />} />
+-            <Route path="ads" element={<AdsManagement />} />
+-            <Route path="strategy" element={<StrategyList />} />
+-            <Route path="decision" element={<DecisionEngine />} />
+-            <Route path="profit" element={<ProfitCalculator />} />
++            <Route
++              path="dashboard"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <Dashboard />
++                </Suspense>
++              }
++            />
++            <Route
++              path="import"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <DataImport />
++                </Suspense>
++              }
++            />
++            <Route
++              path="settings"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <SystemSettings />
++                </Suspense>
++              }
++            />
++            <Route
++              path="abc"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <ABCAnalysis />
++                </Suspense>
++              }
++            />
++            <Route
++              path="price"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <PriceCompetitiveness />
++                </Suspense>
++              }
++            />
++            <Route
++              path="funnel"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <FunnelAnalysis />
++                </Suspense>
++              }
++            />
++            <Route
++              path="inventory"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <InventoryAlert />
++                </Suspense>
++              }
++            />
++            <Route
++              path="ads"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <AdsManagement />
++                </Suspense>
++              }
++            />
++            <Route
++              path="strategy"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <StrategyList />
++                </Suspense>
++              }
++            />
++            <Route
++              path="decision"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <DecisionEngine />
++                </Suspense>
++              }
++            />
++            <Route
++              path="profit"
++              element={
++                <Suspense fallback={<PageLoading />}>
++                  <ProfitCalculator />
++                </Suspense>
++              }
++            />
+           </Route>
+         </Routes>
+       </BrowserRouter>
+贴出 4 条 grep 输出
+
+⚠️ git grep -n "React.lazy" -- frontend/src/App.tsx
+
+
+✅ git grep -n "Suspense" -- frontend/src/App.tsx
+
+
+frontend/src/App.tsx:1:import { lazy, Suspense } from 'react'
+frontend/src/App.tsx:44:              <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:46:              </Suspense>
+frontend/src/App.tsx:54:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:56:                </Suspense>
+frontend/src/App.tsx:62:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:64:                </Suspense>
+frontend/src/App.tsx:70:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:72:                </Suspense>
+frontend/src/App.tsx:78:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:80:                </Suspense>
+frontend/src/App.tsx:86:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:88:                </Suspense>
+frontend/src/App.tsx:94:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:96:                </Suspense>
+frontend/src/App.tsx:102:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:104:                </Suspense>
+frontend/src/App.tsx:110:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:112:                </Suspense>
+frontend/src/App.tsx:118:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:120:                </Suspense>
+frontend/src/App.tsx:126:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:128:                </Suspense>
+frontend/src/App.tsx:134:                <Suspense fallback={<PageLoading />}>
+frontend/src/App.tsx:136:                </Suspense>
+⚠️ git grep -n "import Dashboard from './pages/Dashboard'" -- frontend/src/App.tsx
+
+
+⚠️ git grep -n "import ProfitCalculator from './pages/ProfitCalculator'" -- frontend/src/App.tsx
+
+
+贴出 git status --short
+
+✅ git status --short
+
+
+未做项
+
+本次没有碰 import_service.py
+
+本次没有碰 import_route.py
+
+本次没有碰 frontend/src/types/index.ts
+
+本次没有碰任何页面业务逻辑
+
+本次没有碰利润 runtime
+
+补充：本次已按要求提交并记录 PR 信息。最新提交为 55e93ec Add route-level lazy loading for app pages。
+
+
+文件 (5)
+
+App.tsx
+System/frontend/src/App.tsx
++114
+-24
+
+import_service.py
+System/src/ecom_v51/services/import_service.py
++5
+-0
+
+test_import_api_contract_smoke.py
+System/tests/test_import_api_contract_smoke.py
+新
+
+test_import_mapping_summary_contract.py
+新
+
+test_import_phase_b_fixture_regression.py
+新

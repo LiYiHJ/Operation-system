@@ -1,0 +1,256 @@
+我先按你的要求尝试同步到 checkpoint/import-stable-51f7df8，但当前容器内这个仓库只有本地分支 work，不存在你指定分支，因此无法执行 git checkout checkpoint/import-stable-51f7df8。
+
+我也在仓库内搜索了你指定的 4 份交接文档原始路径/文件名，当前工作副本里未找到这些文件，因此这一步只能基于你指定的 4 个源码文件和现有导入主链实现来收口。
+
+从 import_service.py 的 parse_import_file() / _build_bundle() / confirm_import() / _apply_manual_overrides_to_staging() 可确认，当前主线仍然是导入模块的 core-safe 映射、语义门禁与 confirm 汇总链路，而不是利润 runtime。.
+
+本次修改没有扩展到 import_route 契约，也没有碰 profit 相关运行时代码；只是在 manual override 生效后，把 confirm 返回里的映射统计重新按现有 core-safe 口径做最小一致性重算。.
+
+前端侧只补进后端已存在的 dynamicCompanion / excludeFromSemanticGate 字段，并把映射页的 ignored 判定改为复用这些既有语义，没有改 confirm 流程、entity key suggestion、文案、卡片布局或 protected target 规则。.
+
+因此这一步仍然严格落在“导入层 Phase B / core-safe 收口，以及状态真实性/口径对齐”范围内，没有偏离主线。.
+
+实际修改的 3 个文件与改动内容
+
+frontend/src/types/index.ts
+
+只在 FieldMapping 接口中补了两个可选字段：dynamicCompanion?: boolean 与 excludeFromSemanticGate?: boolean，未改其他类型结构。.
+
+frontend/src/pages/DataImportV2.tsx
+
+在 normalizeFieldMappings() 中接入后端已有的 camelCase / snake_case 字段：dynamicCompanion 与 excludeFromSemanticGate。.
+
+按你的要求重写 isIgnoredField()：只要满足 dynamicCompanion、excludeFromSemanticGate、reasons 命中动态忽略原因，或 mappingSource === 'dynamic_companion' 之一，即视为 ignored。.
+
+src/ecom_v51/services/import_service.py
+
+新增了一个最小 helper _summarize_field_mappings_for_result()，复用现有 _compute_header_structure_score()、_semantic_gate()、_build_core_field_hit_summary() 口径，对 field mappings 做一致性汇总，而不是新发明规则。.
+
+在 confirm_import() 中，当 manual overrides 生效并得到 override_field_mappings 后，不再只替换 result["fieldMappings"]，而是同步重算并更新：fieldMappings、mappedCanonicalFields、topUnmappedHeaders、mappedCount、unmappedCount，并在安全复用现有 helper 的前提下同步刷新 semanticMetrics、coreFieldHitSummary、semanticStatus、semanticGateReasons、riskOverrideReasons、semanticAcceptanceReason，且仅在 transportStatus != failed 时让 finalStatus 跟随现有语义口径更新。.
+
+py_compile 结果
+
+
+cd C:\Operation-system\System
+.\.venv\Scripts\python.exe -m py_compile .\src\ecom_v51\services\import_service.py
+
+/bin/bash: line 1: ./.venv/Scripts/python.exe: Permission denied
+补充说明：当前容器是 Linux 环境，仓库里的 .\.venv\Scripts\python.exe 为 Windows venv 可执行文件，无法在此环境直接运行；因此我额外补跑了等价编译检查，结果如下：
+
+
+python3 -m py_compile ./src/ecom_v51/services/import_service.py
+
+<no output>
+npm run build 结果
+
+
+cd C:\Operation-system\System\frontend
+npm run build
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ecom-v51-frontend@5.1.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3737 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.47 kB │ gzip:   0.36 kB
+dist/assets/index-DHC8dPHR.css      1.65 kB │ gzip:   0.83 kB
+dist/assets/index-Dx_tmJZM.js   2,494.10 kB │ gzip: 802.87 kB │ map: 12,002.48 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 51.52s
+git diff
+
+Diff
+
+diff --git a/System/frontend/src/pages/DataImportV2.tsx b/System/frontend/src/pages/DataImportV2.tsx
+index cff0b31..e672277 100644
+--- a/System/frontend/src/pages/DataImportV2.tsx
++++ b/System/frontend/src/pages/DataImportV2.tsx
+@@ -103,7 +103,13 @@ const isMappedField = (m?: Pick<FieldMapping, 'standardField'> | null) =>
+   !!m?.standardField && m.standardField !== 'unmapped'
+ 
+ const isIgnoredField = (m?: FieldMapping | null) =>
+-  !!m?.reasons?.includes('dynamic_column_ignored')
++  !!(
++    m?.dynamicCompanion === true ||
++    m?.excludeFromSemanticGate === true ||
++    m?.reasons?.includes('dynamic_column_ignored') ||
++    m?.reasons?.includes('dynamic_companion') ||
++    m?.mappingSource === 'dynamic_companion'
++  )
+ 
+ const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
+   if (status === 'passed') return <Tag color="success">passed</Tag>
+@@ -169,6 +175,9 @@ const normalizeFieldMappings = (value: any): FieldMapping[] => {
+     reasons: Array.isArray(item?.reasons) ? item.reasons : [],
+     reason: item?.reason ?? undefined,
+     sampleToken: item?.sampleToken ?? item?.sample_token ?? undefined,
++    dynamicCompanion: item?.dynamicCompanion ?? item?.dynamic_companion ?? false,
++    excludeFromSemanticGate:
++      item?.excludeFromSemanticGate ?? item?.exclude_from_semantic_gate ?? false,
+   }))
+ }
+ 
+diff --git a/System/frontend/src/types/index.ts b/System/frontend/src/types/index.ts
+index 2814214..603f058 100644
+--- a/System/frontend/src/types/index.ts
++++ b/System/frontend/src/types/index.ts
+@@ -270,6 +270,8 @@ export interface FieldMapping {
+   reasons?: string[]
+   reason?: string
+   sampleToken?: string
++  dynamicCompanion?: boolean
++  excludeFromSemanticGate?: boolean
+ }
+ 
+ export interface FieldRegistryField {
+diff --git a/System/src/ecom_v51/services/import_service.py b/System/src/ecom_v51/services/import_service.py
+index 3403f35..ed33071 100644
+--- a/System/src/ecom_v51/services/import_service.py
++++ b/System/src/ecom_v51/services/import_service.py
+@@ -1884,6 +1884,73 @@ class ImportService:
+             "platform": platform,
+         }
+ 
++    def _summarize_field_mappings_for_result(
++        self,
++        field_mappings: List[dict],
++        header_block: dict,
++        flattened_headers: List[str],
++        dropped_placeholder_columns: List[str],
++    ) -> dict:
++        semantic_field_mappings = [
++            item for item in (field_mappings or []) if not item.get("excludeFromSemanticGate")
++        ]
++        mapped_targets = [
++            str(item.get("standardField"))
++            for item in semantic_field_mappings
++            if item.get("standardField")
++        ]
++        candidate_columns = sum(
++            1
++            for item in semantic_field_mappings
++            if not self._is_placeholder_col(item.get("originalField"))
++        )
++        mapped_count = len(mapped_targets)
++        unmapped_headers = [
++            str(item.get("originalField"))
++            for item in semantic_field_mappings
++            if not item.get("standardField")
++        ]
++        header_structure_score, header_structure_signals = (
++            self._compute_header_structure_score(
++                header_block, flattened_headers, dropped_placeholder_columns
++            )
++        )
++        (
++            semantic_status,
++            semantic_gate_reasons,
++            risk_override_reasons,
++            acceptance_reason,
++            semantic_metrics,
++        ) = self._semantic_gate(
++            mapped_targets=mapped_targets,
++            candidate_columns=candidate_columns,
++            mapped_count=mapped_count,
++            wrongly_mapped_count=0,
++            header_signals=header_structure_signals,
++            header_structure_score=header_structure_score,
++        )
++        return {
++            "mappedCanonicalFields": list(dict.fromkeys(mapped_targets))[:20],
++            "topUnmappedHeaders": unmapped_headers[:20],
++            "mappedCount": mapped_count,
++            "unmappedCount": len(unmapped_headers),
++            "semanticMetrics": {
++                **semantic_metrics,
++                "candidateColumns": candidate_columns,
++                "mappedConfidence": round(
++                    sum(float(item.get("confidence") or 0.0) for item in (field_mappings or []))
++                    / max(len(field_mappings or []), 1),
++                    3,
++                ),
++                "wronglyMappedCount": 0,
++            },
++            "coreFieldHitSummary": self._build_core_field_hit_summary(mapped_targets),
++            "semanticStatus": semantic_status,
++            "semanticGateReasons": semantic_gate_reasons,
++            "riskOverrideReasons": risk_override_reasons,
++            "semanticAcceptanceReason": acceptance_reason,
++        }
++
+     def parse_import_file(
+         self, file_path: str, shop_id: int = 1, operator: str = "frontend_user"
+     ) -> dict:
+@@ -2221,6 +2288,34 @@ class ImportService:
+                 session["duplicateCount"] = duplicate_count
+ 
+                 result["fieldMappings"] = override_field_mappings
++                override_summary = self._summarize_field_mappings_for_result(
++                    field_mappings=override_field_mappings,
++                    header_block=result.get("headerBlock") or {},
++                    flattened_headers=result.get("flattenedHeaders") or [],
++                    dropped_placeholder_columns=result.get("droppedPlaceholderColumns") or [],
++                )
++                result["mappedCanonicalFields"] = override_summary[
++                    "mappedCanonicalFields"
++                ]
++                result["topUnmappedHeaders"] = override_summary["topUnmappedHeaders"]
++                result["mappedCount"] = override_summary["mappedCount"]
++                result["unmappedCount"] = override_summary["unmappedCount"]
++                result["semanticMetrics"] = override_summary["semanticMetrics"]
++                result["coreFieldHitSummary"] = override_summary[
++                    "coreFieldHitSummary"
++                ]
++                result["semanticStatus"] = override_summary["semanticStatus"]
++                result["semanticGateReasons"] = override_summary[
++                    "semanticGateReasons"
++                ]
++                result["riskOverrideReasons"] = override_summary[
++                    "riskOverrideReasons"
++                ]
++                result["semanticAcceptanceReason"] = override_summary[
++                    "semanticAcceptanceReason"
++                ]
++                if result.get("transportStatus") != "failed":
++                    result["finalStatus"] = override_summary["semanticStatus"]
+ 
+         warnings: List[str] = []
+         if session.get("duplicateCount"):
+风险与未做项
+
+这一步没有碰利润 runtime，也没有修改任何 profit 相关文件。.
+
+这一步没有改 import_route 契约；/confirm 入口参数和返回 key 名保持现状。.
+
+这一步没有强行重写新的 semantic/final gate 公式；后端仅在存在安全可复用 helper 的前提下，复用了现有 _compute_header_structure_score()、_semantic_gate()、_build_core_field_hit_summary() 来做 override 后的一致性重算。.
+
+未按你的原要求成功切换到 checkpoint/import-stable-51f7df8，因为当前仓库副本中不存在该分支；我是在现有 work 分支完成最小修改并已提交。
+
+你要求的 4 份阶段/交接文档在当前工作副本中未找到，因此本次只能根据现有源码主链做不偏航的最小修正。
+
+Summary
+
+在 FieldMapping 接口中补入 dynamicCompanion 和 excludeFromSemanticGate 两个可选字段，保持其余类型结构不变。.
+
+在 DataImportV2 中接入后端已有忽略标记字段，并将映射页 ignored 判定改为与动态伴生列/语义排除列口径一致。.
+
+在 confirm_import() 的 manual override 分支中，基于现有 helper 做最小一致性重算，同步刷新 fieldMappings、mappedCanonicalFields、topUnmappedHeaders、mappedCount、unmappedCount，并安全复用既有语义汇总逻辑更新相关状态字段。.
+
+Testing
+
+⚠️ ./.venv/Scripts/python.exe -m py_compile ./src/ecom_v51/services/import_service.py（当前 Linux 容器无法执行 Windows venv 的 python.exe，原始结果为 Permission denied）
+
+✅ python3 -m py_compile ./src/ecom_v51/services/import_service.py
+
+✅ npm run build
+
+✅ git diff -- ./src/ecom_v51/services/import_service.py ./frontend/src/pages/DataImportV2.tsx ./frontend/src/types/index.ts
