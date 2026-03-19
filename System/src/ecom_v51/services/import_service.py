@@ -1851,6 +1851,7 @@ class ImportService:
             "riskOverrideReasons": mapping_summary["riskOverrideReasons"],
             "semanticAcceptanceReason": mapping_summary["semanticAcceptanceReason"],
             "mappingCoverage": mapping_summary["mappingCoverage"],
+            "mappedConfidence": mapping_summary["mappedConfidence"],
             "semanticMetrics": mapping_summary["semanticMetrics"],
             "coreFieldHitSummary": mapping_summary["coreFieldHitSummary"],
             "headerBlock": copy.deepcopy(header_block),
@@ -2143,6 +2144,7 @@ class ImportService:
             "mappedCount": mapped_count,
             "unmappedCount": int(active_bundle["unmappedCount"]),
             "mappingCoverage": self._bundle_mapping_coverage(active_bundle),
+            "mappedConfidence": confidence,
             "confidence": confidence,
             "stats": stats,
             "ruMappingQuality": ru_mapping_quality,
@@ -2268,6 +2270,7 @@ class ImportService:
                 result["mappedCount"] = override_summary["mappedCount"]
                 result["unmappedCount"] = override_summary["unmappedCount"]
                 result["mappingCoverage"] = override_summary["mappingCoverage"]
+                result["mappedConfidence"] = override_summary["mappedConfidence"]
                 result["semanticMetrics"] = override_summary["semanticMetrics"]
                 result["coreFieldHitSummary"] = override_summary[
                     "coreFieldHitSummary"
@@ -2373,6 +2376,8 @@ class ImportService:
             "stagingRows": imported_rows,
             "factLoadErrors": fact_load_errors,
             "missingRatingCount": missing_rating_count,
+            "mappingCoverage": result.get("mappingCoverage"),
+            "mappedConfidence": result.get("mappedConfidence"),
             "transportStatus": result.get("transportStatus"),
             "semanticStatus": result.get("semanticStatus"),
             "finalStatus": result.get("finalStatus"),
