@@ -5,3 +5,10 @@ node_modules/
 *.png
 *.jpg
 *.ico
+.venv/
+.venv_broken_*/
+frontend/dist/
+src/uploads/
+uploads/
+*.db
+upload_response_debug.txt
