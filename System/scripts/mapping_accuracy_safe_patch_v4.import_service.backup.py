@@ -241,16 +241,9 @@ class ImportService:
         "доля",
         "abc-анализ",
         "abc анализ",
-        "abc",
         "рекомендац",
-        "recommend",
-        "建议",
-        "补货",
-        "时效",
-        "平均时效",
-        "среднее время",
-        "среднее время доставки",
         "сколько товаров",
+        "среднее время доставки",
         "по сравнению с предыдущим периодом",
     }
     PROTECTED_UNIQUE_TARGETS = {
@@ -301,8 +294,6 @@ class ImportService:
         (["сумма заказ"], "order_amount"),
         (["остат", "склад"], "stock_total"),
         (["в наличии"], "stock_total"),
-        (["рейтинг"], "rating_value"),
-        (["отзыв"], "review_count"),
         (["индекс цен"], "price_index_status"),
         (["средняя позиция", "поиск"], "search_catalog_position_avg"),
     ]
@@ -554,50 +545,227 @@ class ImportService:
         except Exception as exc:
             return None, f"读取文件失败：{exc}", meta
 
+    PROTECTED_TARGETS = set(CORE_FIELDS)
+
+    CORE_SAFE_NOISE_TOKENS = {
+        "динамик": "dynamic",
+        "изменени": "dynamic",
+        "trend": "dynamic",
+        "delta": "dynamic",
+        "change": "dynamic",
+        "рост": "dynamic",
+        "снижение": "dynamic",
+        "доля": "share",
+        "share": "share",
+        "процент": "share",
+        "%": "share",
+        "abc": "abc",
+        "abc-анализ": "abc",
+        "рекомендац": "recommendation",
+        "recommend": "recommendation",
+        "建议": "recommendation",
+        "平均时效": "ops_extension",
+        "补货": "ops_extension",
+        "时效": "ops_extension",
+        "оборач": "ops_extension",
+        "доставка": "ops_extension",
+    }
+
+    MAX_SAMPLE_VALUE_LENGTH = 72
+    MAX_SAMPLE_VALUE_TOKENS = 8
+    ENTITY_KEY_MIN_CONFIDENCE = 0.58
+
+    @staticmethod
+    def _normalize_preview_text(value: Any) -> str:
+        if value is None:
+            return ""
+        text = str(value).strip()
+        text = re.sub(r"\s+", " ", text)
+        return text
+
+    def _looks_like_explanatory_text(self, value: Any) -> bool:
+        text = self._normalize_preview_text(value)
+        if not text:
+            return False
+
+        if len(text) > self.MAX_SAMPLE_VALUE_LENGTH:
+            return True
+
+        if text.count(".") >= 2:
+            return True
+
+        comma_count = text.count(",") + text.count("，") + text.count("；") + text.count(";")
+        if comma_count >= 2:
+            return True
+
+        tokens = [x for x in re.split(r"[\s/|,;:]+", text) if x]
+        if len(tokens) > self.MAX_SAMPLE_VALUE_TOKENS:
+            return True
+
+        return False
+
+    def _detect_core_safe_noise(self, value: Any) -> Optional[str]:
+        text = self._normalize_preview_text(value).lower()
+        if not text:
+            return None
+
+        for token, label in self.CORE_SAFE_NOISE_TOKENS.items():
+            if token in text:
+                return label
+
+        if self._looks_like_explanatory_text(text):
+            return "explanatory_text"
+
+        return None
+
+    def _sanitize_sample_values(self, values: List[Any], limit: int = 3) -> List[Any]:
+        cleaned = []
+        seen = set()
+
+        for raw in values or []:
+            scalar = self._safe_scalar(raw)
+            if scalar is None:
+                continue
+
+            if isinstance(scalar, float) and pd.isna(scalar):
+                continue
+
+            if isinstance(scalar, (int, float)) and not isinstance(scalar, bool):
+                text = str(scalar)
+                if text not in seen:
+                    seen.add(text)
+                    cleaned.append(scalar)
+                if len(cleaned) >= limit:
+                    break
+                continue
+
+            text = self._normalize_preview_text(scalar)
+            if not text or text.lower() == "nan":
+                continue
+
+            if self._looks_like_explanatory_text(text):
+                continue
+
+            if text in seen:
+                continue
+
+            seen.add(text)
+            cleaned.append(text)
+            if len(cleaned) >= limit:
+                break
+
+        return cleaned
+
+    def _mapping_priority_score(self, item: dict) -> float:
+        score = float(item.get("confidence") or 0.0)
+        source = str(item.get("mappingSource") or "").lower()
+        reasons = {str(x).lower() for x in (item.get("reasons") or [])}
+
+        if item.get("isManual"):
+            score += 100.0
+
+        if any(x in source for x in ["registry", "alias", "exact", "canonical"]):
+            score += 30.0
+        elif any(x in source for x in ["phrase", "rule"]):
+            score += 15.0
+
+        if "manual_mapping" in reasons:
+            score += 20.0
+
+        if "core_safe_noise_filtered" in reasons:
+            score -= 50.0
+
+        original = str(item.get("originalField") or "")
+        if original.startswith("Unnamed:") or original.startswith("col_"):
+            score -= 5.0
+
+        return score
+
+    def _sanitize_and_reconcile_field_mappings(self, field_mappings: List[dict]) -> List[dict]:
+        normalized = []
+        protected_best = {}
+
+        for idx, item in enumerate(field_mappings or []):
+            current = dict(item or {})
+            current["sampleValues"] = self._sanitize_sample_values(current.get("sampleValues") or [], limit=3)
+
+            reasons = [str(x) for x in (current.get("reasons") or [])]
+            original_field = str(current.get("originalField") or "")
+            standard_field = current.get("standardField")
+            noise_label = self._detect_core_safe_noise(original_field)
+
+            if standard_field in self.CORE_FIELDS and noise_label and standard_field != "sku":
+                current["noiseCategory"] = noise_label
+                current["filteredOutByCoreSafe"] = True
+                current["standardField"] = None
+                current["dynamicCompanion"] = None
+                current["confidence"] = min(float(current.get("confidence") or 0.0), 0.35)
+                current["reasons"] = list(dict.fromkeys(reasons + ["core_safe_noise_filtered", f"noise:{noise_label}"]))
+            else:
+                if noise_label:
+                    current["noiseCategory"] = noise_label
+                current["reasons"] = reasons
+
+            normalized.append(current)
+
+            protected_target = current.get("standardField")
+            if protected_target in self.PROTECTED_TARGETS:
+                score = self._mapping_priority_score(current)
+                best = protected_best.get(protected_target)
+                if best is None or score > best[0]:
+                    protected_best[protected_target] = (score, idx)
+
+        for idx, current in enumerate(normalized):
+            protected_target = current.get("standardField")
+            if protected_target not in self.PROTECTED_TARGETS:
+                continue
+
+            winner_idx = protected_best.get(protected_target, (0.0, -1))[1]
+            if winner_idx == idx:
+                continue
+
+            current["reasons"] = list(dict.fromkeys([*(current.get("reasons") or []), "protected_target_conflict_dropped"]))
+            current["standardField"] = None
+            current["dynamicCompanion"] = None
+            current["confidence"] = min(float(current.get("confidence") or 0.0), 0.25)
+
+        return normalized
+
     def _preview_values_for_column(
         self, df: pd.DataFrame, col: Any, limit: int = 3
     ) -> List[Any]:
         if col not in df.columns:
             return []
+
         selected = df.loc[:, col]
-        raw_values: List[Any] = []
-        scan_limit = max(limit * 8, 24)
+        raw_values = []
 
         if isinstance(selected, pd.DataFrame):
-            for row in selected.head(scan_limit).itertuples(index=False, name=None):
+            for row in selected.head(max(limit * 3, 9)).itertuples(index=False, name=None):
                 for item in row if isinstance(row, tuple) else (row,):
                     raw_values.append(self._safe_scalar(item))
-        else:
-            try:
-                raw_values = selected.head(scan_limit).tolist()
-            except Exception:
-                raw_values = (
-                    selected.head(scan_limit).values.tolist()
-                    if hasattr(selected.head(scan_limit), "values")
-                    else []
-                )
+                    if len(raw_values) >= max(limit * 4, 12):
+                        return self._sanitize_sample_values(raw_values, limit=limit)
+            return self._sanitize_sample_values(raw_values, limit=limit)
 
-        values: List[Any] = []
-        seen: set[str] = set()
-        for item in raw_values:
-            nested_items = item if isinstance(item, list) else [item]
-            for nested in nested_items:
-                scalar = self._safe_scalar(nested)
-                text = str(scalar or "").strip()
-                if not text or text.lower() == "nan":
-                    continue
-                if self._looks_like_explainer_text(text):
-                    continue
-                key = text
-                if key in seen:
-                    continue
-                seen.add(key)
-                values.append(scalar)
-                if len(values) >= limit:
-                    return values[:limit]
-        return values[:limit]
+        try:
+            source = selected.head(max(limit * 3, 9)).tolist()
+        except Exception:
+            head_values = selected.head(max(limit * 3, 9))
+            source = head_values.values.tolist() if hasattr(head_values, "values") else []
 
-    @staticmethod
+        for item in source:
+            if isinstance(item, list):
+                for nested in item:
+                    raw_values.append(self._safe_scalar(nested))
+            else:
+                raw_values.append(self._safe_scalar(item))
+
+            if len(raw_values) >= max(limit * 4, 12):
+                break
+
+        return self._sanitize_sample_values(raw_values, limit=limit)
+
     def _collapse_duplicate_columns(df: pd.DataFrame) -> pd.DataFrame:
         if df is None or not df.columns.duplicated().any():
             return df
@@ -674,8 +842,6 @@ class ImportService:
         "код товара",
     ]
 
-    ENTITY_KEY_MIN_CONFIDENCE = 0.58
-
     def _extract_entity_key_token(self, value: Any) -> Optional[str]:
         text = str(value or "").strip()
         if not text:
@@ -707,10 +873,10 @@ class ImportService:
             elif token.isdigit() and 8 <= len(token) <= 14:
                 score += 0.05
 
-        if self._is_soft_excluded_header(raw):
+        if self._detect_core_safe_noise(raw):
             score -= 0.35
 
-        if self._looks_like_explainer_text(raw):
+        if self._looks_like_explanatory_text(raw):
             score -= 0.4
 
         if raw.startswith("Unnamed:") or raw.startswith("col_"):
@@ -724,9 +890,9 @@ class ImportService:
         field_mappings: List[dict],
         limit: int = 12,
     ) -> List[tuple[str, str]]:
-        values: List[tuple[str, str]] = []
-
+        values = []
         unmapped_headers = []
+
         for item in field_mappings or []:
             if item.get("standardField") or item.get("dynamicCompanion"):
                 continue
@@ -738,10 +904,11 @@ class ImportService:
         fallback_headers = []
 
         for header in unmapped_headers:
-            if self._is_soft_excluded_header(header):
+            lower = header.lower()
+
+            if self._detect_core_safe_noise(header):
                 continue
 
-            lower = header.lower()
             if (
                 header.startswith("Unnamed:")
                 or header.startswith("col_")
@@ -760,20 +927,23 @@ class ImportService:
         for header in scan_headers:
             if header not in df.columns:
                 continue
+
             series = df[header]
             for raw in series.tolist():
                 if raw is None:
                     continue
+
                 text = str(raw).strip()
                 if not text or text.lower() == "nan":
                     continue
-                if self._looks_like_explainer_text(text):
+
+                if self._detect_core_safe_noise(text):
                     continue
 
                 token = self._extract_entity_key_token(text)
                 if token:
                     values.append((header, token))
-                elif len(text) <= 48:
+                elif not self._looks_like_explanatory_text(text) and len(text) <= 48:
                     values.append((header, text))
 
                 if len(values) >= limit:
@@ -783,95 +953,68 @@ class ImportService:
 
     def _build_entity_key_suggestion(
         self,
-        top_unmapped_headers: List[str],
-        recovery_candidate_preview: List[dict],
-        mapped_canonical_fields: List[str],
-        field_mappings: Optional[List[dict]] = None,
+        field_mappings: List[dict],
+        profile: Optional[dict] = None,
         df: Optional[pd.DataFrame] = None,
     ) -> Optional[dict]:
-        if "sku" in {str(x) for x in (mapped_canonical_fields or [])}:
-            return None
+        profile = profile or {}
+        candidate_pool = []
 
-        candidate_pool: List[tuple[str, Optional[str], str]] = []
+        for value in profile.get("topUnmappedHeaders") or []:
+            if value:
+                candidate_pool.append(("profile.topUnmappedHeaders", None, str(value)))
 
-        for item in top_unmapped_headers or []:
-            text = str(item)
-            if self._is_soft_excluded_header(text):
-                continue
-            candidate_pool.append(("topUnmappedHeaders", None, text))
-
-        for candidate in recovery_candidate_preview or []:
-            for example in candidate.get("flattenedHeaderExamples") or []:
-                text = str(example)
-                if self._is_soft_excluded_header(text):
-                    continue
-                candidate_pool.append(("recoveryCandidatePreview", None, text))
+        for value in profile.get("recoveryCandidatePreview") or []:
+            if value:
+                candidate_pool.append(("profile.recoveryCandidatePreview", None, str(value)))
 
         for item in field_mappings or []:
-            if item.get("standardField") or item.get("dynamicCompanion"):
-                continue
+            if item.get("standardField") == "sku":
+                return None
+
             original_field = str(item.get("originalField") or "")
-            if original_field and not self._is_soft_excluded_header(original_field):
-                candidate_pool.append(
-                    ("fieldMappings.originalField", original_field, original_field)
-                )
-            for value in item.get("sampleValues") or []:
-                text = str(value)
-                if self._looks_like_explainer_text(text):
-                    continue
-                candidate_pool.append(
-                    ("fieldMappings.sampleValues", original_field or None, text)
-                )
+            if original_field:
+                candidate_pool.append(("fieldMappings.originalField", original_field, original_field))
+
+            for value in self._sanitize_sample_values(item.get("sampleValues") or [], limit=3):
+                candidate_pool.append(("fieldMappings.sampleValues", original_field or None, str(value)))
 
         if df is not None:
-            for column_name, value in self._collect_entity_key_probe_values(
-                df, field_mappings or []
-            ):
+            for column_name, value in self._collect_entity_key_probe_values(df, field_mappings):
                 candidate_pool.append(("dataProbeValues", column_name, value))
 
-        best = None
         best_score = 0.0
-        best_token = None
-        best_source = None
-        best_column = None
-        best_text = None
+        best_item = None
 
         for source, column_name, raw in candidate_pool:
-            if self._is_soft_excluded_header(raw) or self._looks_like_explainer_text(raw):
+            if self._detect_core_safe_noise(raw):
                 continue
 
             score = self._score_entity_key_candidate(raw)
+            if score <= 0:
+                continue
+
             token = self._extract_entity_key_token(raw)
+            if source == "fieldMappings.originalField" and column_name and (
+                column_name.startswith("Unnamed:") or column_name.startswith("col_")
+            ):
+                score -= 0.05
 
-            if token and score >= best_score:
-                best = raw
+            if score > best_score:
                 best_score = score
-                best_token = token
-                best_source = source
-                best_column = column_name
-                best_text = raw
-            elif best is None and score > best_score:
-                best = raw
-                best_score = score
-                best_token = token
-                best_source = source
-                best_column = column_name
-                best_text = raw
+                best_item = {
+                    "standardField": "sku",
+                    "source": source,
+                    "originalField": column_name,
+                    "confidence": round(max(score, 0.0), 4),
+                    "sampleToken": token,
+                    "reason": f"entity_key_candidate:{source}",
+                }
 
-        if best_score < self.ENTITY_KEY_MIN_CONFIDENCE:
+        if best_item is None or best_score < self.ENTITY_KEY_MIN_CONFIDENCE:
             return None
 
-        return {
-            "field": "sku",
-            "confidence": best_score,
-            "sourceHeader": best_source,
-            "sourceColumn": best_column,
-            "sampleToken": best_token,
-            "detectedBy": "value_pattern" if best_token else "header_hint",
-            "rawCandidate": best_text,
-        }
-
-    # ---------- 读取 / 表头恢复 ----------
+        return best_item
 
     def _read_file_default(
         self, file_path: str
@@ -1265,26 +1408,13 @@ class ImportService:
         raw = str(text or "").strip().lower()
         if not raw:
             return False
-
-        compact = " ".join(raw.split())
-        token_count = len([tok for tok in re.split(r"[^a-zа-я0-9一-龥]+", compact) if tok])
-        punctuation_count = sum(compact.count(ch) for ch in [",", ";", ":", "，", "；", "："])
-
         return (
-            len(compact) >= 40
-            or token_count >= 8
-            or punctuation_count >= 2
-            or "оцениваем" in compact
-            or "считаем" in compact
-            or "для этого" in compact
-            or "по сравнению" in compact
-            or "динамика по сравнению" in compact
-            or "товары a приносят" in compact
-            or "recommend" in compact
-            or "рекомендац" in compact
-            or "建议" in compact
-            or "平均时效" in compact
-            or "среднее время" in compact
+            len(raw) >= 40
+            or "оцениваем" in raw
+            or "считаем" in raw
+            or "для этого" in raw
+            or "динамика по сравнению" in raw
+            or "товары a приносят" in raw
         )
 
     def _postprocess_field_mappings(self, field_mappings: List[dict]) -> List[dict]:
@@ -1357,8 +1487,6 @@ class ImportService:
         compressed = self._compress_header_phrase(original)
         dynamic_companion = self._is_dynamic_companion(original)
         soft_excluded = self._is_soft_excluded_header(original)
-        explainer_like_header = self._looks_like_explainer_text(original)
-        soft_excluded = soft_excluded or explainer_like_header
         reasons: List[str] = []
         conflicts: List[str] = []
         best_canonical: Optional[str] = None
@@ -1419,32 +1547,27 @@ class ImportService:
                     local_reasons.append(candidate_reason)
                     return canonical, "en_builtin", 0.95, local_reasons
             # token overlap fallback for long phrases
-            cand_tokens = {
-                t
-                for t in re.split(r"[^a-zа-я0-9一-龥]+", candidate_text)
-                if len(t) > 2 and t not in self.GENERIC_HEADER_PIECES
-            }
-            if len(cand_tokens) >= 2:
-                best_overlap = (None, 0.0)
-                for alias_norm, canonical in self._alias_lookup.items():
-                    alias_tokens = {
-                        t
-                        for t in re.split(r"[^a-zа-я0-9一-龥]+", alias_norm)
-                        if len(t) > 2 and t not in self.GENERIC_HEADER_PIECES
-                    }
-                    if len(alias_tokens) < 2:
-                        continue
-                    overlap = len(cand_tokens & alias_tokens) / max(len(alias_tokens), 1)
-                    if overlap > best_overlap[1]:
-                        best_overlap = (canonical, overlap)
-                if best_overlap[0] and best_overlap[1] >= 0.75:
-                    local_reasons.append(f"token_overlap:{best_overlap[1]:.2f}")
-                    return (
-                        best_overlap[0],
-                        "token_overlap",
-                        round(0.52 + best_overlap[1] * 0.22, 3),
-                        local_reasons,
-                    )
+            cand_tokens = set(
+                t for t in re.split(r"[^a-zа-я0-9一-龥]+", candidate_text) if len(t) > 2
+            )
+            best_overlap = (None, 0.0)
+            for alias_norm, canonical in self._alias_lookup.items():
+                alias_tokens = set(
+                    t for t in re.split(r"[^a-zа-я0-9一-龥]+", alias_norm) if len(t) > 2
+                )
+                if not cand_tokens or not alias_tokens:
+                    continue
+                overlap = len(cand_tokens & alias_tokens) / max(len(alias_tokens), 1)
+                if overlap > best_overlap[1]:
+                    best_overlap = (canonical, overlap)
+            if best_overlap[0] and best_overlap[1] >= 0.66:
+                local_reasons.append(f"token_overlap:{best_overlap[1]:.2f}")
+                return (
+                    best_overlap[0],
+                    "token_overlap",
+                    round(0.55 + best_overlap[1] * 0.25, 3),
+                    local_reasons,
+                )
             return None, "unmapped", 0.0, local_reasons
 
         for candidate_text, candidate_reason in compressed:
@@ -2068,6 +2191,8 @@ class ImportService:
 
         recovery_candidate_preview = list(recovery_result.get("candidatePreview") or [])
 
+        field_mappings = self._sanitize_and_reconcile_field_mappings(field_mappings)
+
         entity_key_suggestion = self._build_entity_key_suggestion(
             top_unmapped_headers=top_unmapped_headers,
             recovery_candidate_preview=recovery_candidate_preview,
@@ -2425,21 +2550,7 @@ class ImportService:
         next_df = staging_df.copy()
         next_field_mappings = copy.deepcopy(field_mappings or [])
 
-        normalized_manual_overrides: List[dict] = []
-        seen_protected_targets: set[str] = set()
-        for item in reversed(manual_overrides or []):
-            original_field = str(item.get("originalField") or "").strip()
-            standard_field = str(item.get("standardField") or "").strip()
-            if not original_field or not standard_field:
-                continue
-            if standard_field in self.PROTECTED_UNIQUE_TARGETS:
-                if standard_field in seen_protected_targets:
-                    continue
-                seen_protected_targets.add(standard_field)
-            normalized_manual_overrides.append(item)
-        normalized_manual_overrides.reverse()
-
-        for item in normalized_manual_overrides:
+        for item in manual_overrides or []:
             original_field = str(item.get("originalField") or "").strip()
             standard_field = str(item.get("standardField") or "").strip()
 
@@ -2483,5 +2594,4 @@ class ImportService:
                     }
                 )
 
-        next_field_mappings = self._postprocess_field_mappings(next_field_mappings)
         return next_df, next_field_mappings

@@ -1,382 +1,421 @@
-
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
-REPO_ROOT = Path(r"C:\Operation-system\System")
-TARGET = REPO_ROOT / "src" / "ecom_v51" / "services" / "import_service.py"
+
+TARGET = Path(r"src\ecom_v51\services\import_service.py")
 
 
-def replace_once(text: str, old: str, new: str, label: str) -> str:
-    count = text.count(old)
+def _replace_once(text: str, pattern: str, replacement: str, label: str) -> str:
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.DOTALL)
     if count != 1:
-        raise RuntimeError(f"[{label}] expected 1 match, got {count}")
-    return text.replace(old, new, 1)
-
-
-OLD_CONSTANTS = """    DYNAMIC_PATTERNS = [
-        "динамик",
-        "изменени",
-        "change",
-        "delta",
-        "trend",
-        "рост",
-        "снижение",
-    ]
-    GENERIC_HEADER_PIECES = {
-"""
-NEW_CONSTANTS = """    DYNAMIC_PATTERNS = [
-        "динамик",
-        "изменени",
-        "change",
-        "delta",
-        "trend",
-        "рост",
-        "снижение",
-    ]
-    SOFT_EXCLUDE_PATTERNS = {
-        "динамик",
-        "доля",
-        "abc-анализ",
-        "abc анализ",
-        "рекомендац",
-        "сколько товаров",
-        "среднее время доставки",
-        "по сравнению с предыдущим периодом",
-    }
-    PROTECTED_UNIQUE_TARGETS = {
-        "sku",
-        "orders",
-        "order_amount",
-        "impressions_total",
-        "impressions_search_catalog",
-        "product_card_visits",
-        "add_to_cart_total",
-        "stock_total",
-        "rating_value",
-        "review_count",
-        "price_index_status",
-    }
-    GENERIC_HEADER_PIECES = {
-"""
-
-OLD_RU_RULES = """    RU_PHRASE_CANONICAL_RULES = [
-        (["артикул"], "sku"),
-        (["seller sku"], "sku"),
-        (["offer id"], "sku"),
-        (["показы в поиске", "каталоге"], "impressions_search_catalog"),
-        (["показы", "всего"], "impressions_total"),
-        (["показы"], "impressions_total"),
-        (["посещ", "карточк"], "product_card_visits"),
-        (["переход", "карточк"], "product_card_visits"),
-        (["добав", "корзин"], "add_to_cart_total"),
-        (["заказано на сумму"], "order_amount"),
-        (["сумма заказ"], "order_amount"),
-        (["заказ"], "orders"),
-        (["остат", "склад"], "stock_total"),
-        (["в наличии"], "stock_total"),
-        (["рейтинг"], "rating_value"),
-        (["отзыв"], "review_count"),
-        (["индекс цен"], "price_index_status"),
-        (["средняя позиция", "поиск"], "search_catalog_position_avg"),
-    ]
-"""
-NEW_RU_RULES = """    RU_PHRASE_CANONICAL_RULES = [
-        (["артикул"], "sku"),
-        (["seller sku"], "sku"),
-        (["offer id"], "sku"),
-        (["показы в поиске", "каталоге"], "impressions_search_catalog"),
-        (["показы", "всего"], "impressions_total"),
-        (["посещ", "карточк"], "product_card_visits"),
-        (["переход", "карточк"], "product_card_visits"),
-        (["добав", "корзин"], "add_to_cart_total"),
-        (["заказано на сумму"], "order_amount"),
-        (["сумма заказ"], "order_amount"),
-        (["остат", "склад"], "stock_total"),
-        (["в наличии"], "stock_total"),
-        (["рейтинг"], "rating_value"),
-        (["отзыв"], "review_count"),
-        (["индекс цен"], "price_index_status"),
-        (["средняя позиция", "поиск"], "search_catalog_position_avg"),
-    ]
-"""
-
-OLD_PREVIEW = """    def _preview_values_for_column(
-        self, df: pd.DataFrame, col: Any, limit: int = 3
-    ) -> List[Any]:
-        if col not in df.columns:
-            return []
-        selected = df.loc[:, col]
-        values: List[Any] = []
-
-        if isinstance(selected, pd.DataFrame):
-            for row in selected.head(limit).itertuples(index=False, name=None):
-                for item in row if isinstance(row, tuple) else (row,):
-                    values.append(self._safe_scalar(item))
-                    if len(values) >= limit:
-                        return values[:limit]
-            return values[:limit]
-
-        try:
-            raw_values = selected.head(limit).tolist()
-        except Exception:
-            raw_values = (
-                selected.head(limit).values.tolist()
-                if hasattr(selected.head(limit), "values")
-                else []
-            )
-        for item in raw_values:
-            if isinstance(item, list):
-                for nested in item:
-                    values.append(self._safe_scalar(nested))
-                    if len(values) >= limit:
-                        return values[:limit]
-            else:
-                values.append(self._safe_scalar(item))
-                if len(values) >= limit:
-                    return values[:limit]
-        return values[:limit]
-"""
-NEW_PREVIEW = """    def _preview_values_for_column(
-        self, df: pd.DataFrame, col: Any, limit: int = 3
-    ) -> List[Any]:
-        if col not in df.columns:
-            return []
-        selected = df.loc[:, col]
-        raw_values: List[Any] = []
-        scan_limit = max(limit * 8, 24)
-
-        if isinstance(selected, pd.DataFrame):
-            for row in selected.head(scan_limit).itertuples(index=False, name=None):
-                for item in row if isinstance(row, tuple) else (row,):
-                    raw_values.append(self._safe_scalar(item))
-        else:
-            try:
-                raw_values = selected.head(scan_limit).tolist()
-            except Exception:
-                raw_values = (
-                    selected.head(scan_limit).values.tolist()
-                    if hasattr(selected.head(scan_limit), "values")
-                    else []
-                )
-
-        values: List[Any] = []
-        seen: set[str] = set()
-        for item in raw_values:
-            nested_items = item if isinstance(item, list) else [item]
-            for nested in nested_items:
-                scalar = self._safe_scalar(nested)
-                text = str(scalar or "").strip()
-                if not text or text.lower() == "nan":
-                    continue
-                if self._looks_like_explainer_text(text):
-                    continue
-                key = text
-                if key in seen:
-                    continue
-                seen.add(key)
-                values.append(scalar)
-                if len(values) >= limit:
-                    return values[:limit]
-        return values[:limit]
-"""
-
-OLD_HELPER_START = """    def _is_dynamic_companion(self, text: str) -> bool:
-        normalized = self._normalize_header(text)
-        return any(token in normalized for token in self.DYNAMIC_PATTERNS)
-
-    def _compress_header_phrase(self, original: Any) -> List[Tuple[str, str]]:
-"""
-NEW_HELPER_START = """    def _is_dynamic_companion(self, text: str) -> bool:
-        normalized = self._normalize_header(text)
-        return any(token in normalized for token in self.DYNAMIC_PATTERNS)
-
-    def _is_soft_excluded_header(self, text: str) -> bool:
-        normalized = self._normalize_header(text)
-        return any(token in normalized for token in self.SOFT_EXCLUDE_PATTERNS)
-
-    def _looks_like_explainer_text(self, text: str) -> bool:
-        raw = str(text or "").strip().lower()
-        if not raw:
-            return False
-        return (
-            len(raw) >= 40
-            or "оцениваем" in raw
-            or "считаем" in raw
-            or "для этого" in raw
-            or "динамика по сравнению" in raw
-            or "товары a приносят" in raw
-        )
-
-    def _postprocess_field_mappings(self, field_mappings: List[dict]) -> List[dict]:
-        grouped: Dict[str, List[dict]] = {}
-        for item in field_mappings or []:
-            target = str(item.get("standardField") or "").strip()
-            if not target:
-                continue
-            grouped.setdefault(target, []).append(item)
-
-        for target, items in grouped.items():
-            if target not in self.PROTECTED_UNIQUE_TARGETS or len(items) <= 1:
-                continue
-
-            def sort_key(item: dict) -> tuple:
-                original = self._normalize_header(item.get("originalField") or "")
-                article_bonus = 1 if "артикул" in original else 0
-                return (float(item.get("confidence") or 0.0), article_bonus)
-
-            ranked = sorted(items, key=sort_key, reverse=True)
-            for loser in ranked[1:]:
-                loser["standardField"] = None
-                loser["mappingSource"] = "conflict_dropped"
-                loser["confidence"] = 0.0
-                loser["reasons"] = list(
-                    dict.fromkeys(list(loser.get("reasons") or []) + [f"duplicate_target:{target}"])
-                )
-        return field_mappings
-
-    def _compress_header_phrase(self, original: Any) -> List[Tuple[str, str]]:
-"""
-
-OLD_COMPRESS_SNIP = """        candidates: List[Tuple[str, str]] = []
-        seen: set[str] = set()
-
-        def push(value: str, reason: str) -> None:
-"""
-NEW_COMPRESS_SNIP = """        candidates: List[Tuple[str, str]] = []
-        seen: set[str] = set()
-        soft_excluded = self._is_soft_excluded_header(text)
-
-        def push(value: str, reason: str) -> None:
-"""
-
-OLD_COMPRESS_RULES = """        for needles, canonical in self.RU_PHRASE_CANONICAL_RULES:
-            if all(needle in normalized_wo_unit for needle in needles):
-                push(canonical, f"phrase_rule:{canonical}")
-"""
-NEW_COMPRESS_RULES = """        if not soft_excluded:
-            for needles, canonical in self.RU_PHRASE_CANONICAL_RULES:
-                if all(needle in normalized_wo_unit for needle in needles):
-                    push(canonical, f"phrase_rule:{canonical}")
-"""
-
-OLD_COMPRESS_MEANINGFUL = """        if meaningful:
-            push(" ".join(dict.fromkeys(meaningful)), "token_compaction")
-"""
-NEW_COMPRESS_MEANINGFUL = """        if meaningful and not soft_excluded:
-            push(" ".join(dict.fromkeys(meaningful)), "token_compaction")
-"""
-
-OLD_DETAILS_START = """        compressed = self._compress_header_phrase(original)
-        dynamic_companion = self._is_dynamic_companion(original)
-        reasons: List[str] = []
-"""
-NEW_DETAILS_START = """        compressed = self._compress_header_phrase(original)
-        dynamic_companion = self._is_dynamic_companion(original)
-        soft_excluded = self._is_soft_excluded_header(original)
-        reasons: List[str] = []
-"""
-
-OLD_DETAILS_DYNAMIC = """        def score_candidate(
-"""
-NEW_DETAILS_DYNAMIC = """        if dynamic_companion:
-            return {
-                "originalField": original,
-                "normalizedField": normalized,
-                "standardField": None,
-                "mappingSource": "dynamic_companion",
-                "confidence": 0.0,
-                "sampleValues": list(sample_values or []),
-                "isManual": False,
-                "reasons": ["dynamic_companion"],
-                "conflicts": conflicts,
-                "dynamicCompanion": True,
-                "compressedHeader": None,
-                "excludeFromSemanticGate": True,
-            }
-
-        if soft_excluded:
-            return {
-                "originalField": original,
-                "normalizedField": normalized,
-                "standardField": None,
-                "mappingSource": "soft_excluded",
-                "confidence": 0.0,
-                "sampleValues": list(sample_values or []),
-                "isManual": False,
-                "reasons": ["soft_excluded_header"],
-                "conflicts": conflicts,
-                "dynamicCompanion": False,
-                "compressedHeader": None,
-                "excludeFromSemanticGate": False,
-            }
-
-        def score_candidate(
-"""
-
-OLD_MAP_COLUMNS = """    def map_columns(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[dict]]:
-        rename_map: Dict[str, str] = {}
-        field_mappings: List[dict] = []
-
-        for col in df.columns:
-            sample_values = self._preview_values_for_column(df, col, limit=3)
-            details = self._map_single_column_details(col, sample_values=sample_values)
-            field_mappings.append(details)
-            canonical = details.get("standardField")
-            if canonical:
-                rename_map[str(col)] = canonical
-
-        mapped_df = df.rename(columns=rename_map)
-        mapped_df = self._collapse_duplicate_columns(mapped_df)
-        return mapped_df, field_mappings
-"""
-NEW_MAP_COLUMNS = """    def map_columns(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[dict]]:
-        rename_map: Dict[str, str] = {}
-        field_mappings: List[dict] = []
-
-        for col in df.columns:
-            sample_values = self._preview_values_for_column(df, col, limit=3)
-            details = self._map_single_column_details(col, sample_values=sample_values)
-            field_mappings.append(details)
-
-        field_mappings = self._postprocess_field_mappings(field_mappings)
-
-        for details in field_mappings:
-            canonical = details.get("standardField")
-            original_field = str(details.get("originalField") or "")
-            if canonical and original_field:
-                rename_map[original_field] = str(canonical)
-
-        mapped_df = df.rename(columns=rename_map)
-        mapped_df = self._collapse_duplicate_columns(mapped_df)
-        return mapped_df, field_mappings
-"""
+        raise RuntimeError(f"{label} 替换失败，命中次数={count}")
+    return new_text
 
 
 def main() -> None:
     if not TARGET.exists():
-        raise FileNotFoundError(f"missing file: {TARGET}")
+        raise SystemExit(f"未找到文件: {TARGET}")
 
     text = TARGET.read_text(encoding="utf-8")
-    backup = TARGET.with_suffix(".py.bak_mapping_accuracy_safe_v1")
-    if not backup.exists():
-        backup.write_text(text, encoding="utf-8")
+    original = text
 
-    text = replace_once(text, OLD_CONSTANTS, NEW_CONSTANTS, "constants")
-    text = replace_once(text, OLD_RU_RULES, NEW_RU_RULES, "ru rules")
-    text = replace_once(text, OLD_PREVIEW, NEW_PREVIEW, "preview values")
-    text = replace_once(text, OLD_HELPER_START, NEW_HELPER_START, "insert helpers")
-    text = replace_once(text, OLD_COMPRESS_SNIP, NEW_COMPRESS_SNIP, "compress soft exclude flag")
-    text = replace_once(text, OLD_COMPRESS_RULES, NEW_COMPRESS_RULES, "compress rules gate")
-    text = replace_once(text, OLD_COMPRESS_MEANINGFUL, NEW_COMPRESS_MEANINGFUL, "compress token gate")
-    text = replace_once(text, OLD_DETAILS_START, NEW_DETAILS_START, "details soft exclude flag")
-    text = replace_once(text, OLD_DETAILS_DYNAMIC, NEW_DETAILS_DYNAMIC, "details early returns")
-    text = replace_once(text, OLD_MAP_COLUMNS, NEW_MAP_COLUMNS, "map columns postprocess")
+    text = _replace_once(
+        text,
+        r'''    DYNAMIC_PATTERNS\s*=\s*\[(?:.*?)\]\s*    GENERIC_HEADER_PIECES''',
+        '''    DYNAMIC_PATTERNS = [
+        "динамик",
+        "изменени",
+        "change",
+        "delta",
+        "trend",
+        "рост",
+        "снижение",
+    ]
 
-    TARGET.write_text(text, encoding="utf-8")
-    print("Applied mapping accuracy safe patch v1")
-    print(f"Patched: {TARGET}")
-    print(f"Backup:  {backup}")
+    CORE_SAFE_NOISE_TOKENS = {
+        "динамик": "dynamic",
+        "изменени": "dynamic",
+        "trend": "dynamic",
+        "delta": "dynamic",
+        "change": "dynamic",
+        "рост": "dynamic",
+        "снижение": "dynamic",
+        "доля": "share",
+        "share": "share",
+        "процент": "share",
+        "%": "share",
+        "abc": "abc",
+        "abc-анализ": "abc",
+        "рекомендац": "recommendation",
+        "recommend": "recommendation",
+        "建议": "recommendation",
+        "补货": "ops_extension",
+        "时效": "ops_extension",
+        "оборач": "ops_extension",
+        "доставка": "ops_extension",
+        "平均时效": "ops_extension",
+    }
+
+    MAX_SAMPLE_VALUE_LENGTH = 72
+    MAX_SAMPLE_VALUE_TOKENS = 8
+    ENTITY_KEY_MIN_CONFIDENCE = 0.58
+
+    GENERIC_HEADER_PIECES''',
+        "常量区",
+    )
+
+    text = _replace_once(
+        text,
+        r'''    RU_PHRASE_CANONICAL_RULES\s*=\s*\[(?:.*?)\]\s*    def __init__''',
+        '''    RU_PHRASE_CANONICAL_RULES = [
+        (["артикул"], "sku"),
+        (["seller sku"], "sku"),
+        (["offer id"], "sku"),
+        (["показы в поиске", "каталоге"], "impressions_search_catalog"),
+        (["показы", "всего"], "impressions_total"),
+        (["посещ", "карточк"], "product_card_visits"),
+        (["переход", "карточк"], "product_card_visits"),
+        (["добав", "корзин"], "add_to_cart_total"),
+        (["заказано на сумму"], "order_amount"),
+        (["сумма заказ"], "order_amount"),
+        (["остат", "склад"], "stock_total"),
+        (["в наличии"], "stock_total"),
+        (["индекс цен"], "price_index_status"),
+        (["средняя позиция", "поиск"], "search_catalog_position_avg"),
+    ]
+
+    def __init__''',
+        "俄语规则",
+    )
+
+    text = _replace_once(
+        text,
+        r'''    def _preview_values_for_column\((?:.*?)\n    @staticmethod''',
+        '''    @staticmethod
+    def _normalize_preview_text(value: object) -> str:
+        if value is None:
+            return ""
+        text = str(value).strip()
+        text = re.sub(r"\s+", " ", text)
+        return text
+
+    def _looks_like_explanatory_text(self, value: object) -> bool:
+        text = self._normalize_preview_text(value)
+        if not text:
+            return False
+
+        if len(text) > self.MAX_SAMPLE_VALUE_LENGTH:
+            return True
+
+        if text.count(".") >= 2:
+            return True
+
+        comma_count = text.count(",") + text.count("，") + text.count("；") + text.count(";")
+        if comma_count >= 2:
+            return True
+
+        tokens = [x for x in re.split(r"[\s/|,;:]+", text) if x]
+        if len(tokens) > self.MAX_SAMPLE_VALUE_TOKENS:
+            return True
+
+        return False
+
+    def _detect_core_safe_noise(self, value: object) -> str | None:
+        text = self._normalize_preview_text(value).lower()
+        if not text:
+            return None
+
+        for token, label in self.CORE_SAFE_NOISE_TOKENS.items():
+            if token in text:
+                return label
+
+        if self._looks_like_explanatory_text(text):
+            return "explanatory_text"
+
+        return None
+
+    def _sanitize_sample_values(self, values: list[object], limit: int = 3) -> list[object]:
+        cleaned: list[object] = []
+        seen: set[str] = set()
+
+        for raw in values or []:
+            scalar = self._safe_scalar(raw)
+            if scalar is None:
+                continue
+
+            if isinstance(scalar, float) and pd.isna(scalar):
+                continue
+
+            if isinstance(scalar, (int, float)) and not isinstance(scalar, bool):
+                text = str(scalar)
+                if text not in seen:
+                    seen.add(text)
+                    cleaned.append(scalar)
+                if len(cleaned) >= limit:
+                    break
+                continue
+
+            text = self._normalize_preview_text(scalar)
+            if not text or text.lower() == "nan":
+                continue
+
+            if self._looks_like_explanatory_text(text):
+                continue
+
+            if text in seen:
+                continue
+
+            seen.add(text)
+            cleaned.append(text)
+
+            if len(cleaned) >= limit:
+                break
+
+        return cleaned
+
+    def _preview_values_for_column(
+        self, df: pd.DataFrame, col: object, limit: int = 3
+    ) -> list[object]:
+        if col not in df.columns:
+            return []
+
+        selected = df.loc[:, col]
+        raw_values: list[object] = []
+
+        if isinstance(selected, pd.DataFrame):
+            for row in selected.head(max(limit * 3, 9)).itertuples(index=False, name=None):
+                for item in row if isinstance(row, tuple) else (row,):
+                    raw_values.append(self._safe_scalar(item))
+                    if len(raw_values) >= max(limit * 4, 12):
+                        return self._sanitize_sample_values(raw_values, limit=limit)
+            return self._sanitize_sample_values(raw_values, limit=limit)
+
+        try:
+            source = selected.head(max(limit * 3, 9)).tolist()
+        except Exception:
+            head_part = selected.head(max(limit * 3, 9))
+            source = head_part.values.tolist() if hasattr(head_part, "values") else []
+
+        for item in source:
+            if isinstance(item, list):
+                for nested in item:
+                    raw_values.append(self._safe_scalar(nested))
+            else:
+                raw_values.append(self._safe_scalar(item))
+
+            if len(raw_values) >= max(limit * 4, 12):
+                break
+
+        return self._sanitize_sample_values(raw_values, limit=limit)
+
+    @staticmethod''',
+        "样本值清洗",
+    )
+
+    text = _replace_once(
+        text,
+        r'''    def _score_entity_key_candidate\((?:.*?)\n    def _collect_entity_key_probe_values''',
+        '''    def _score_entity_key_candidate(self, text: str) -> float:
+        raw = str(text or "").strip()
+        if not raw:
+            return 0.0
+
+        score = 0.0
+        lower = raw.lower()
+
+        if any(hint in lower for hint in self.ENTITY_KEY_HEADER_HINTS):
+            score += 0.35
+
+        token = self._extract_entity_key_token(raw)
+        if token:
+            score += 0.45
+            if "-" in token or "_" in token:
+                score += 0.1
+            elif token.isdigit() and 8 <= len(token) <= 14:
+                score += 0.05
+
+        if self._detect_core_safe_noise(raw):
+            score -= 0.35
+
+        if self._looks_like_explanatory_text(raw):
+            score -= 0.4
+
+        if raw.startswith("Unnamed:") or raw.startswith("col_"):
+            score -= 0.15
+
+        return round(max(score, 0.0), 4)
+
+    def _collect_entity_key_probe_values''',
+        "entity key 评分",
+    )
+
+    text = _replace_once(
+        text,
+        r'''    def _collect_entity_key_probe_values\((?:.*?)\n    def _build_entity_key_suggestion''',
+        '''    def _collect_entity_key_probe_values(
+        self,
+        df: pd.DataFrame,
+        field_mappings: list[dict],
+        limit: int = 12,
+    ) -> list[tuple[str, str]]:
+        values: list[tuple[str, str]] = []
+        unmapped_headers = []
+
+        for item in field_mappings or []:
+            if item.get("standardField") or item.get("dynamicCompanion"):
+                continue
+            original_field = str(item.get("originalField") or "")
+            if original_field:
+                unmapped_headers.append(original_field)
+
+        preferred_headers = []
+        fallback_headers = []
+
+        for header in unmapped_headers:
+            lower = header.lower()
+
+            if self._detect_core_safe_noise(header):
+                continue
+
+            if (
+                header.startswith("Unnamed:")
+                or header.startswith("col_")
+                or "sku" in lower
+                or "货号" in header
+                or "编码" in header
+                or "id" in lower
+                or "артикул" in lower
+            ):
+                preferred_headers.append(header)
+            else:
+                fallback_headers.append(header)
+
+        scan_headers = preferred_headers + fallback_headers
+
+        for header in scan_headers:
+            if header not in df.columns:
+                continue
+
+            series = df[header]
+            for raw in series.tolist():
+                if raw is None:
+                    continue
+
+                text = str(raw).strip()
+                if not text or text.lower() == "nan":
+                    continue
+
+                if self._detect_core_safe_noise(text):
+                    continue
+
+                token = self._extract_entity_key_token(text)
+                if token:
+                    values.append((header, token))
+                elif not self._looks_like_explanatory_text(text) and len(text) <= 48:
+                    values.append((header, text))
+
+                if len(values) >= limit:
+                    return values
+
+        return values
+
+    def _build_entity_key_suggestion''',
+        "entity key 探针",
+    )
+
+    text = _replace_once(
+        text,
+        r'''    def _build_entity_key_suggestion\((?:.*?)\n    # ---------- 读取 / 表头恢复 ----------''',
+        '''    def _build_entity_key_suggestion(
+        self,
+        top_unmapped_headers: list[str],
+        recovery_candidate_preview: list[dict],
+        mapped_canonical_fields: list[str],
+        field_mappings: list[dict] | None = None,
+        df: pd.DataFrame | None = None,
+    ) -> dict | None:
+        if "sku" in {str(x) for x in (mapped_canonical_fields or [])}:
+            return None
+
+        candidate_pool: list[tuple[str, str | None, str]] = []
+
+        for item in top_unmapped_headers or []:
+            candidate_pool.append(("topUnmappedHeaders", None, str(item)))
+
+        for candidate in recovery_candidate_preview or []:
+            for example in candidate.get("flattenedHeaderExamples") or []:
+                candidate_pool.append(("recoveryCandidatePreview", None, str(example)))
+
+        for item in field_mappings or []:
+            if item.get("standardField") or item.get("dynamicCompanion"):
+                continue
+
+            original_field = str(item.get("originalField") or "")
+            if original_field:
+                candidate_pool.append(("fieldMappings.originalField", original_field, original_field))
+
+            for value in self._sanitize_sample_values(item.get("sampleValues") or [], limit=3):
+                candidate_pool.append(("fieldMappings.sampleValues", original_field or None, str(value)))
+
+        if df is not None:
+            for column_name, value in self._collect_entity_key_probe_values(df, field_mappings or []):
+                candidate_pool.append(("dataProbeValues", column_name, value))
+
+        best = None
+        best_score = 0.0
+        best_token = None
+        best_source = None
+        best_column = None
+        best_text = None
+
+        for source, column_name, raw in candidate_pool:
+            if self._detect_core_safe_noise(raw):
+                continue
+
+            score = self._score_entity_key_candidate(raw)
+            token = self._extract_entity_key_token(raw)
+
+            if token and score >= best_score:
+                best = raw
+                best_score = score
+                best_token = token
+                best_source = source
+                best_column = column_name
+                best_text = raw
+            elif best is None and score > best_score:
+                best = raw
+                best_score = score
+                best_token = token
+                best_source = source
+                best_column = column_name
+                best_text = raw
+
+        if best_score < self.ENTITY_KEY_MIN_CONFIDENCE:
+            return None
+
+        return {
+            "field": "sku",
+            "confidence": best_score,
+            "sourceHeader": best_source,
+            "sourceColumn": best_column,
+            "sampleToken": best_token,
+            "detectedBy": "value_pattern" if best_token else "header_hint",
+            "rawCandidate": best_text,
+        }
+
+    # ---------- 读取 / 表头恢复 ----------''',
+        "entity key 建议",
+    )
+
+    if text == original:
+        raise RuntimeError("没有产生任何改动，说明补丁没有命中当前分支代码。")
+
+    with TARGET.open("w", encoding="utf-8", newline="") as f:
+        f.write(text)
+
+    print("patched:", TARGET)
 
 
 if __name__ == "__main__":

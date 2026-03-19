@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Dict, List
+
+
+class ProfitRegistryService:
+    """读取利润引擎 registry 的轻量服务。"""
+
+    def __init__(self, root_dir: str | Path | None = None) -> None:
+        current = Path(root_dir) if root_dir else Path(__file__).resolve().parents[3]
+        self.root_dir = current
+        self.config_dir = self.root_dir / "config"
+        self.cost_registry_path = self.config_dir / "cost_component_registry.json"
+        self.metric_registry_path = self.config_dir / "profit_metric_registry.json"
+
+    def _read_json(self, path: Path) -> Dict[str, Any]:
+        if not path.exists():
+            raise FileNotFoundError(f"registry 文件不存在: {path}")
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def get_cost_component_registry(self) -> Dict[str, Any]:
+        data = self._read_json(self.cost_registry_path)
+        components = data.get("components") or []
+        return {
+            "version": data.get("version"),
+            "count": len(components),
+            "components": components,
+        }
+
+    def get_profit_metric_registry(self) -> Dict[str, Any]:
+        data = self._read_json(self.metric_registry_path)
+        metrics = data.get("metrics") or []
+        pricing_fields = data.get("pricingFields") or []
+        return {
+            "version": data.get("version"),
+            "metricCount": len(metrics),
+            "pricingFieldCount": len(pricing_fields),
+            "metrics": metrics,
+            "pricingFields": pricing_fields,
+        }
+
+    def get_registry_summary(self) -> Dict[str, Any]:
+        cost = self.get_cost_component_registry()
+        metric = self.get_profit_metric_registry()
+
+        return {
+            "costRegistryVersion": cost.get("version"),
+            "metricRegistryVersion": metric.get("version"),
+            "costComponentCount": cost.get("count", 0),
+            "metricCount": metric.get("metricCount", 0),
+            "pricingFieldCount": metric.get("pricingFieldCount", 0),
+            "strategyConsumableMetrics": [
+                item.get("code")
+                for item in (metric.get("metrics") or [])
+                if item.get("strategyConsumable")
+            ],
+            "phaseBuckets": {
+                "costComponents": _group_by_phase(cost.get("components") or [], "requiredPhase"),
+                "metrics": _group_by_phase(metric.get("metrics") or [], "phase"),
+                "pricingFields": _group_by_phase(metric.get("pricingFields") or [], "phase"),
+            },
+        }
+
+
+def _group_by_phase(items: List[Dict[str, Any]], key: str) -> Dict[str, int]:
+    result: Dict[str, int] = {}
+    for item in items:
+        phase = str(item.get(key) or "UNKNOWN")
+        result[phase] = result.get(phase, 0) + 1
+    return result

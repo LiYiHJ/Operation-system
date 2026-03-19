@@ -434,60 +434,7 @@ export interface CostBreakdown {
   description: string
 }
 
-
-export interface CostComponentDefinition {
-  code: string
-  label: string
-  allocLevel: 'order' | 'order_line' | 'sku' | 'shop'
-  sourceMode: Array<'api' | 'import' | 'rule' | 'manual'>
-  requiredPhase: 'P0' | 'P1' | 'P2' | 'P3' | 'P4'
-  mutable: boolean
-}
-
-export interface ProfitMetricDefinition {
-  code: string
-  label: string
-  phase: 'P0' | 'P1' | 'P2' | 'P3' | 'P4'
-  strategyConsumable?: boolean
-  dependsOn?: string[]
-}
-
-export interface PricingFieldDefinition {
-  code: 'floor_price' | 'target_price' | 'ceiling_price'
-  label: string
-  phase: 'P0' | 'P1' | 'P2' | 'P3' | 'P4'
-}
-
-export interface CostComponentRegistryResponse {
-  version: string
-  count: number
-  components: CostComponentDefinition[]
-}
-
-export interface ProfitMetricRegistryResponse {
-  version: string
-  metricCount: number
-  pricingFieldCount: number
-  metrics: ProfitMetricDefinition[]
-  pricingFields: PricingFieldDefinition[]
-}
-
-export interface ProfitRegistrySummary {
-  costRegistryVersion?: string
-  metricRegistryVersion?: string
-  costComponentCount: number
-  metricCount: number
-  pricingFieldCount: number
-  strategyConsumableMetrics: string[]
-  phaseBuckets: {
-    costComponents: Record<string, number>
-    metrics: Record<string, number>
-    pricingFields: Record<string, number>
-  }
-}
-
 // ========== Ads 相关类型 ==========
-
 
 export interface AdCampaign {
   id: string

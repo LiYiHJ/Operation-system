@@ -241,16 +241,9 @@ class ImportService:
         "доля",
         "abc-анализ",
         "abc анализ",
-        "abc",
         "рекомендац",
-        "recommend",
-        "建议",
-        "补货",
-        "时效",
-        "平均时效",
-        "среднее время",
-        "среднее время доставки",
         "сколько товаров",
+        "среднее время доставки",
         "по сравнению с предыдущим периодом",
     }
     PROTECTED_UNIQUE_TARGETS = {
@@ -674,8 +667,6 @@ class ImportService:
         "код товара",
     ]
 
-    ENTITY_KEY_MIN_CONFIDENCE = 0.58
-
     def _extract_entity_key_token(self, value: Any) -> Optional[str]:
         text = str(value or "").strip()
         if not text:
@@ -707,12 +698,6 @@ class ImportService:
             elif token.isdigit() and 8 <= len(token) <= 14:
                 score += 0.05
 
-        if self._is_soft_excluded_header(raw):
-            score -= 0.35
-
-        if self._looks_like_explainer_text(raw):
-            score -= 0.4
-
         if raw.startswith("Unnamed:") or raw.startswith("col_"):
             score -= 0.15
 
@@ -738,9 +723,6 @@ class ImportService:
         fallback_headers = []
 
         for header in unmapped_headers:
-            if self._is_soft_excluded_header(header):
-                continue
-
             lower = header.lower()
             if (
                 header.startswith("Unnamed:")
@@ -767,15 +749,7 @@ class ImportService:
                 text = str(raw).strip()
                 if not text or text.lower() == "nan":
                     continue
-                if self._looks_like_explainer_text(text):
-                    continue
-
-                token = self._extract_entity_key_token(text)
-                if token:
-                    values.append((header, token))
-                elif len(text) <= 48:
-                    values.append((header, text))
-
+                values.append((header, text))
                 if len(values) >= limit:
                     return values
 
@@ -795,32 +769,23 @@ class ImportService:
         candidate_pool: List[tuple[str, Optional[str], str]] = []
 
         for item in top_unmapped_headers or []:
-            text = str(item)
-            if self._is_soft_excluded_header(text):
-                continue
-            candidate_pool.append(("topUnmappedHeaders", None, text))
+            candidate_pool.append(("topUnmappedHeaders", None, str(item)))
 
         for candidate in recovery_candidate_preview or []:
             for example in candidate.get("flattenedHeaderExamples") or []:
-                text = str(example)
-                if self._is_soft_excluded_header(text):
-                    continue
-                candidate_pool.append(("recoveryCandidatePreview", None, text))
+                candidate_pool.append(("recoveryCandidatePreview", None, str(example)))
 
         for item in field_mappings or []:
             if item.get("standardField") or item.get("dynamicCompanion"):
                 continue
             original_field = str(item.get("originalField") or "")
-            if original_field and not self._is_soft_excluded_header(original_field):
+            if original_field:
                 candidate_pool.append(
                     ("fieldMappings.originalField", original_field, original_field)
                 )
             for value in item.get("sampleValues") or []:
-                text = str(value)
-                if self._looks_like_explainer_text(text):
-                    continue
                 candidate_pool.append(
-                    ("fieldMappings.sampleValues", original_field or None, text)
+                    ("fieldMappings.sampleValues", original_field or None, str(value))
                 )
 
         if df is not None:
@@ -837,9 +802,6 @@ class ImportService:
         best_text = None
 
         for source, column_name, raw in candidate_pool:
-            if self._is_soft_excluded_header(raw) or self._looks_like_explainer_text(raw):
-                continue
-
             score = self._score_entity_key_candidate(raw)
             token = self._extract_entity_key_token(raw)
 
@@ -858,7 +820,7 @@ class ImportService:
                 best_column = column_name
                 best_text = raw
 
-        if best_score < self.ENTITY_KEY_MIN_CONFIDENCE:
+        if best_score < 0.45:
             return None
 
         return {
@@ -1265,26 +1227,13 @@ class ImportService:
         raw = str(text or "").strip().lower()
         if not raw:
             return False
-
-        compact = " ".join(raw.split())
-        token_count = len([tok for tok in re.split(r"[^a-zа-я0-9一-龥]+", compact) if tok])
-        punctuation_count = sum(compact.count(ch) for ch in [",", ";", ":", "，", "；", "："])
-
         return (
-            len(compact) >= 40
-            or token_count >= 8
-            or punctuation_count >= 2
-            or "оцениваем" in compact
-            or "считаем" in compact
-            or "для этого" in compact
-            or "по сравнению" in compact
-            or "динамика по сравнению" in compact
-            or "товары a приносят" in compact
-            or "recommend" in compact
-            or "рекомендац" in compact
-            or "建议" in compact
-            or "平均时效" in compact
-            or "среднее время" in compact
+            len(raw) >= 40
+            or "оцениваем" in raw
+            or "считаем" in raw
+            or "для этого" in raw
+            or "динамика по сравнению" in raw
+            or "товары a приносят" in raw
         )
 
     def _postprocess_field_mappings(self, field_mappings: List[dict]) -> List[dict]:
@@ -1357,8 +1306,6 @@ class ImportService:
         compressed = self._compress_header_phrase(original)
         dynamic_companion = self._is_dynamic_companion(original)
         soft_excluded = self._is_soft_excluded_header(original)
-        explainer_like_header = self._looks_like_explainer_text(original)
-        soft_excluded = soft_excluded or explainer_like_header
         reasons: List[str] = []
         conflicts: List[str] = []
         best_canonical: Optional[str] = None
@@ -1419,32 +1366,27 @@ class ImportService:
                     local_reasons.append(candidate_reason)
                     return canonical, "en_builtin", 0.95, local_reasons
             # token overlap fallback for long phrases
-            cand_tokens = {
-                t
-                for t in re.split(r"[^a-zа-я0-9一-龥]+", candidate_text)
-                if len(t) > 2 and t not in self.GENERIC_HEADER_PIECES
-            }
-            if len(cand_tokens) >= 2:
-                best_overlap = (None, 0.0)
-                for alias_norm, canonical in self._alias_lookup.items():
-                    alias_tokens = {
-                        t
-                        for t in re.split(r"[^a-zа-я0-9一-龥]+", alias_norm)
-                        if len(t) > 2 and t not in self.GENERIC_HEADER_PIECES
-                    }
-                    if len(alias_tokens) < 2:
-                        continue
-                    overlap = len(cand_tokens & alias_tokens) / max(len(alias_tokens), 1)
-                    if overlap > best_overlap[1]:
-                        best_overlap = (canonical, overlap)
-                if best_overlap[0] and best_overlap[1] >= 0.75:
-                    local_reasons.append(f"token_overlap:{best_overlap[1]:.2f}")
-                    return (
-                        best_overlap[0],
-                        "token_overlap",
-                        round(0.52 + best_overlap[1] * 0.22, 3),
-                        local_reasons,
-                    )
+            cand_tokens = set(
+                t for t in re.split(r"[^a-zа-я0-9一-龥]+", candidate_text) if len(t) > 2
+            )
+            best_overlap = (None, 0.0)
+            for alias_norm, canonical in self._alias_lookup.items():
+                alias_tokens = set(
+                    t for t in re.split(r"[^a-zа-я0-9一-龥]+", alias_norm) if len(t) > 2
+                )
+                if not cand_tokens or not alias_tokens:
+                    continue
+                overlap = len(cand_tokens & alias_tokens) / max(len(alias_tokens), 1)
+                if overlap > best_overlap[1]:
+                    best_overlap = (canonical, overlap)
+            if best_overlap[0] and best_overlap[1] >= 0.66:
+                local_reasons.append(f"token_overlap:{best_overlap[1]:.2f}")
+                return (
+                    best_overlap[0],
+                    "token_overlap",
+                    round(0.55 + best_overlap[1] * 0.25, 3),
+                    local_reasons,
+                )
             return None, "unmapped", 0.0, local_reasons
 
         for candidate_text, candidate_reason in compressed:
@@ -2425,21 +2367,7 @@ class ImportService:
         next_df = staging_df.copy()
         next_field_mappings = copy.deepcopy(field_mappings or [])
 
-        normalized_manual_overrides: List[dict] = []
-        seen_protected_targets: set[str] = set()
-        for item in reversed(manual_overrides or []):
-            original_field = str(item.get("originalField") or "").strip()
-            standard_field = str(item.get("standardField") or "").strip()
-            if not original_field or not standard_field:
-                continue
-            if standard_field in self.PROTECTED_UNIQUE_TARGETS:
-                if standard_field in seen_protected_targets:
-                    continue
-                seen_protected_targets.add(standard_field)
-            normalized_manual_overrides.append(item)
-        normalized_manual_overrides.reverse()
-
-        for item in normalized_manual_overrides:
+        for item in manual_overrides or []:
             original_field = str(item.get("originalField") or "").strip()
             standard_field = str(item.get("standardField") or "").strip()
 
@@ -2483,5 +2411,4 @@ class ImportService:
                     }
                 )
 
-        next_field_mappings = self._postprocess_field_mappings(next_field_mappings)
         return next_df, next_field_mappings

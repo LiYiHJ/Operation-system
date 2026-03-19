@@ -1,0 +1,144 @@
+{
+  "version": "p0-v1",
+  "components": [
+    {
+      "code": "purchase_cost",
+      "label": "采购成本",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "manual",
+        "import",
+        "rule"
+      ],
+      "requiredPhase": "P1",
+      "mutable": true
+    },
+    {
+      "code": "packaging_cost",
+      "label": "包装成本",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "manual",
+        "rule"
+      ],
+      "requiredPhase": "P1",
+      "mutable": true
+    },
+    {
+      "code": "first_mile_cost",
+      "label": "头程成本",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "manual",
+        "import",
+        "rule"
+      ],
+      "requiredPhase": "P1",
+      "mutable": true
+    },
+    {
+      "code": "landed_cost",
+      "label": "落地成本",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "manual",
+        "import",
+        "rule"
+      ],
+      "requiredPhase": "P1",
+      "mutable": true
+    },
+    {
+      "code": "platform_commission",
+      "label": "平台佣金",
+      "allocLevel": "order_line",
+      "sourceMode": [
+        "api",
+        "import",
+        "rule"
+      ],
+      "requiredPhase": "P1",
+      "mutable": false
+    },
+    {
+      "code": "payment_fee",
+      "label": "支付费",
+      "allocLevel": "order_line",
+      "sourceMode": [
+        "api",
+        "import",
+        "rule"
+      ],
+      "requiredPhase": "P1",
+      "mutable": false
+    },
+    {
+      "code": "fulfillment_cost",
+      "label": "履约成本",
+      "allocLevel": "order_line",
+      "sourceMode": [
+        "api",
+        "import",
+        "rule",
+        "manual"
+      ],
+      "requiredPhase": "P1",
+      "mutable": true
+    },
+    {
+      "code": "ad_cost",
+      "label": "广告成本",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "api",
+        "import"
+      ],
+      "requiredPhase": "P1",
+      "mutable": false
+    },
+    {
+      "code": "refund_reserve",
+      "label": "退款/售后准备",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "rule",
+        "manual"
+      ],
+      "requiredPhase": "P3",
+      "mutable": true
+    },
+    {
+      "code": "rating_risk_reserve",
+      "label": "评分风险准备",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "rule",
+        "manual"
+      ],
+      "requiredPhase": "P3",
+      "mutable": true
+    },
+    {
+      "code": "inventory_risk_reserve",
+      "label": "库存风险准备",
+      "allocLevel": "sku",
+      "sourceMode": [
+        "rule",
+        "manual"
+      ],
+      "requiredPhase": "P3",
+      "mutable": true
+    },
+    {
+      "code": "fx_risk_reserve",
+      "label": "汇率风险准备",
+      "allocLevel": "shop",
+      "sourceMode": [
+        "rule",
+        "manual"
+      ],
+      "requiredPhase": "P3",
+      "mutable": true
+    }
+  ]
+}

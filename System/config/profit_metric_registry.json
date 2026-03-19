@@ -1,0 +1,117 @@
+{
+  "version": "p0-v1",
+  "metrics": [
+    {
+      "code": "gross_revenue",
+      "label": "毛收入",
+      "phase": "P1",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "order_amount"
+      ]
+    },
+    {
+      "code": "net_revenue",
+      "label": "净收入",
+      "phase": "P1",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "gross_revenue",
+        "refund_reserve"
+      ]
+    },
+    {
+      "code": "base_contribution_profit",
+      "label": "基础贡献利润",
+      "phase": "P1",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "gross_revenue",
+        "landed_cost",
+        "platform_commission",
+        "payment_fee",
+        "fulfillment_cost"
+      ]
+    },
+    {
+      "code": "profit_after_ads",
+      "label": "广告后利润",
+      "phase": "P1",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "base_contribution_profit",
+        "ad_cost"
+      ]
+    },
+    {
+      "code": "risk_adjusted_profit",
+      "label": "风险调整后利润",
+      "phase": "P3",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "profit_after_ads",
+        "refund_reserve",
+        "rating_risk_reserve",
+        "inventory_risk_reserve",
+        "fx_risk_reserve"
+      ]
+    },
+    {
+      "code": "profit_margin_base",
+      "label": "基础利润率",
+      "phase": "P1",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "base_contribution_profit",
+        "gross_revenue"
+      ]
+    },
+    {
+      "code": "profit_margin_after_ads",
+      "label": "广告后利润率",
+      "phase": "P1",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "profit_after_ads",
+        "gross_revenue"
+      ]
+    },
+    {
+      "code": "profit_margin_risk_adjusted",
+      "label": "风险调整后利润率",
+      "phase": "P3",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "risk_adjusted_profit",
+        "gross_revenue"
+      ]
+    },
+    {
+      "code": "profit_band",
+      "label": "利润档位",
+      "phase": "P2",
+      "strategyConsumable": true,
+      "dependsOn": [
+        "profit_margin_after_ads",
+        "risk_adjusted_profit"
+      ]
+    }
+  ],
+  "pricingFields": [
+    {
+      "code": "floor_price",
+      "label": "底价",
+      "phase": "P1"
+    },
+    {
+      "code": "target_price",
+      "label": "目标价",
+      "phase": "P1"
+    },
+    {
+      "code": "ceiling_price",
+      "label": "上限价",
+      "phase": "P1"
+    }
+  ]
+}
