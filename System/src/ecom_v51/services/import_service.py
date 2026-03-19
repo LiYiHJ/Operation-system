@@ -1185,19 +1185,11 @@ class ImportService:
                 ),
                 "candidateScore": bundle["candidateScore"],
                 "mappedCanonicalFields": list(
-                    dict.fromkeys(
-                        [
-                            str(item.get("standardField"))
-                            for item in (bundle.get("fieldMappings") or [])
-                            if item.get("standardField")
-                        ]
-                    )
-                )[:12],
-                "topUnmappedHeaders": [
-                    str(item.get("originalField"))
-                    for item in (bundle.get("fieldMappings") or [])
-                    if not item.get("standardField")
-                ][:12],
+                    (bundle.get("mappedCanonicalFields") or [])[:12]
+                ),
+                "topUnmappedHeaders": list(
+                    (bundle.get("topUnmappedHeaders") or [])[:12]
+                ),
                 "flattenedHeaderExamples": list(
                     (candidate.get("flattenedHeaders") or [])[:12]
                 ),
@@ -1772,55 +1764,26 @@ class ImportService:
         rescued_placeholder_columns: List[str],
     ) -> dict:
         mapped_df, field_mappings = self.map_columns(df)
-        semantic_field_mappings = [
-            item for item in field_mappings if not item.get("excludeFromSemanticGate")
-        ]
-        mapped_targets = [
-            str(item["standardField"])
-            for item in semantic_field_mappings
-            if item.get("standardField")
-        ]
-        candidate_columns = sum(
-            1
-            for item in semantic_field_mappings
-            if not self._is_placeholder_col(item.get("originalField"))
-        )
-        mapped_count = len(mapped_targets)
-        unmapped_fields = [
-            str(item["originalField"])
-            for item in semantic_field_mappings
-            if not item.get("standardField")
-        ]
-        wrongly_mapped_count = 0
-        header_structure_score, header_structure_signals = (
-            self._compute_header_structure_score(
-                header_block, flattened_headers, dropped_placeholder_columns
-            )
-        )
-        (
-            semantic_status,
-            semantic_gate_reasons,
-            risk_override_reasons,
-            acceptance_reason,
-            semantic_metrics,
-        ) = self._semantic_gate(
-            mapped_targets=mapped_targets,
-            candidate_columns=candidate_columns,
-            mapped_count=mapped_count,
-            wrongly_mapped_count=wrongly_mapped_count,
-            header_signals=header_structure_signals,
-            header_structure_score=header_structure_score,
+        mapping_summary = self._build_field_mapping_summary(
+            field_mappings=field_mappings,
+            header_block=header_block,
+            flattened_headers=flattened_headers,
+            dropped_placeholder_columns=dropped_placeholder_columns,
         )
         transport_status = (
             "passed" if len(df.columns) > 0 and len(df) >= 0 else "failed"
         )
-        final_status = "failed" if transport_status == "failed" else semantic_status
+        final_status = (
+            "failed"
+            if transport_status == "failed"
+            else mapping_summary["semanticStatus"]
+        )
         diagnosis_obj = self.diagnoser.diagnose(
             file_name="",
             preview_rows=df.head(20).values.tolist(),
             headers=[str(c) for c in df.columns],
-            mapped_fields=mapped_count,
-            unmapped_fields=unmapped_fields,
+            mapped_fields=int(mapping_summary["mappedCount"]),
+            unmapped_fields=list(mapping_summary["topUnmappedHeaders"]),
             row_error_count=0,
         )
         if hasattr(diagnosis_obj, "__dict__"):
@@ -1845,7 +1808,7 @@ class ImportService:
             diagnosis = {
                 "suggestions": [],
                 "keyField": None,
-                "unmappedFields": unmapped_fields,
+                "unmappedFields": list(mapping_summary["topUnmappedHeaders"]),
                 "status": "partial",
             }
             platform = "generic"
@@ -1853,12 +1816,86 @@ class ImportService:
         return {
             "df": mapped_df,
             "fieldMappings": field_mappings,
+            "mappedTargets": mapping_summary["mappedTargets"],
+            "mappedCount": mapping_summary["mappedCount"],
+            "unmappedCount": mapping_summary["unmappedCount"],
+            "mappedCanonicalFields": mapping_summary["mappedCanonicalFields"],
+            "topUnmappedHeaders": mapping_summary["topUnmappedHeaders"],
+            "transportStatus": transport_status,
+            "semanticStatus": mapping_summary["semanticStatus"],
+            "finalStatus": final_status,
+            "semanticGateReasons": mapping_summary["semanticGateReasons"],
+            "riskOverrideReasons": mapping_summary["riskOverrideReasons"],
+            "semanticAcceptanceReason": mapping_summary["semanticAcceptanceReason"],
+            "semanticMetrics": mapping_summary["semanticMetrics"],
+            "coreFieldHitSummary": mapping_summary["coreFieldHitSummary"],
+            "headerBlock": copy.deepcopy(header_block),
+            "flattenedHeaders": list(flattened_headers),
+            "headerRecoveryApplied": bool(header_recovery_applied),
+            "headerStructureScore": mapping_summary["headerStructureScore"],
+            "headerStructureRiskSignals": mapping_summary["headerStructureRiskSignals"],
+            "droppedPlaceholderColumns": list(dropped_placeholder_columns),
+            "rescuedPlaceholderColumns": list(rescued_placeholder_columns),
+            "diagnosis": diagnosis,
+            "platform": platform,
+        }
+
+    def _build_field_mapping_summary(
+        self,
+        field_mappings: List[dict],
+        header_block: dict,
+        flattened_headers: List[str],
+        dropped_placeholder_columns: List[str],
+    ) -> dict:
+        semantic_field_mappings = [
+            item for item in (field_mappings or []) if not item.get("excludeFromSemanticGate")
+        ]
+        mapped_targets = [
+            str(item.get("standardField"))
+            for item in semantic_field_mappings
+            if item.get("standardField")
+        ]
+        candidate_columns = sum(
+            1
+            for item in semantic_field_mappings
+            if not self._is_placeholder_col(item.get("originalField"))
+        )
+        unmapped_headers = [
+            str(item.get("originalField"))
+            for item in semantic_field_mappings
+            if not item.get("standardField") and not item.get("dynamicCompanion")
+        ]
+        mapped_count = len(mapped_targets)
+        wrong_mapped_count = 0
+        header_structure_score, header_structure_signals = (
+            self._compute_header_structure_score(
+                header_block, flattened_headers, dropped_placeholder_columns
+            )
+        )
+        (
+            semantic_status,
+            semantic_gate_reasons,
+            risk_override_reasons,
+            acceptance_reason,
+            semantic_metrics,
+        ) = self._semantic_gate(
+            mapped_targets=mapped_targets,
+            candidate_columns=candidate_columns,
+            mapped_count=mapped_count,
+            wrongly_mapped_count=wrong_mapped_count,
+            header_signals=header_structure_signals,
+            header_structure_score=header_structure_score,
+        )
+        return {
+            "semanticFieldMappings": semantic_field_mappings,
             "mappedTargets": mapped_targets,
             "mappedCount": mapped_count,
-            "unmappedCount": len(unmapped_fields),
-            "transportStatus": transport_status,
+            "unmappedCount": len(unmapped_headers),
+            "mappedCanonicalFields": list(dict.fromkeys(mapped_targets))[:20],
+            "topUnmappedHeaders": unmapped_headers[:20],
+            "headerStructureScore": header_structure_score,
+            "headerStructureRiskSignals": header_structure_signals,
             "semanticStatus": semantic_status,
-            "finalStatus": final_status,
             "semanticGateReasons": semantic_gate_reasons,
             "riskOverrideReasons": risk_override_reasons,
             "semanticAcceptanceReason": acceptance_reason,
@@ -1866,22 +1903,13 @@ class ImportService:
                 **semantic_metrics,
                 "candidateColumns": candidate_columns,
                 "mappedConfidence": round(
-                    sum(float(item.get("confidence") or 0.0) for item in field_mappings)
-                    / max(len(field_mappings), 1),
+                    sum(float(item.get("confidence") or 0.0) for item in (field_mappings or []))
+                    / max(len(field_mappings or []), 1),
                     3,
                 ),
-                "wronglyMappedCount": wrongly_mapped_count,
+                "wronglyMappedCount": wrong_mapped_count,
             },
             "coreFieldHitSummary": self._build_core_field_hit_summary(mapped_targets),
-            "headerBlock": copy.deepcopy(header_block),
-            "flattenedHeaders": list(flattened_headers),
-            "headerRecoveryApplied": bool(header_recovery_applied),
-            "headerStructureScore": header_structure_score,
-            "headerStructureRiskSignals": header_structure_signals,
-            "droppedPlaceholderColumns": list(dropped_placeholder_columns),
-            "rescuedPlaceholderColumns": list(rescued_placeholder_columns),
-            "diagnosis": diagnosis,
-            "platform": platform,
         }
 
     def parse_import_file(
@@ -2050,21 +2078,9 @@ class ImportService:
             "pass": active_bundle["semanticStatus"] != "failed",
             "details": [],
         }
-        mapped_canonical_fields = list(
-            dict.fromkeys(
-                [
-                    str(item.get("standardField"))
-                    for item in (active_bundle.get("fieldMappings") or [])
-                    if item.get("standardField")
-                ]
-            )
-        )[:20]
+        mapped_canonical_fields = list(active_bundle.get("mappedCanonicalFields") or [])
 
-        top_unmapped_headers = [
-            str(item.get("originalField"))
-            for item in (active_bundle.get("fieldMappings") or [])
-            if not item.get("standardField") and not item.get("dynamicCompanion")
-        ][:20]
+        top_unmapped_headers = list(active_bundle.get("topUnmappedHeaders") or [])
 
         recovery_candidate_preview = list(recovery_result.get("candidatePreview") or [])
 
@@ -2221,6 +2237,37 @@ class ImportService:
                 session["duplicateCount"] = duplicate_count
 
                 result["fieldMappings"] = override_field_mappings
+                override_summary = self._build_field_mapping_summary(
+                    field_mappings=override_field_mappings,
+                    header_block=result.get("headerBlock") or {},
+                    flattened_headers=result.get("flattenedHeaders") or [],
+                    dropped_placeholder_columns=result.get("droppedPlaceholderColumns") or [],
+                )
+                result["mappedCanonicalFields"] = override_summary[
+                    "mappedCanonicalFields"
+                ]
+                result["topUnmappedHeaders"] = override_summary["topUnmappedHeaders"]
+                result["mappedCount"] = override_summary["mappedCount"]
+                result["unmappedCount"] = override_summary["unmappedCount"]
+                result["semanticMetrics"] = override_summary["semanticMetrics"]
+                result["coreFieldHitSummary"] = override_summary[
+                    "coreFieldHitSummary"
+                ]
+                result["semanticStatus"] = override_summary["semanticStatus"]
+                result["semanticGateReasons"] = override_summary[
+                    "semanticGateReasons"
+                ]
+                result["riskOverrideReasons"] = override_summary[
+                    "riskOverrideReasons"
+                ]
+                result["semanticAcceptanceReason"] = override_summary[
+                    "semanticAcceptanceReason"
+                ]
+                result["finalStatus"] = (
+                    "failed"
+                    if result.get("transportStatus") == "failed"
+                    else override_summary["semanticStatus"]
+                )
 
         warnings: List[str] = []
         if session.get("duplicateCount"):
