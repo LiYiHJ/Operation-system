@@ -1133,11 +1133,39 @@ class ImportService:
             )
         return candidates
 
+    @staticmethod
+    def _bundle_mapping_coverage(bundle: Optional[Dict[str, Any]]) -> float:
+        payload = bundle or {}
+        top_level = payload.get("mappingCoverage")
+        if top_level is not None:
+            try:
+                return float(top_level)
+            except (TypeError, ValueError):
+                pass
+        metrics = payload.get("semanticMetrics") or {}
+        try:
+            return float(metrics.get("mappingCoverage") or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    @staticmethod
+    def _bundle_mapped_confidence(bundle: Optional[Dict[str, Any]]) -> float:
+        payload = bundle or {}
+        top_level = payload.get("mappedConfidence")
+        if top_level is not None:
+            try:
+                return float(top_level)
+            except (TypeError, ValueError):
+                pass
+        metrics = payload.get("semanticMetrics") or {}
+        try:
+            return float(metrics.get("mappedConfidence") or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
     def _score_candidate_bundle(self, bundle: Dict[str, Any]) -> float:
         mapped = int(bundle.get("mappedCount") or 0)
-        coverage = float(
-            (bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0
-        )
+        coverage = self._bundle_mapping_coverage(bundle)
         core_summary = bundle.get("coreFieldHitSummary") or {}
         core_hits = sum(1 for k, v in core_summary.items() if isinstance(v, bool) and v)
         structure = float(bundle.get("headerStructureScore") or 0.0)
@@ -1181,7 +1209,7 @@ class ImportService:
                 ],
                 "mappedCount": bundle["mappedCount"],
                 "unmappedCount": bundle["unmappedCount"],
-                "mappingCoverage": float(bundle.get("mappingCoverage") or 0.0),
+                "mappingCoverage": self._bundle_mapping_coverage(bundle),
                 "candidateScore": bundle["candidateScore"],
                 "mappedCanonicalFields": list(
                     (bundle.get("mappedCanonicalFields") or [])[:12]
@@ -1207,12 +1235,8 @@ class ImportService:
             }
         evaluated.sort(key=lambda x: x.get("candidateScore") or 0.0, reverse=True)
         best = evaluated[0]
-        pre_cov = float(
-            (pre_bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0
-        )
-        post_cov = float(
-            (best.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0
-        )
+        pre_cov = self._bundle_mapping_coverage(pre_bundle)
+        post_cov = self._bundle_mapping_coverage(best)
         pre_core = sum(
             1
             for v in (pre_bundle.get("coreFieldHitSummary") or {}).values()
@@ -1999,12 +2023,8 @@ class ImportService:
         rescued_placeholder_columns = list(
             active_bundle.get("rescuedPlaceholderColumns") or []
         )
-        pre_cov = float(
-            (pre_bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0
-        )
-        post_cov = float(
-            (post_bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0
-        )
+        pre_cov = self._bundle_mapping_coverage(pre_bundle)
+        post_cov = self._bundle_mapping_coverage(post_bundle)
         pre_core = sum(
             1
             for v in (pre_bundle.get("coreFieldHitSummary") or {}).values()
@@ -2023,7 +2043,7 @@ class ImportService:
         status_map = {"passed": "success", "risk": "partial", "failed": "failed"}
         preview_df = active_bundle["df"].head(10)
         preview_rows = preview_df.fillna("").astype(str).values.tolist()
-        confidence = float(active_bundle.get("mappedConfidence") or 0.0)
+        confidence = self._bundle_mapped_confidence(active_bundle)
         candidate_columns = int(
             active_bundle["semanticMetrics"].get("candidateColumns") or 0
         )
@@ -2032,10 +2052,8 @@ class ImportService:
             "candidateColumns": candidate_columns,
             "ignoredColumns": len(active_bundle["droppedPlaceholderColumns"]),
             "ignoredFields": active_bundle["droppedPlaceholderColumns"],
-            "mappedConfidence": float(
-                active_bundle["semanticMetrics"].get("mappedConfidence") or 0.0
-            ),
-            "mappingCoverage": float(active_bundle.get("mappingCoverage") or 0.0),
+            "mappedConfidence": self._bundle_mapped_confidence(active_bundle),
+            "mappingCoverage": self._bundle_mapping_coverage(active_bundle),
             "mappedCount": mapped_count,
             "unmappedCount": int(active_bundle["unmappedCount"]),
             "correctlyMappedCount": mapped_count,
@@ -2124,7 +2142,7 @@ class ImportService:
             "entityKeySuggestion": entity_key_suggestion,
             "mappedCount": mapped_count,
             "unmappedCount": int(active_bundle["unmappedCount"]),
-            "mappingCoverage": float(active_bundle.get("mappingCoverage") or 0.0),
+            "mappingCoverage": self._bundle_mapping_coverage(active_bundle),
             "confidence": confidence,
             "stats": stats,
             "ruMappingQuality": ru_mapping_quality,
