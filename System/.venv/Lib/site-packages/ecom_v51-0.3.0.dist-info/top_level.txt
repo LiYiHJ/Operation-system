@@ -1,2 +1,0 @@
-ecom_v51
-high_crt_analysis

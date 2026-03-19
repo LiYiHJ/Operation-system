@@ -4,3 +4,13 @@ frontend/dist/
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+.venv_broken_*/
+src/uploads/
+uploads/
+*.db
+upload_response_debug.txt
+codex_*.patch
+codex_*.py
+codex_*.tsx
+codex_*.ts
