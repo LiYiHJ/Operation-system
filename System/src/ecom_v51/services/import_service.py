@@ -2376,6 +2376,8 @@ class ImportService:
             "stagingRows": imported_rows,
             "factLoadErrors": fact_load_errors,
             "missingRatingCount": missing_rating_count,
+            "mappingCoverage": result.get("mappingCoverage"),
+            "mappedConfidence": result.get("mappedConfidence"),
             "transportStatus": result.get("transportStatus"),
             "semanticStatus": result.get("semanticStatus"),
             "finalStatus": result.get("finalStatus"),
