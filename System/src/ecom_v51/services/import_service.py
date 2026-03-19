@@ -1180,9 +1180,8 @@ class ImportService:
                     candidate["headerBlock"]["endRow"],
                 ],
                 "mappedCount": bundle["mappedCount"],
-                "mappingCoverage": float(
-                    (bundle.get("semanticMetrics") or {}).get("mappingCoverage") or 0.0
-                ),
+                "unmappedCount": bundle["unmappedCount"],
+                "mappingCoverage": float(bundle.get("mappingCoverage") or 0.0),
                 "candidateScore": bundle["candidateScore"],
                 "mappedCanonicalFields": list(
                     (bundle.get("mappedCanonicalFields") or [])[:12]
@@ -1827,6 +1826,7 @@ class ImportService:
             "semanticGateReasons": mapping_summary["semanticGateReasons"],
             "riskOverrideReasons": mapping_summary["riskOverrideReasons"],
             "semanticAcceptanceReason": mapping_summary["semanticAcceptanceReason"],
+            "mappingCoverage": mapping_summary["mappingCoverage"],
             "semanticMetrics": mapping_summary["semanticMetrics"],
             "coreFieldHitSummary": mapping_summary["coreFieldHitSummary"],
             "headerBlock": copy.deepcopy(header_block),
@@ -1886,6 +1886,15 @@ class ImportService:
             header_signals=header_structure_signals,
             header_structure_score=header_structure_score,
         )
+        mapped_confidence = round(
+            sum(float(item.get("confidence") or 0.0) for item in (field_mappings or []))
+            / max(len(field_mappings or []), 1),
+            3,
+        )
+        mapping_coverage = round(
+            float(semantic_metrics.get("mappingCoverage") or 0.0),
+            3,
+        )
         return {
             "semanticFieldMappings": semantic_field_mappings,
             "mappedTargets": mapped_targets,
@@ -1899,14 +1908,13 @@ class ImportService:
             "semanticGateReasons": semantic_gate_reasons,
             "riskOverrideReasons": risk_override_reasons,
             "semanticAcceptanceReason": acceptance_reason,
+            "mappingCoverage": mapping_coverage,
+            "mappedConfidence": mapped_confidence,
             "semanticMetrics": {
                 **semantic_metrics,
+                "mappingCoverage": mapping_coverage,
                 "candidateColumns": candidate_columns,
-                "mappedConfidence": round(
-                    sum(float(item.get("confidence") or 0.0) for item in (field_mappings or []))
-                    / max(len(field_mappings or []), 1),
-                    3,
-                ),
+                "mappedConfidence": mapped_confidence,
                 "wronglyMappedCount": wrong_mapped_count,
             },
             "coreFieldHitSummary": self._build_core_field_hit_summary(mapped_targets),
@@ -2015,14 +2023,7 @@ class ImportService:
         status_map = {"passed": "success", "risk": "partial", "failed": "failed"}
         preview_df = active_bundle["df"].head(10)
         preview_rows = preview_df.fillna("").astype(str).values.tolist()
-        confidence = round(
-            sum(
-                float(item.get("confidence") or 0.0)
-                for item in active_bundle["fieldMappings"]
-            )
-            / max(len(active_bundle["fieldMappings"]), 1),
-            3,
-        )
+        confidence = float(active_bundle.get("mappedConfidence") or 0.0)
         candidate_columns = int(
             active_bundle["semanticMetrics"].get("candidateColumns") or 0
         )
@@ -2034,9 +2035,7 @@ class ImportService:
             "mappedConfidence": float(
                 active_bundle["semanticMetrics"].get("mappedConfidence") or 0.0
             ),
-            "mappingCoverage": float(
-                active_bundle["semanticMetrics"].get("mappingCoverage") or 0.0
-            ),
+            "mappingCoverage": float(active_bundle.get("mappingCoverage") or 0.0),
             "mappedCount": mapped_count,
             "unmappedCount": int(active_bundle["unmappedCount"]),
             "correctlyMappedCount": mapped_count,
@@ -2125,6 +2124,7 @@ class ImportService:
             "entityKeySuggestion": entity_key_suggestion,
             "mappedCount": mapped_count,
             "unmappedCount": int(active_bundle["unmappedCount"]),
+            "mappingCoverage": float(active_bundle.get("mappingCoverage") or 0.0),
             "confidence": confidence,
             "stats": stats,
             "ruMappingQuality": ru_mapping_quality,
@@ -2249,6 +2249,7 @@ class ImportService:
                 result["topUnmappedHeaders"] = override_summary["topUnmappedHeaders"]
                 result["mappedCount"] = override_summary["mappedCount"]
                 result["unmappedCount"] = override_summary["unmappedCount"]
+                result["mappingCoverage"] = override_summary["mappingCoverage"]
                 result["semanticMetrics"] = override_summary["semanticMetrics"]
                 result["coreFieldHitSummary"] = override_summary[
                     "coreFieldHitSummary"
@@ -2263,6 +2264,8 @@ class ImportService:
                 result["semanticAcceptanceReason"] = override_summary[
                     "semanticAcceptanceReason"
                 ]
+                if "confidence" in result:
+                    result["confidence"] = override_summary["mappedConfidence"]
                 result["finalStatus"] = (
                     "failed"
                     if result.get("transportStatus") == "failed"

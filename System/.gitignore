@@ -12,3 +12,7 @@ uploads/
 upload_response_debug.txt
 docs/current_audit_snapshot/
 docs/*.local.diff.txt
+codex_*.patch
+codex_*.py
+codex_*.tsx
+codex_*.ts
