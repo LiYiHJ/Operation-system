@@ -103,7 +103,13 @@ const isMappedField = (m?: Pick<FieldMapping, 'standardField'> | null) =>
   !!m?.standardField && m.standardField !== 'unmapped'
 
 const isIgnoredField = (m?: FieldMapping | null) =>
-  !!m?.reasons?.includes('dynamic_column_ignored')
+  !!(
+    m?.dynamicCompanion === true ||
+    m?.excludeFromSemanticGate === true ||
+    m?.reasons?.includes('dynamic_column_ignored') ||
+    m?.reasons?.includes('dynamic_companion') ||
+    m?.mappingSource === 'dynamic_companion'
+  )
 
 const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
   if (status === 'passed') return <Tag color="success">passed</Tag>
@@ -169,6 +175,9 @@ const normalizeFieldMappings = (value: any): FieldMapping[] => {
     reasons: Array.isArray(item?.reasons) ? item.reasons : [],
     reason: item?.reason ?? undefined,
     sampleToken: item?.sampleToken ?? item?.sample_token ?? undefined,
+    dynamicCompanion: item?.dynamicCompanion ?? item?.dynamic_companion ?? false,
+    excludeFromSemanticGate:
+      item?.excludeFromSemanticGate ?? item?.exclude_from_semantic_gate ?? false,
   }))
 }
 
@@ -261,45 +270,65 @@ const detectProtectedConflicts = (mappings: FieldMapping[]) => {
 
 const buildDisplayStats = (result: ImportResult | null) => {
   const mappings = Array.isArray(result?.fieldMappings) ? result!.fieldMappings : []
-  const ignoredFields = new Set(result?.stats?.ignoredFields || [])
-  const candidateMappings = mappings.filter(
-    (m) => !(isIgnoredField(m) || ignoredFields.has(m.originalField)),
-  )
+  const candidateMappings = mappings.filter((m) => !isIgnoredField(m))
   const mappedCountFromMappings = candidateMappings.filter(isMappedField).length
   const unmappedCountFromMappings = candidateMappings.length - mappedCountFromMappings
   const coverageFromMappings =
     mappedCountFromMappings / Math.max(candidateMappings.length, 1)
-  const mappedConfidence =
+  const mappedConfidenceFromMappings =
     mappedCountFromMappings > 0
       ? candidateMappings
           .filter(isMappedField)
           .reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCountFromMappings
       : 0
+  const hasManualEdits = mappings.some((m) => m.isManual)
+  const isValidNumber = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value)
+
+  const backendMappedCount = Number(
+    (result as any)?.mappedCount ?? (result as any)?.mapped_count ?? Number.NaN,
+  )
+  const backendUnmappedCount = Number(
+    (result as any)?.unmappedCount ?? (result as any)?.unmapped_count ?? Number.NaN,
+  )
+  const backendMappingCoverage = Number(
+    (result as any)?.mappingCoverage ?? (result as any)?.mapping_coverage ?? Number.NaN,
+  )
+  const backendMappedConfidence = Number(
+    (result as any)?.semanticMetrics?.mappedConfidence ?? Number.NaN,
+  )
 
   const mappedCount =
-    candidateMappings.length > 0
-      ? mappedCountFromMappings
-      : Number((result as any)?.mappedCount ?? (result as any)?.mapped_count ?? 0)
+    !hasManualEdits && isValidNumber(backendMappedCount)
+      ? backendMappedCount
+      : mappedCountFromMappings
 
   const unmappedCount =
-    candidateMappings.length > 0
-      ? unmappedCountFromMappings
-      : Number((result as any)?.unmappedCount ?? (result as any)?.unmapped_count ?? 0)
+    !hasManualEdits && isValidNumber(backendUnmappedCount)
+      ? backendUnmappedCount
+      : unmappedCountFromMappings
 
-  const mappingCoverage =
-    candidateMappings.length > 0
-      ? Number(coverageFromMappings.toFixed(3))
-      : Number(
-          Number(
-            (result as any)?.mappingCoverage ?? (result as any)?.mapping_coverage ?? 0,
-          ).toFixed(3),
-        )
+  const mappingCoverage = Number(
+    (
+      !hasManualEdits && isValidNumber(backendMappingCoverage)
+        ? backendMappingCoverage
+        : coverageFromMappings
+    ).toFixed(3),
+  )
+
+  const mappedConfidence = Number(
+    (
+      !hasManualEdits && isValidNumber(backendMappedConfidence)
+        ? backendMappedConfidence
+        : mappedConfidenceFromMappings
+    ).toFixed(3),
+  )
 
   return {
     mappedCount,
     unmappedCount,
     mappingCoverage,
-    mappedConfidence: Number(mappedConfidence.toFixed(3)),
+    mappedConfidence,
     rawColumns: Number(result?.rawColumns ?? result?.totalColumns ?? 0),
   }
 }
@@ -358,9 +387,6 @@ export default function DataImportV2() {
       if (!result.fileName && selectedFile?.name) {
         result.fileName = selectedFile.name
       }
-      console.log('upload raw ->', raw)
-      console.log('upload normalized ->', result)
-      console.log('upload fieldMappings length ->', Array.isArray(result.fieldMappings) ? result.fieldMappings.length : 'n/a')
       setImportResult(result)
       setConfirmResult(null)
       setAcceptedEntityKeySuggestion(false)
@@ -510,8 +536,6 @@ const confirmImport = async () => {
     })
 
     const result = normalizeConfirmResult(raw)
-    console.log('confirm raw ->', raw)
-    console.log('confirm normalized ->', result)
     if (result?.status !== 'success') {
       throw new Error(result?.errors?.[0] || '导入失败')
     }

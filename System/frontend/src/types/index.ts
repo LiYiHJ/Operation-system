@@ -270,6 +270,8 @@ export interface FieldMapping {
   reasons?: string[]
   reason?: string
   sampleToken?: string
+  dynamicCompanion?: boolean
+  excludeFromSemanticGate?: boolean
 }
 
 export interface FieldRegistryField {
