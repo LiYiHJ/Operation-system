@@ -1,30 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Descriptions,
-  message,
-  Modal,
-  Progress,
-  Row,
-  Select,
-  Space,
-  Spin,
-  Statistic,
-  Steps,
-  Table,
-  Tag,
-  Typography,
-  Upload,
-} from 'antd'
-import {
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  SaveOutlined,
-  UploadOutlined,
-} from '@ant-design/icons'
+import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons'
+import { Modal, Steps, Space, Typography, message } from 'antd'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { importApi } from '../services/api'
 import type {
@@ -34,306 +10,26 @@ import type {
   FieldRegistryField,
   ImportResult,
 } from '../types'
+import ImportCompleteStep from './data-import-v2/ImportCompleteStep'
+import ImportMappingStep from './data-import-v2/ImportMappingStep'
+import ImportParsingStep from './data-import-v2/ImportParsingStep'
+import ImportUploadStep from './data-import-v2/ImportUploadStep'
+import {
+  SHOP_ID,
+  STANDARD_FIELDS,
+  type SavedTemplate,
+  type StandardFieldConfig,
+  buildDisplayStats,
+  findProtectedTargetConflicts,
+  getSuggestionOverride,
+  isMappedField,
+  normalizeConfirmResult,
+  normalizeImportResult,
+  normalizeRawFile,
+} from './data-import-v2/shared'
 
-const { Dragger } = Upload
-const { Title, Paragraph, Text } = Typography
+const { Title, Paragraph } = Typography
 
-const SHOP_ID = 1
-const UNMAPPED_VALUE = '__UNMAPPED__'
-
-type StandardFieldConfig = {
-  name: string
-  category: string
-  required?: boolean
-  description?: string
-}
-
-
-const PROTECTED_TARGETS = new Set([
-  'sku',
-  'orders',
-  'order_amount',
-  'impressions_total',
-  'impressions_search_catalog',
-  'product_card_visits',
-  'add_to_cart_total',
-  'stock_total',
-  'rating_value',
-  'review_count',
-  'price_index_status',
-])
-
-const findProtectedTargetConflicts = (mappings: FieldMapping[]) => {
-  const grouped = new Map<string, FieldMapping[]>()
-  for (const item of mappings || []) {
-    const target = item?.standardField || null
-    if (!target || !PROTECTED_TARGETS.has(target)) continue
-    if (!grouped.has(target)) grouped.set(target, [])
-    grouped.get(target)!.push(item)
-  }
-  return [...grouped.entries()].filter(([, items]) => items.length > 1)
-}
-
-const STANDARD_FIELDS: Record<string, StandardFieldConfig> = {
-
-  sku: { name: 'SKU', category: '基础', required: true, description: '商品唯一标识' },
-  product_name: { name: '商品名称', category: '基础' },
-  category: { name: '类目', category: '基础' },
-  orders: { name: '订单数', category: '销售' },
-  revenue: { name: '销售额', category: '销售' },
-  order_amount: { name: '订单金额', category: '销售' },
-  units: { name: '销量', category: '销售' },
-  impressions_total: { name: '总曝光', category: '流量' },
-  impressions_search_catalog: { name: '搜索/目录曝光', category: '流量' },
-  clicks: { name: '点击量', category: '流量' },
-  product_card_visits: { name: '商品卡访问', category: '流量' },
-  add_to_cart_total: { name: '总加购', category: '转化' },
-  conversion_rate: { name: '转化率', category: '转化' },
-  avg_sale_price: { name: '平均销售价', category: '价格' },
-  price_index_status: { name: '价格指数状态', category: '价格' },
-  stock_total: { name: '总库存', category: '库存' },
-  rating_value: { name: '评分值', category: '评价' },
-  review_count: { name: '评论数', category: '评价' },
-  ad_spend: { name: '广告花费', category: '广告' },
-  ad_revenue: { name: '广告收入', category: '广告' },
-  cost_price: { name: '成本价', category: '成本' },
-}
-
-const isMappedField = (m?: Pick<FieldMapping, 'standardField'> | null) =>
-  !!m?.standardField && m.standardField !== 'unmapped'
-
-const isIgnoredField = (m?: FieldMapping | null) =>
-  m?.dynamicCompanion === true ||
-  m?.excludeFromSemanticGate === true ||
-  !!m?.reasons?.includes('dynamic_column_ignored') ||
-  !!m?.reasons?.includes('dynamic_companion') ||
-  m?.mappingSource === 'dynamic_companion'
-
-const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
-  if (status === 'passed') return <Tag color="success">passed</Tag>
-  if (status === 'risk') return <Tag color="warning">risk</Tag>
-  if (status === 'failed') return <Tag color="error">failed</Tag>
-  return <Tag>n/a</Tag>
-}
-
-const normalizeRawFile = (uploadFile?: UploadFile): File | null => {
-  if (!uploadFile) return null
-  const raw = uploadFile.originFileObj
-  return raw instanceof File ? raw : null
-}
-
-const getSuggestionOverride = (
-  suggestion: EntityKeySuggestion | null,
-): FieldMapping | null => {
-  if (!suggestion?.field || !suggestion?.sourceColumn) return null
-  return {
-    originalField: suggestion.sourceColumn,
-    normalizedField: suggestion.sourceColumn.toLowerCase(),
-    standardField: suggestion.field,
-    mappingSource: 'manual_override',
-    confidence: 1.0,
-    sampleValues: suggestion.sampleToken ? [suggestion.sampleToken] : [],
-    isManual: true,
-    reasons: ['entity_key_suggestion_confirmed'],
-    reason: 'entity_key_suggestion_confirmed',
-    sampleToken: suggestion.sampleToken || undefined,
-  }
-}
-
-
-const tryParseJson = (value: any) => {
-  if (typeof value !== 'string') return value
-  try {
-    return JSON.parse(value)
-  } catch {
-    return value
-  }
-}
-
-const unwrapPayload = (raw: any) => {
-  const parsedRaw = tryParseJson(raw)
-  const candidate = parsedRaw?.data ?? parsedRaw?.result ?? parsedRaw ?? {}
-  return tryParseJson(candidate)
-}
-
-const normalizeFieldMappings = (value: any): FieldMapping[] => {
-  if (!Array.isArray(value)) return []
-  return value.map((item: any) => ({
-    originalField: item?.originalField ?? item?.original_field ?? '',
-    normalizedField: item?.normalizedField ?? item?.normalized_field ?? undefined,
-    standardField: item?.standardField ?? item?.standard_field ?? null,
-    mappingSource: item?.mappingSource ?? item?.mapping_source ?? undefined,
-    confidence: Number(item?.confidence ?? 0),
-    sampleValues: Array.isArray(item?.sampleValues)
-      ? item.sampleValues
-      : Array.isArray(item?.sample_values)
-      ? item.sample_values
-      : [],
-    isManual: Boolean(item?.isManual ?? item?.is_manual ?? false),
-    reasons: Array.isArray(item?.reasons) ? item.reasons : [],
-    reason: item?.reason ?? undefined,
-    sampleToken: item?.sampleToken ?? item?.sample_token ?? undefined,
-    dynamicCompanion: item?.dynamicCompanion ?? item?.dynamic_companion ?? false,
-    excludeFromSemanticGate:
-      item?.excludeFromSemanticGate ?? item?.exclude_from_semantic_gate ?? false,
-  }))
-}
-
-const normalizeImportResult = (raw: any): ImportResult => {
-  const payload = unwrapPayload(raw)
-  return {
-    status: payload?.status ?? 'success',
-    sessionId: Number(payload?.sessionId ?? payload?.session_id ?? 0),
-    fileName: payload?.fileName ?? payload?.file_name ?? payload?.filename ?? '',
-    platform: payload?.platform ?? '',
-    headerRow: Number(payload?.headerRow ?? payload?.header_row ?? 0),
-    totalRows: Number(payload?.totalRows ?? payload?.total_rows ?? 0),
-    totalColumns: Number(payload?.totalColumns ?? payload?.total_columns ?? 0),
-    rawColumns: Number(
-      payload?.rawColumns ??
-        payload?.raw_columns ??
-        payload?.totalColumns ??
-        payload?.total_columns ??
-        0,
-    ),
-    fieldMappings: normalizeFieldMappings(payload?.fieldMappings ?? payload?.field_mappings),
-    stats: payload?.stats ?? {},
-    transportStatus: payload?.transportStatus ?? payload?.transport_status,
-    semanticStatus: payload?.semanticStatus ?? payload?.semantic_status,
-    finalStatus: payload?.finalStatus ?? payload?.final_status,
-    semanticGateReasons:
-      payload?.semanticGateReasons ?? payload?.semantic_gate_reasons ?? [],
-    semanticAcceptanceReason:
-      payload?.semanticAcceptanceReason ??
-      payload?.semantic_acceptance_reason ??
-      [],
-    entityKeySuggestion:
-      payload?.entityKeySuggestion ?? payload?.entity_key_suggestion ?? null,
-    mappedCount: Number(payload?.mappedCount ?? payload?.mapped_count ?? 0),
-    unmappedCount: Number(payload?.unmappedCount ?? payload?.unmapped_count ?? 0),
-    mappingCoverage: Number(
-      payload?.mappingCoverage ?? payload?.mapping_coverage ?? 0,
-    ),
-    ...payload,
-  } as ImportResult
-}
-
-const normalizeConfirmResult = (raw: any): ConfirmImportResponse => {
-  const payload = unwrapPayload(raw)
-  return {
-    status: payload?.status ?? 'success',
-    importedRows: Number(payload?.importedRows ?? payload?.imported_rows ?? 0),
-    quarantineCount: Number(payload?.quarantineCount ?? payload?.quarantine_count ?? 0),
-    duplicateCount: Number(payload?.duplicateCount ?? payload?.duplicate_count ?? 0),
-    missingRatingCount: Number(payload?.missingRatingCount ?? payload?.missing_rating_count ?? 0),
-    importabilityStatus: payload?.importabilityStatus ?? payload?.importability_status,
-    importabilityReasons: payload?.importabilityReasons ?? payload?.importability_reasons ?? [],
-    semanticStatus: payload?.semanticStatus ?? payload?.semantic_status,
-    finalStatus: payload?.finalStatus ?? payload?.final_status,
-    ratingIssueSamples: Array.isArray(payload?.ratingIssueSamples)
-      ? payload.ratingIssueSamples
-      : Array.isArray(payload?.rating_issue_samples)
-      ? payload.rating_issue_samples
-      : [],
-    errors: Array.isArray(payload?.errors) ? payload.errors : [],
-    ...payload,
-  } as ConfirmImportResponse
-}
-
-
-
-const protectedTargets = new Set([
-  'sku',
-  'orders',
-  'order_amount',
-  'impressions_total',
-  'impressions_search_catalog',
-  'product_card_visits',
-  'add_to_cart_total',
-  'stock_total',
-  'rating_value',
-  'review_count',
-  'price_index_status',
-])
-
-const detectProtectedConflicts = (mappings: FieldMapping[]) => {
-  const grouped = new Map<string, FieldMapping[]>()
-  for (const item of mappings) {
-    if (!item.standardField || !protectedTargets.has(item.standardField)) continue
-    if (!grouped.has(item.standardField)) grouped.set(item.standardField, [])
-    grouped.get(item.standardField)!.push(item)
-  }
-  return [...grouped.entries()].filter(([, arr]) => arr.length > 1)
-}
-
-
-
-
-const isValidNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value)
-
-const buildDisplayStats = (result: ImportResult | null) => {
-  const mappings = Array.isArray(result?.fieldMappings) ? result!.fieldMappings : []
-  const candidateMappings = mappings.filter((m) => !isIgnoredField(m))
-  const mappedCountFromMappings = candidateMappings.filter(isMappedField).length
-  const unmappedCountFromMappings = candidateMappings.length - mappedCountFromMappings
-  const coverageFromMappings = mappedCountFromMappings / Math.max(candidateMappings.length, 1)
-  const mappedConfidenceFromMappings =
-    mappedCountFromMappings > 0
-      ? candidateMappings
-          .filter(isMappedField)
-          .reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCountFromMappings
-      : 0
-
-  const backendMappedCount = Number(
-    (result as any)?.mappedCount ?? (result as any)?.mapped_count ?? Number.NaN,
-  )
-  const backendUnmappedCount = Number(
-    (result as any)?.unmappedCount ?? (result as any)?.unmapped_count ?? Number.NaN,
-  )
-  const backendMappingCoverage = Number(
-    (result as any)?.mappingCoverage ?? (result as any)?.mapping_coverage ?? Number.NaN,
-  )
-  const backendMappedConfidence = Number(
-    (result as any)?.semanticMetrics?.mappedConfidence ?? Number.NaN,
-  )
-
-  const hasManualEdits = mappings.some((m) => m.isManual)
-
-  const mappedCount =
-    !hasManualEdits && isValidNumber(backendMappedCount)
-      ? backendMappedCount
-      : mappedCountFromMappings
-
-  const unmappedCount =
-    !hasManualEdits && isValidNumber(backendUnmappedCount)
-      ? backendUnmappedCount
-      : unmappedCountFromMappings
-
-  const mappingCoverage = Number(
-    (
-      !hasManualEdits && isValidNumber(backendMappingCoverage)
-        ? backendMappingCoverage
-        : coverageFromMappings
-    ).toFixed(3),
-  )
-
-  const mappedConfidence = Number(
-    (
-      !hasManualEdits && isValidNumber(backendMappedConfidence)
-        ? backendMappedConfidence
-        : mappedConfidenceFromMappings
-    ).toFixed(3),
-  )
-
-  return {
-    mappedCount,
-    unmappedCount,
-    mappingCoverage,
-    mappedConfidence,
-    rawColumns: Number(result?.rawColumns ?? result?.totalColumns ?? 0),
-  }
-}
 export default function DataImportV2() {
   const [currentStep, setCurrentStep] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
@@ -342,7 +38,7 @@ export default function DataImportV2() {
   const [confirmResult, setConfirmResult] = useState<ConfirmImportResponse | null>(null)
   const [acceptedEntityKeySuggestion, setAcceptedEntityKeySuggestion] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [savedTemplates, setSavedTemplates] = useState<any[]>([])
+  const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([])
   const [standardFieldRegistry, setStandardFieldRegistry] =
     useState<Record<string, StandardFieldConfig>>(STANDARD_FIELDS)
 
@@ -408,7 +104,7 @@ export default function DataImportV2() {
 
   const handleManualMapping = (index: number, nextValue: string) => {
     if (!importResult || !Array.isArray(importResult.fieldMappings)) return
-    const newStandardField = nextValue === UNMAPPED_VALUE ? null : nextValue
+    const newStandardField = nextValue === '__UNMAPPED__' ? null : nextValue
     const nextMappings = [...importResult.fieldMappings]
     const prev = nextMappings[index]
     if (!prev) return
@@ -430,7 +126,7 @@ export default function DataImportV2() {
 
   const saveTemplate = () => {
     if (!importResult) return
-    const template = {
+    const template: SavedTemplate = {
       name: `模板_${new Date().toLocaleString()}`,
       platform: importResult.platform,
       mappings: importResult.fieldMappings,
@@ -440,7 +136,7 @@ export default function DataImportV2() {
     message.success(`模板“${template.name}”已保存`)
   }
 
-  const applyTemplate = (template: any) => {
+  const applyTemplate = (template: SavedTemplate) => {
     if (!importResult || !Array.isArray(template?.mappings)) return
     setImportResult({
       ...importResult,
@@ -472,465 +168,146 @@ export default function DataImportV2() {
     return [...manualMappings, suggestionOverride]
   }
 
+  const confirmImport = async () => {
+    if (!importResult) return
 
-const confirmImport = async () => {
-  if (!importResult) return
-
-  const confirmedOverrides = buildConfirmedOverrides()
-  const effectiveByOriginal = new Map<string, FieldMapping>()
-  for (const item of importResult.fieldMappings || []) {
-    effectiveByOriginal.set(item.originalField, { ...item })
-  }
-  for (const item of confirmedOverrides) {
-    effectiveByOriginal.set(item.originalField, {
-      ...(effectiveByOriginal.get(item.originalField) || item),
-      ...item,
-      isManual: true,
-    })
-  }
-
-  const protectedConflicts = findProtectedTargetConflicts([...effectiveByOriginal.values()])
-  if (protectedConflicts.length > 0) {
-    Modal.error({
-      title: '存在重复目标字段映射',
-      content: (
-        <div>
-          {protectedConflicts.map(([target, items]) => (
-            <div key={target}>
-              {target}: {items.map((x) => x.originalField).join('、')}
-            </div>
-          ))}
-        </div>
-      ),
-    })
-    return
-  }
-
-  if (importResult.finalStatus === 'risk') {
-    const reasons =
-      (importResult.semanticGateReasons || importResult.semanticAcceptanceReason || []).join('、') ||
-      'semantic_gate_not_met'
-
-    const proceed = await new Promise<boolean>((resolve) => {
-      Modal.confirm({
-        title: '存在语义风险，确认继续导入？',
-        icon: <ExclamationCircleOutlined />,
-        content: `finalStatus=risk，原因：${reasons}`,
-        okText: '继续导入',
-        cancelText: '返回检查',
-        okButtonProps: { danger: true },
-        onOk: () => resolve(true),
-        onCancel: () => resolve(false),
+    const confirmedOverrides = buildConfirmedOverrides()
+    const effectiveByOriginal = new Map<string, FieldMapping>()
+    for (const item of importResult.fieldMappings || []) {
+      effectiveByOriginal.set(item.originalField, { ...item })
+    }
+    for (const item of confirmedOverrides) {
+      effectiveByOriginal.set(item.originalField, {
+        ...(effectiveByOriginal.get(item.originalField) || item),
+        ...item,
+        isManual: true,
       })
-    })
-
-    if (!proceed) return
-  }
-
-  setImporting(true)
-  try {
-    const raw = await importApi.confirmImport({
-      sessionId: importResult.sessionId,
-      shopId: SHOP_ID,
-      operator: 'ui_manual_confirmation',
-      manualOverrides: confirmedOverrides,
-    })
-
-    const result = normalizeConfirmResult(raw)
-    if (result?.status !== 'success') {
-      throw new Error(result?.errors?.[0] || '导入失败')
     }
 
-    setConfirmResult(result)
-
-    if (result.importabilityStatus === 'risk') {
-      message.warning(
-        `导入完成，但仍存在可提交性风险：${(result.importabilityReasons || []).join('、') || 'importability_risk'}`,
-      )
-    } else {
-      message.success(`成功导入 ${result.importedRows || 0} 条数据`)
-    }
-
-    setCurrentStep(3)
-  } catch (error: any) {
-    message.error(`导入失败: ${error?.message || '未知错误'}`)
-  } finally {
-    setImporting(false)
-  }
-}
-
-  const renderUploadStep = () => (
-    <Card>
-      <Title level={4}>导入文件</Title>
-      <Paragraph type="secondary">
-        当前入口已接入：建议式 SKU 识别、人工确认导入，以及缺失评分审计。
-      </Paragraph>
-
-      <Alert
-        type="info"
-        showIcon
-        style={{ marginBottom: 16 }}
-        message="当前导入能力"
-        description={
+    const protectedConflicts = findProtectedTargetConflicts([...effectiveByOriginal.values()])
+    if (protectedConflicts.length > 0) {
+      Modal.error({
+        title: '存在重复目标字段映射',
+        content: (
           <div>
-            <div>• 已完成实证：xlsx / csv</div>
-            <div>• 支持字段智能映射与人工调整</div>
-            <div>• 支持 entityKeySuggestion → manualOverrides → confirm 闭环</div>
-            <div>• 评分缺失会计入 missingRatingCount，不会伪造评分值</div>
+            {protectedConflicts.map(([target, items]) => (
+              <div key={target}>
+                {target}: {items.map((x) => x.originalField).join('、')}
+              </div>
+            ))}
           </div>
-        }
-      />
-
-      <Dragger
-        fileList={fileList}
-        maxCount={1}
-        beforeUpload={(file) => {
-          const isLt50M = file.size / 1024 / 1024 < 50
-          if (!isLt50M) {
-            message.error('文件大小不能超过 50MB')
-            return Upload.LIST_IGNORE
-          }
-          syncSelectedFile([file as UploadFile])
-          return false
-        }}
-        onChange={({ fileList: nextList }) => syncSelectedFile(nextList)}
-        onRemove={() => {
-          syncSelectedFile([])
-          return true
-        }}
-      >
-        <p className="ant-upload-drag-icon">
-          <UploadOutlined />
-        </p>
-        <p className="ant-upload-text">点击或拖拽文件到此区域</p>
-        <p className="ant-upload-hint">支持 xlsx / csv，单文件不超过 50MB</p>
-      </Dragger>
-
-      <Space style={{ marginTop: 16 }}>
-        <Button type="primary" onClick={handleUpload} disabled={!selectedFile} loading={importing}>
-          开始解析
-        </Button>
-      </Space>
-    </Card>
-  )
-
-  const renderParsingStep = () => (
-    <Card>
-      <Space direction="vertical" style={{ width: '100%', alignItems: 'center' }}>
-        <Spin size="large" />
-        <Title level={4} style={{ marginBottom: 0 }}>
-          正在智能解析文件...
-        </Title>
-        <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-          正在执行：文件识别 → 表头分析 → 字段映射 → suggestion 生成
-        </Paragraph>
-      </Space>
-    </Card>
-  )
-
-  const renderMappingStep = () => {
-    if (!importResult) return null
-    const mappings = Array.isArray(importResult.fieldMappings) ? importResult.fieldMappings : []
-
-    const canUseSuggestion =
-      !!entityKeySuggestion?.field &&
-      !!entityKeySuggestion?.sourceColumn &&
-      !mappings.some((m) => m.standardField === 'sku')
-
-    const columns = [
-      {
-        title: '原始字段',
-        dataIndex: 'originalField',
-        key: 'originalField',
-        width: 220,
-        render: (text: string) => <strong>{text}</strong>,
-      },
-      {
-        title: '样本值',
-        dataIndex: 'sampleValues',
-        key: 'sampleValues',
-        width: 260,
-        render: (values: any[]) => {
-          const display = Array.isArray(values) ? values.slice(0, 3).join(', ') : ''
-          return <span>{display || '—'}</span>
-        },
-      },
-      {
-        title: '映射到',
-        dataIndex: 'standardField',
-        key: 'standardField',
-        width: 240,
-        render: (field: string | null, _: FieldMapping, index: number) => (
-          <Select
-            value={field || UNMAPPED_VALUE}
-            style={{ width: '100%' }}
-            onChange={(value) => handleManualMapping(index, value)}
-            options={[
-              { value: UNMAPPED_VALUE, label: '不映射' },
-              ...Object.entries(standardFieldRegistry).map(([key, config]) => ({
-                value: key,
-                label: `${config.required ? '[必填] ' : ''}${config.category} · ${config.name}`,
-              })),
-            ]}
-            showSearch
-            optionFilterProp="label"
-          />
         ),
-      },
-      {
-        title: '置信度',
-        dataIndex: 'confidence',
-        key: 'confidence',
-        width: 140,
-        render: (val: number) => (
-          <Progress
-            percent={(val || 0) * 100}
-            size="small"
-            status={val > 0.7 ? 'success' : val > 0.4 ? 'normal' : 'exception'}
-            format={(percent) => `${percent?.toFixed(0)}%`}
-          />
-        ),
-      },
-      {
-        title: '状态',
-        key: 'status',
-        width: 100,
-        render: (_: any, record: FieldMapping) => {
-          if (record.isManual) return <Tag color="blue">手动</Tag>
-          if (isIgnoredField(record)) return <Tag>忽略</Tag>
-          if (isMappedField(record)) return <Tag color="green">自动</Tag>
-          return <Tag>未映射</Tag>
-        },
-      },
-    ]
+      })
+      return
+    }
 
-    return (
-      <div>
-        {mappings.length === 0 && (
-          <Alert
-            type="warning"
-            showIcon
-            style={{ marginBottom: 16 }}
-            message="后端未返回 fieldMappings，当前按回退模式展示统计与建议"
-            description={
-              <div>
-                <div>已映射字段：{displayStats.mappedCount}</div>
-                <div>待处理字段：{displayStats.unmappedCount}</div>
-                <div>映射覆盖率：{(displayStats.mappingCoverage * 100).toFixed(1)}%</div>
-                <div>若下方出现 SKU 建议，可直接接受建议后确认导入。</div>
-              </div>
-            }
-          />
-        )}
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col span={6}>
-            <Card><Statistic title="已映射字段" value={displayStats.mappedCount} /></Card>
-          </Col>
-          <Col span={6}>
-            <Card><Statistic title="待处理字段" value={displayStats.unmappedCount} /></Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic title="映射覆盖率" value={displayStats.mappingCoverage * 100} precision={1} suffix="%" />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic title="平均置信度" value={displayStats.mappedConfidence * 100} precision={1} suffix="%" />
-            </Card>
-          </Col>
-        </Row>
+    if (importResult.finalStatus === 'risk') {
+      const reasons =
+        (importResult.semanticGateReasons || importResult.semanticAcceptanceReason || []).join('、') ||
+        'semantic_gate_not_met'
 
-        <Card style={{ marginBottom: 16 }}>
-          <Descriptions bordered column={3} size="small">
-            <Descriptions.Item label="文件名">{importResult.fileName || selectedFile?.name || 'n/a'}</Descriptions.Item>
-            <Descriptions.Item label="平台">{importResult.platform}</Descriptions.Item>
-            <Descriptions.Item label="表头行">第 {importResult.headerRow} 行</Descriptions.Item>
-            <Descriptions.Item label="传输状态">{renderGateTag(importResult.transportStatus)}</Descriptions.Item>
-            <Descriptions.Item label="语义状态">{renderGateTag(importResult.semanticStatus)}</Descriptions.Item>
-            <Descriptions.Item label="最终状态">{renderGateTag(importResult.finalStatus)}</Descriptions.Item>
-            <Descriptions.Item label="总行数">{importResult.totalRows}</Descriptions.Item>
-            <Descriptions.Item label="原始列数">{displayStats.rawColumns}</Descriptions.Item>
-            <Descriptions.Item label="当前列数">{importResult.totalColumns}</Descriptions.Item>
-          </Descriptions>
-        </Card>
+      const proceed = await new Promise<boolean>((resolve) => {
+        Modal.confirm({
+          title: '存在语义风险，确认继续导入？',
+          icon: <ExclamationCircleOutlined />,
+          content: `finalStatus=risk，原因：${reasons}`,
+          okText: '继续导入',
+          cancelText: '返回检查',
+          okButtonProps: { danger: true },
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        })
+      })
 
-        {canUseSuggestion && (
-          <Alert
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
-            message="检测到疑似 SKU 主标识列"
-            description={
-              <div>
-                <div>建议字段：{entityKeySuggestion?.field}</div>
-                <div>建议列：{entityKeySuggestion?.sourceColumn}</div>
-                <div>样本值：{entityKeySuggestion?.sampleToken || 'n/a'}</div>
-                <div>置信度：{((entityKeySuggestion?.confidence || 0) * 100).toFixed(1)}%</div>
-                <Space style={{ marginTop: 12 }}>
-                  <Button
-                    type={acceptedEntityKeySuggestion ? 'primary' : 'default'}
-                    onClick={() => setAcceptedEntityKeySuggestion(!acceptedEntityKeySuggestion)}
-                  >
-                    {acceptedEntityKeySuggestion ? '已接受建议' : '接受建议'}
-                  </Button>
-                  <Button
-                    onClick={() => setAcceptedEntityKeySuggestion(false)}
-                    disabled={!acceptedEntityKeySuggestion}
-                  >
-                    忽略建议
-                  </Button>
-                </Space>
-              </div>
-            }
-          />
-        )}
+      if (!proceed) return
+    }
 
-        <Card
-          title="字段映射"
-          extra={
-            <Space>
-              <Button icon={<SaveOutlined />} onClick={saveTemplate}>
-                保存模板
-              </Button>
-              {savedTemplates.length > 0 && (
-                <Select
-                  style={{ width: 220 }}
-                  placeholder="应用模板"
-                  onChange={(index) => applyTemplate(savedTemplates[index])}
-                  options={savedTemplates.map((template, index) => ({
-                    value: index,
-                    label: `${template.name} (${template.platform})`,
-                  }))}
-                />
-              )}
-            </Space>
-          }
-        >
-          <Alert
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
-            message="可手动调整字段映射；如接受系统建议，确认导入时将只提交你确认过的 override。"
-          />
+    setImporting(true)
+    try {
+      const raw = await importApi.confirmImport({
+        sessionId: importResult.sessionId,
+        shopId: SHOP_ID,
+        operator: 'ui_manual_confirmation',
+        manualOverrides: confirmedOverrides,
+      })
 
-          <Table
-            rowKey={(record: FieldMapping) => record.originalField}
-            columns={columns}
-            dataSource={mappings}
-            pagination={{ pageSize: 20 }}
-            scroll={{ x: 980 }}
-            size="small"
-          />
+      const result = normalizeConfirmResult(raw)
+      if (result?.status !== 'success') {
+        throw new Error(result?.errors?.[0] || '导入失败')
+      }
 
-          <Space style={{ marginTop: 16 }}>
-            <Button onClick={() => setCurrentStep(0)}>返回重新上传</Button>
-            <Button
-              type="primary"
-              onClick={confirmImport}
-              loading={importing}
-              disabled={displayStats.mappedCount === 0 && !acceptedEntityKeySuggestion}
-            >
-              {semanticRisk ? '存在语义风险，继续导入（需确认）' : '确认导入'}
-            </Button>
-          </Space>
-        </Card>
-      </div>
-    )
+      setConfirmResult(result)
+
+      if (result.importabilityStatus === 'risk') {
+        message.warning(
+          `导入完成，但仍存在可提交性风险：${(result.importabilityReasons || []).join('、') || 'importability_risk'}`,
+        )
+      } else {
+        message.success(`成功导入 ${result.importedRows || 0} 条数据`)
+      }
+
+      setCurrentStep(3)
+    } catch (error: any) {
+      message.error(`导入失败: ${error?.message || '未知错误'}`)
+    } finally {
+      setImporting(false)
+    }
   }
 
-  const renderCompleteStep = () => {
-    const result = confirmResult
-
-    return (
-      <Card>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Space direction="vertical" style={{ width: '100%', alignItems: 'center' }}>
-            <CheckCircleOutlined style={{ fontSize: 56, color: '#52c41a' }} />
-            <Title level={3} style={{ marginBottom: 0 }}>
-              {result?.importabilityStatus === 'risk' ? '导入完成，但需复核' : '导入完成'}
-            </Title>
-            <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              成功导入 {result?.importedRows ?? 0} 条，隔离 {result?.quarantineCount ?? 0} 条
-            </Paragraph>
-          </Space>
-
-          <Descriptions bordered column={3}>
-            <Descriptions.Item label="语义状态">
-              {renderGateTag(result?.semanticStatus || importResult?.semanticStatus)}
-            </Descriptions.Item>
-            <Descriptions.Item label="导入可用性">
-              {renderGateTag(result?.importabilityStatus)}
-            </Descriptions.Item>
-            <Descriptions.Item label="最终状态">
-              {renderGateTag(result?.finalStatus || importResult?.finalStatus)}
-            </Descriptions.Item>
-            <Descriptions.Item label="导入行数">{result?.importedRows ?? 0}</Descriptions.Item>
-            <Descriptions.Item label="隔离行数">{result?.quarantineCount ?? 0}</Descriptions.Item>
-            <Descriptions.Item label="缺失评分">{result?.missingRatingCount ?? 0}</Descriptions.Item>
-          </Descriptions>
-
-          {(result?.missingRatingCount || 0) > 0 && (
-            <Alert
-              type="info"
-              showIcon
-              message="评分缺失已按缺失事实导入"
-              description={`当前有 ${result?.missingRatingCount ?? 0} 条商品无评分，系统未伪造评分值，而是按缺失事实保留。`}
-            />
-          )}
-
-          {!!result?.ratingIssueSamples?.length && (
-            <Card size="small" title="评分问题样本（截取）">
-              {result.ratingIssueSamples.map((item, index) => (
-                <Paragraph key={`${item.row}-${index}`} style={{ marginBottom: 8 }}>
-                  <Text strong>行 {item.row}</Text>：
-                  <Text code>{String(item.ratingSourceColumn || 'n/a')}</Text>
-                  {' → '}
-                  原始值 <Text code>{String(item.ratingSourceRawValue ?? 'null')}</Text>
-                  {' / '}
-                  当前值 <Text code>{String(item.ratingValue ?? 'null')}</Text>
-                </Paragraph>
-              ))}
-            </Card>
-          )}
-
-          <Space>
-            <Button
-              type="primary"
-              onClick={() => {
-                window.location.href = '/dashboard'
-              }}
-            >
-              查看仪表盘
-            </Button>
-            <Button
-              onClick={() => {
-                setCurrentStep(0)
-                setFileList([])
-                setSelectedFile(null)
-                setImportResult(null)
-                setConfirmResult(null)
-                setAcceptedEntityKeySuggestion(false)
-              }}
-            >
-              继续导入
-            </Button>
-          </Space>
-        </Space>
-      </Card>
-    )
+  const resetFlow = () => {
+    setCurrentStep(0)
+    setFileList([])
+    setSelectedFile(null)
+    setImportResult(null)
+    setConfirmResult(null)
+    setAcceptedEntityKeySuggestion(false)
   }
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
-        return renderUploadStep()
+        return (
+          <ImportUploadStep
+            fileList={fileList}
+            selectedFile={selectedFile}
+            importing={importing}
+            onSyncFileList={syncSelectedFile}
+            onHandleUpload={handleUpload}
+          />
+        )
       case 1:
-        return renderParsingStep()
+        return <ImportParsingStep />
       case 2:
-        return renderMappingStep()
+        return importResult ? (
+          <ImportMappingStep
+            importResult={importResult}
+            selectedFileName={selectedFile?.name}
+            standardFieldRegistry={standardFieldRegistry}
+            savedTemplates={savedTemplates}
+            acceptedEntityKeySuggestion={acceptedEntityKeySuggestion}
+            entityKeySuggestion={entityKeySuggestion}
+            semanticRisk={semanticRisk}
+            displayStats={displayStats}
+            importing={importing}
+            onManualMapping={handleManualMapping}
+            onSaveTemplate={saveTemplate}
+            onApplyTemplate={applyTemplate}
+            onToggleAcceptedEntityKeySuggestion={setAcceptedEntityKeySuggestion}
+            onConfirmImport={confirmImport}
+            onBackToUpload={() => setCurrentStep(0)}
+          />
+        ) : null
       case 3:
-        return renderCompleteStep()
+        return (
+          <ImportCompleteStep
+            confirmResult={confirmResult}
+            importResult={importResult}
+            onGoDashboard={() => {
+              window.location.href = '/dashboard'
+            }}
+            onContinueImport={resetFlow}
+          />
+        )
       default:
         return null
     }
