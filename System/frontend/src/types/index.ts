@@ -1,6 +1,6 @@
 /**
- * 类型定义中心
- * 统一管理所有 TypeScript 接口和类型
+ * 类型定义入口
+ * 仅做 barrel export，不再承载具体类型实现
  */
 
 export * from './common'

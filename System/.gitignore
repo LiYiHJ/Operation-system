@@ -20,7 +20,7 @@ frontend/dist/
 src/uploads/
 uploads/
 
-# Codex/local handoff artifacts
+# Local handoff artifacts
 codex_*.patch
 codex_*.py
 codex_*.tsx

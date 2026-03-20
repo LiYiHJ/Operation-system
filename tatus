@@ -1,0 +1,37 @@
+warning: in the working copy of 'System/.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/pages/DataImportV2.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/ads.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/analysis.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/common.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/dashboard.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/import.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/index.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/profit.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'System/frontend/src/types/strategy.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/System/.gitignore b/System/.gitignore[m
+[1mindex 0412641..77e5d35 100644[m
+[1m--- a/System/.gitignore[m
+[1m+++ b/System/.gitignore[m
+[36m@@ -20,7 +20,7 @@[m [mfrontend/dist/[m
+ src/uploads/[m
+ uploads/[m
+ [m
+[31m-# Codex/local handoff artifacts[m
+[32m+[m[32m# Local handoff artifacts[m
+ codex_*.patch[m
+ codex_*.py[m
+ codex_*.tsx[m
+[1mdiff --git a/System/frontend/src/types/index.ts b/System/frontend/src/types/index.ts[m
+[1mindex bfdc6b4..ef288e7 100644[m
+[1m--- a/System/frontend/src/types/index.ts[m
+[1m+++ b/System/frontend/src/types/index.ts[m
+[36m@@ -1,6 +1,6 @@[m
+ /**[m
+[31m- * 类型定义中心[m
+[31m- * 统一管理所有 TypeScript 接口和类型[m
+[32m+[m[32m * 类型定义入口[m
+[32m+[m[32m * 仅做 barrel export，不再承载具体类型实现[m
+  */[m
+ [m
+ export * from './common'[m
