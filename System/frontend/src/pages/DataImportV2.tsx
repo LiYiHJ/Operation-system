@@ -63,6 +63,10 @@ export default function DataImportV2() {
   const semanticRisk = importResult?.finalStatus === 'risk'
   const entityKeySuggestion = importResult?.entityKeySuggestion || null
   const displayStats = useMemo(() => buildDisplayStats(importResult), [importResult])
+  const datasetKind = ((importResult as any)?.datasetKind || 'orders') as string
+  const batchStatus = ((confirmResult as any)?.batchStatus ||
+    (importResult as any)?.batchStatus ||
+    'uploaded') as string
 
   const syncSelectedFile = (nextList: UploadFile[]) => {
     setFileList(nextList)
@@ -322,6 +326,9 @@ export default function DataImportV2() {
           </Title>
           <Paragraph type="secondary" style={{ marginBottom: 0 }}>
             当前页面已正式接入：entityKeySuggestion → manualOverrides → confirm → missingRatingCount。
+          </Paragraph>
+          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            当前数据集：{datasetKind}；当前批次状态：{batchStatus}。
           </Paragraph>
         </div>
 

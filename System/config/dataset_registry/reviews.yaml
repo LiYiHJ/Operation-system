@@ -1,0 +1,12 @@
+dataset_kind: reviews
+source_type: file
+platform: generic
+grain: sku_daily
+schema_version: v1
+gate_policy: core_safe
+loader_target: fact_reviews_daily
+required_core_fields:
+  - sku
+optional_common_fields:
+  - rating_value
+  - review_count

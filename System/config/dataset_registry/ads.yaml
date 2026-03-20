@@ -1,0 +1,14 @@
+dataset_kind: ads
+source_type: file
+platform: generic
+grain: campaign_daily
+schema_version: v1
+gate_policy: core_safe
+loader_target: fact_ads_daily
+required_core_fields:
+  - sku
+optional_common_fields:
+  - impressions_total
+  - product_card_visits
+  - add_to_cart_total
+  - order_amount

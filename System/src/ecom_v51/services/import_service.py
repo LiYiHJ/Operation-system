@@ -23,6 +23,11 @@ import copy
 import itertools
 import json
 import re
+
+try:
+    import yaml  # type: ignore
+except Exception:
+    yaml = None  # type: ignore
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -199,6 +204,9 @@ class _FallbackDiagnoser:
 class ImportService:
     """当前导入主链路服务。"""
 
+    CONTRACT_VERSION = "p0.v1"
+    DEFAULT_DATASET_KIND = "orders"
+
     CORE_FIELDS = {
         "sku",
         "orders",
@@ -313,6 +321,9 @@ class ImportService:
             self._root_dir / "config" / "import_field_registry.json",
             default={"version": "v1", "fields": []},
         )
+        self._dataset_registry = self._load_dataset_registry(
+            self._root_dir / "config" / "dataset_registry"
+        )
         self._field_registry = self._registry_cfg.get("fields") or []
         self._fallback_mapping = FieldMapping()
         self.mapping = self._fallback_mapping
@@ -338,6 +349,83 @@ class ImportService:
             return data if isinstance(data, dict) else default
         except Exception:
             return default
+
+
+    @staticmethod
+    def _load_yaml(path: Path, default: dict) -> dict:
+        if not path.exists():
+            return default
+        try:
+            text = path.read_text(encoding="utf-8")
+            if yaml is not None:
+                data = yaml.safe_load(text)
+                return data if isinstance(data, dict) else default
+        except Exception:
+            return default
+        return default
+
+    def _load_dataset_registry(self, directory: Path) -> Dict[str, dict]:
+        registry: Dict[str, dict] = {}
+        if not directory.exists() or not directory.is_dir():
+            return registry
+        for path in sorted(directory.glob("*.yaml")):
+            payload = self._load_yaml(path, default={})
+            if not isinstance(payload, dict):
+                continue
+            dataset_kind = str(
+                payload.get("dataset_kind") or path.stem or self.DEFAULT_DATASET_KIND
+            ).strip()
+            if not dataset_kind:
+                continue
+            registry[dataset_kind] = payload
+        return registry
+
+    def get_dataset_registry(self) -> dict:
+        datasets = []
+        for dataset_kind, payload in sorted(self._dataset_registry.items()):
+            datasets.append(
+                {
+                    "datasetKind": dataset_kind,
+                    "sourceType": payload.get("source_type") or "file",
+                    "platform": payload.get("platform") or "generic",
+                    "grain": payload.get("grain") or "",
+                    "requiredCoreFields": list(payload.get("required_core_fields") or []),
+                    "optionalCommonFields": list(
+                        payload.get("optional_common_fields") or []
+                    ),
+                    "loaderTarget": payload.get("loader_target") or "",
+                    "gatePolicy": payload.get("gate_policy") or "core_safe",
+                    "schemaVersion": payload.get("schema_version") or "v1",
+                }
+            )
+        return {
+            "contractVersion": self.CONTRACT_VERSION,
+            "datasets": datasets,
+        }
+
+    def _infer_dataset_kind(
+        self,
+        mapped_targets: List[str],
+        file_name: str = "",
+    ) -> str:
+        lower_name = str(file_name or "").lower()
+        targets = set(mapped_targets or [])
+
+        if any(token in lower_name for token in ["ads", "campaign", "advert", "广告"]):
+            return "ads"
+        if any(token in lower_name for token in ["review", "rating", "评价", "评论"]):
+            return "reviews"
+
+        if {"rating_value", "review_count"} & targets and not (
+            {"orders", "order_amount", "stock_total"} & targets
+        ):
+            return "reviews"
+        if {"impressions_total", "product_card_visits", "add_to_cart_total"} & targets:
+            return "orders"
+        if {"orders", "order_amount", "sku", "stock_total"} & targets:
+            return "orders"
+
+        return self.DEFAULT_DATASET_KIND
 
     @staticmethod
     def _normalize_header(value: Any) -> str:
@@ -1984,6 +2072,9 @@ class ImportService:
                 "readerEngineUsed": default_meta.get("readerEngineUsed"),
                 "readerFallbackStage": default_meta.get("readerFallbackStage"),
                 "fieldRegistryVersion": str(self._registry_cfg.get("version") or "v1"),
+                "datasetKind": self.DEFAULT_DATASET_KIND,
+                "batchStatus": "failed",
+                "ingestionContractVersion": self.CONTRACT_VERSION,
             }
 
         raw_df, raw_error, raw_meta = self._read_file_raw(file_path)
@@ -2097,6 +2188,8 @@ class ImportService:
             "details": [],
         }
         mapped_canonical_fields = list(active_bundle.get("mappedCanonicalFields") or [])
+        dataset_kind = self._infer_dataset_kind(mapped_canonical_fields, path.name)
+        batch_status = "validated" if active_bundle["finalStatus"] != "failed" else "blocked"
 
         top_unmapped_headers = list(active_bundle.get("topUnmappedHeaders") or [])
 
@@ -2172,6 +2265,9 @@ class ImportService:
             "recoveryCandidatePreview": recovery_candidate_preview,
             "status": status_map.get(active_bundle["finalStatus"], "partial"),
             "diagnosis": active_bundle["diagnosis"],
+            "datasetKind": dataset_kind,
+            "batchStatus": batch_status,
+            "ingestionContractVersion": self.CONTRACT_VERSION,
         }
 
         self._sessions[session_id] = {
@@ -2189,6 +2285,8 @@ class ImportService:
             "stagingFieldMappings": copy.deepcopy(
                 active_bundle.get("fieldMappings") or []
             ),
+            "datasetKind": dataset_kind,
+            "batchStatus": batch_status,
         }
         self.batches.append(
             {
@@ -2226,6 +2324,9 @@ class ImportService:
                 "riskOverrideReasons": [],
                 "semanticAcceptanceReason": [],
                 "recoverySummary": {},
+                "datasetKind": self.DEFAULT_DATASET_KIND,
+                "batchStatus": "failed",
+                "ingestionContractVersion": self.CONTRACT_VERSION,
             }
 
         session = self._sessions[session_id]
@@ -2314,6 +2415,21 @@ class ImportService:
         else:
             importability_status = "failed"
 
+        dataset_kind = str(
+            session.get("datasetKind")
+            or result.get("datasetKind")
+            or self.DEFAULT_DATASET_KIND
+        )
+
+        if imported_rows > 0 and quarantine_count == 0 and fact_load_errors == 0:
+            batch_status = "imported"
+        elif imported_rows > 0:
+            batch_status = "partially_imported"
+        elif importability_status == "risk":
+            batch_status = "blocked"
+        else:
+            batch_status = "failed"
+
         rating_source_column = None
         for mapping in session.get("stagingFieldMappings") or []:
             if str(mapping.get("standardField") or "") == "rating_value":
@@ -2398,12 +2514,17 @@ class ImportService:
                 "riskOverrideReasons": list(result.get("riskOverrideReasons") or []),
                 "recoveryDiff": copy.deepcopy(result.get("recoveryDiff") or {}),
             },
+            "datasetKind": dataset_kind,
+            "batchStatus": batch_status,
+            "ingestionContractVersion": self.CONTRACT_VERSION,
             "runtimeAudit": {
                 "sessionId": session_id,
                 "operator": operator,
                 "shopId": shop_id,
                 "confirmedAt": datetime.now().isoformat(),
                 "sourceFile": session.get("fileName"),
+                "datasetKind": dataset_kind,
+                "batchStatus": batch_status,
                 "finalStatus": result.get("finalStatus"),
                 "transportStatus": result.get("transportStatus"),
                 "semanticStatus": result.get("semanticStatus"),
