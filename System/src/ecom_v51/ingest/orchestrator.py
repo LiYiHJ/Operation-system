@@ -13,7 +13,7 @@ class IngestionOrchestrator:
     - 为后续文件导入 / API 同步共用同一批次契约做准备
     """
 
-    CONTRACT_VERSION = "p0.v1"
+    CONTRACT_VERSION = "p1.v1"
 
     def build_parse_snapshot(
         self,
@@ -42,6 +42,7 @@ class IngestionOrchestrator:
                 "sessionId": parse_result.get("sessionId"),
                 "fileName": parse_result.get("fileName"),
                 "finalStatus": parse_result.get("finalStatus"),
+                "importProfile": parse_result.get("importProfile"),
             },
         )
 
@@ -72,5 +73,5 @@ class IngestionOrchestrator:
             ),
             quarantineCount=int(confirm_result.get("quarantineCount") or 0),
             importedRows=int(confirm_result.get("importedRows") or 0),
-            auditSummary=dict(confirm_result.get("runtimeAudit") or {}),
+            auditSummary={**dict(confirm_result.get("runtimeAudit") or {}), "importProfile": confirm_result.get("importProfile") or parse_result.get("importProfile")},
         )

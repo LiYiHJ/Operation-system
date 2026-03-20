@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons'
-import { Modal, Steps, Space, Typography, message } from 'antd'
+import { Modal, Steps, Space, Typography, message, Select } from 'antd'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { importApi } from '../services/api'
 import type {
@@ -9,6 +9,8 @@ import type {
   FieldMapping,
   FieldRegistryField,
   ImportResult,
+  DatasetRegistryItem,
+  DatasetKind,
 } from '../types'
 import ImportCompleteStep from './data-import-v2/ImportCompleteStep'
 import ImportMappingStep from './data-import-v2/ImportMappingStep'
@@ -41,6 +43,8 @@ export default function DataImportV2() {
   const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([])
   const [standardFieldRegistry, setStandardFieldRegistry] =
     useState<Record<string, StandardFieldConfig>>(STANDARD_FIELDS)
+  const [datasetRegistry, setDatasetRegistry] = useState<DatasetRegistryItem[]>([])
+  const [selectedDatasetKind, setSelectedDatasetKind] = useState<DatasetKind | string>('orders')
 
   useEffect(() => {
     importApi
@@ -75,6 +79,11 @@ export default function DataImportV2() {
   const semanticRisk = importResult?.finalStatus === 'risk'
   const entityKeySuggestion = importResult?.entityKeySuggestion || null
   const displayStats = useMemo(() => buildDisplayStats(importResult), [importResult])
+  const currentDatasetMeta = useMemo(
+    () => datasetRegistry.find((item) => String(item.datasetKind) === String(selectedDatasetKind)) || null,
+    [datasetRegistry, selectedDatasetKind],
+  )
+  const currentImportProfile = currentDatasetMeta?.importProfile || String(selectedDatasetKind)
   const datasetKind = ((importResult as any)?.datasetKind || 'orders') as string
   const batchStatus = ((confirmResult as any)?.batchStatus ||
     (importResult as any)?.batchStatus ||
@@ -95,12 +104,16 @@ export default function DataImportV2() {
     setCurrentStep(1)
 
     try {
-      const raw = await importApi.uploadFile(selectedFile, SHOP_ID)
+      const raw = await importApi.uploadFile(selectedFile, SHOP_ID, undefined, {
+        datasetKind: selectedDatasetKind,
+        importProfile: currentImportProfile,
+      })
       const result = normalizeImportResult(raw)
       if (!result.fileName && selectedFile?.name) {
         result.fileName = selectedFile.name
       }
       setImportResult(result)
+      setSelectedDatasetKind(String((result as any).datasetKind || selectedDatasetKind || 'orders'))
       setConfirmResult(null)
       setAcceptedEntityKeySuggestion(false)
       setCurrentStep(2)
@@ -245,6 +258,8 @@ export default function DataImportV2() {
         shopId: SHOP_ID,
         operator: 'ui_manual_confirmation',
         manualOverrides: confirmedOverrides,
+        datasetKind: selectedDatasetKind,
+        importProfile: currentImportProfile,
       })
 
       const result = normalizeConfirmResult(raw)

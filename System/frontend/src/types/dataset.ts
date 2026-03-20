@@ -11,6 +11,8 @@ export type DatasetKind =
 
 export interface DatasetRegistryItem {
   datasetKind: DatasetKind | string
+  importProfile?: string
+  label?: string
   sourceType: 'file' | 'api' | 'manual' | string
   platform: string
   grain: string
@@ -19,4 +21,5 @@ export interface DatasetRegistryItem {
   loaderTarget: string
   gatePolicy: string
   schemaVersion: string
+  entityKeyField?: string
 }

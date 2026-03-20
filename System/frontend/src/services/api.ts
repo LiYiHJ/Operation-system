@@ -145,11 +145,14 @@ export const importApi = {
   uploadFile: (
     file: File,
     shopId: number,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    options?: { datasetKind?: DatasetKind | string; importProfile?: string }
   ): Promise<ImportResult> => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('shop_id', shopId.toString())
+    if (options?.datasetKind) formData.append('dataset_kind', String(options.datasetKind))
+    if (options?.importProfile) formData.append('import_profile', String(options.importProfile))
 
     return apiClient.post('/import/upload', formData, {
       headers: {
@@ -167,7 +170,7 @@ export const importApi = {
   /**
    * 确认导入
    */
-  confirmImport: (data: ConfirmImportRequest): Promise<ConfirmImportResponse> => {
+  confirmImport: (data: ConfirmImportRequest & { datasetKind?: DatasetKind | string; importProfile?: string }): Promise<ConfirmImportResponse> => {
     return apiClient.post('/import/confirm', data)
   },
 

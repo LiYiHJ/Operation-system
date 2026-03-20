@@ -10,3 +10,6 @@ required_core_fields:
 optional_common_fields:
   - rating_value
   - review_count
+import_profile: review_daily
+label: 评价评分日报
+entity_key_field: sku

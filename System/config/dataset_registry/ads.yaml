@@ -12,3 +12,6 @@ optional_common_fields:
   - product_card_visits
   - add_to_cart_total
   - order_amount
+import_profile: ads_campaign_daily
+label: 广告活动日报
+entity_key_field: sku

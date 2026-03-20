@@ -18,6 +18,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from .registry.dataset_registry import DatasetRegistryService
+from .ingest.orchestrator import IngestionOrchestrator
 from typing import Any, Dict, List, Optional, Tuple
 import copy
 import itertools
@@ -336,6 +338,8 @@ class ImportService:
         self.batches: List[Dict[str, Any]] = []
         self._sessions: Dict[int, Dict[str, Any]] = {}
         self._session_counter = itertools.count(1)
+        self.dataset_registry = DatasetRegistryService(Path(__file__).resolve().parents[3])
+        self.orchestrator = IngestionOrchestrator()
 
     # ---------- 基础加载 ----------
 
@@ -2034,10 +2038,16 @@ class ImportService:
         }
 
     def parse_import_file(
-        self, file_path: str, shop_id: int = 1, operator: str = "frontend_user"
+        self,
+        file_path: str,
+        shop_id: int = 1,
+        operator: str = "frontend_user",
+        dataset_kind: Optional[str] = None,
+        import_profile: Optional[str] = None,
     ) -> dict:
         path = Path(file_path)
         session_id = next(self._session_counter)
+        dataset_contract = self._resolve_dataset_contract(dataset_kind=dataset_kind, import_profile=import_profile)
 
         default_df, error, default_meta = self._read_file_default(file_path)
         if error or default_df is None:
@@ -2270,6 +2280,8 @@ class ImportService:
             "ingestionContractVersion": self.CONTRACT_VERSION,
         }
 
+        result = self._apply_dataset_contract(result, dataset_kind=dataset_contract.get("datasetKind"), import_profile=dataset_contract.get("importProfile"))
+
         self._sessions[session_id] = {
             "sessionId": session_id,
             "filePath": str(path),
@@ -2281,6 +2293,9 @@ class ImportService:
             "rowErrors": row_errors,
             "duplicateCount": duplicate_count,
             "createdAt": datetime.now().isoformat(),
+            "datasetKind": result.get("datasetKind"),
+            "importProfile": result.get("importProfile"),
+            "datasetContract": dataset_contract,
             "stagingDf": active_bundle["df"].copy(),
             "stagingFieldMappings": copy.deepcopy(
                 active_bundle.get("fieldMappings") or []
@@ -2305,6 +2320,8 @@ class ImportService:
         shop_id: int,
         manual_overrides: Optional[List[dict]] = None,
         operator: str = "frontend_user",
+        dataset_kind: Optional[str] = None,
+        import_profile: Optional[str] = None,
     ) -> dict:
         if session_id not in self._sessions:
             return {
@@ -2330,6 +2347,10 @@ class ImportService:
             }
 
         session = self._sessions[session_id]
+        dataset_contract = self._resolve_dataset_contract(
+            dataset_kind=dataset_kind or session.get("datasetKind"),
+            import_profile=import_profile or session.get("importProfile"),
+        )
         result = copy.deepcopy(session["result"])
 
         valid_df: pd.DataFrame = session["df"]
@@ -2544,6 +2565,12 @@ class ImportService:
                 "manualOverrides": copy.deepcopy(manual_overrides),
             },
         }
+        response = self._apply_dataset_contract(
+            response,
+            dataset_kind=dataset_contract.get("datasetKind"),
+            import_profile=dataset_contract.get("importProfile"),
+        )
+        response.setdefault("runtimeAudit", {})["importProfile"] = response.get("importProfile")
         return response
 
     # ---------- 兼容旧接口 ----------

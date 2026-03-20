@@ -16,3 +16,6 @@ optional_common_fields:
   - stock_total
   - rating_value
   - review_count
+import_profile: sku_analytics_daily
+label: SKU经营日报
+entity_key_field: sku
