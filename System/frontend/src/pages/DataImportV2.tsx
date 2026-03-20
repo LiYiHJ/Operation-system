@@ -268,22 +268,21 @@ const detectProtectedConflicts = (mappings: FieldMapping[]) => {
   return [...grouped.entries()].filter(([, arr]) => arr.length > 1)
 }
 
+const isValidNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value)
+
 const buildDisplayStats = (result: ImportResult | null) => {
   const mappings = Array.isArray(result?.fieldMappings) ? result!.fieldMappings : []
   const candidateMappings = mappings.filter((m) => !isIgnoredField(m))
   const mappedCountFromMappings = candidateMappings.filter(isMappedField).length
   const unmappedCountFromMappings = candidateMappings.length - mappedCountFromMappings
-  const coverageFromMappings =
-    mappedCountFromMappings / Math.max(candidateMappings.length, 1)
+  const coverageFromMappings = mappedCountFromMappings / Math.max(candidateMappings.length, 1)
   const mappedConfidenceFromMappings =
     mappedCountFromMappings > 0
       ? candidateMappings
           .filter(isMappedField)
           .reduce((acc, cur) => acc + (cur.confidence || 0), 0) / mappedCountFromMappings
       : 0
-  const hasManualEdits = mappings.some((m) => m.isManual)
-  const isValidNumber = (value: unknown): value is number =>
-    typeof value === 'number' && Number.isFinite(value)
 
   const backendMappedCount = Number(
     (result as any)?.mappedCount ?? (result as any)?.mapped_count ?? Number.NaN,
@@ -297,6 +296,8 @@ const buildDisplayStats = (result: ImportResult | null) => {
   const backendMappedConfidence = Number(
     (result as any)?.semanticMetrics?.mappedConfidence ?? Number.NaN,
   )
+
+  const hasManualEdits = mappings.some((m) => m.isManual)
 
   const mappedCount =
     !hasManualEdits && isValidNumber(backendMappedCount)
@@ -332,7 +333,6 @@ const buildDisplayStats = (result: ImportResult | null) => {
     rawColumns: Number(result?.rawColumns ?? result?.totalColumns ?? 0),
   }
 }
-
 export default function DataImportV2() {
   const [currentStep, setCurrentStep] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
