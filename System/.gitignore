@@ -1,15 +1,26 @@
-frontend/.env
-frontend/node_modules/
-frontend/dist/
+# Python
 __pycache__/
 *.pyc
 *.pyo
+
+# Virtual environments
 .venv/
 .venv_broken_*/
-src/uploads/
-uploads/
+venv/
+env/
+
+# Runtime / local artifacts
 *.db
 upload_response_debug.txt
+
+# Frontend build output
+frontend/dist/
+
+# Upload/runtime data
+src/uploads/
+uploads/
+
+# Codex/local handoff artifacts
 codex_*.patch
 codex_*.py
 codex_*.tsx
