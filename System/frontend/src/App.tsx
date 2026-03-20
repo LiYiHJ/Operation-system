@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
 import Layout from './layout/Layout'
 import { AuthProvider, useAuth } from './auth'
 import './App.css'
@@ -23,8 +24,10 @@ function PageLoading() {
 
 function ProtectedLayout() {
   const { user, loading } = useAuth()
+
   if (loading) return <div style={{ padding: 24 }}>加载中...</div>
   if (!user) return <Navigate to="/login" replace />
+
   return <Layout />
 }
 
@@ -46,8 +49,10 @@ function App() {
               </Suspense>
             }
           />
+
           <Route path="/" element={<ProtectedLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
+
             <Route
               path="dashboard"
               element={
@@ -56,6 +61,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="import"
               element={
@@ -64,6 +70,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="settings"
               element={
@@ -72,6 +79,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="abc"
               element={
@@ -80,6 +88,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="price"
               element={
@@ -88,6 +97,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="funnel"
               element={
@@ -96,6 +106,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="inventory"
               element={
@@ -104,6 +115,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="ads"
               element={
@@ -112,6 +124,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="strategy"
               element={
@@ -120,6 +133,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="decision"
               element={
@@ -128,6 +142,7 @@ function App() {
                 </Suspense>
               }
             />
+
             <Route
               path="profit"
               element={
