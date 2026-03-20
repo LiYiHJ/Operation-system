@@ -103,13 +103,11 @@ const isMappedField = (m?: Pick<FieldMapping, 'standardField'> | null) =>
   !!m?.standardField && m.standardField !== 'unmapped'
 
 const isIgnoredField = (m?: FieldMapping | null) =>
-  !!(
-    m?.dynamicCompanion === true ||
-    m?.excludeFromSemanticGate === true ||
-    m?.reasons?.includes('dynamic_column_ignored') ||
-    m?.reasons?.includes('dynamic_companion') ||
-    m?.mappingSource === 'dynamic_companion'
-  )
+  m?.dynamicCompanion === true ||
+  m?.excludeFromSemanticGate === true ||
+  !!m?.reasons?.includes('dynamic_column_ignored') ||
+  !!m?.reasons?.includes('dynamic_companion') ||
+  m?.mappingSource === 'dynamic_companion'
 
 const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
   if (status === 'passed') return <Tag color="success">passed</Tag>
@@ -267,6 +265,9 @@ const detectProtectedConflicts = (mappings: FieldMapping[]) => {
   }
   return [...grouped.entries()].filter(([, arr]) => arr.length > 1)
 }
+
+
+
 
 const isValidNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
