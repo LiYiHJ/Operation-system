@@ -805,20 +805,4 @@ export default function DataImportV2() {
 
           <Tabs.TabPane tab="常见问题" key="faq">
             <ul>
-              <li><strong>Q: 文件表头不在第一行怎么办？</strong>                系统会自动扫描前 20 行并尝试识别真实表头；如果识别不准，可在字段映射页手动调整。
-              </li>
-              <li>
-                <strong>Q: 有未映射字段怎么办？</strong>
-                可以先导入核心字段；未映射字段会保留在映射结果里，后续可再补充规则或手动映射。
-              </li>
-              <li>
-                <strong>Q: 为什么会出现语义风险提示？</strong>
-                说明文件虽然可读取，但语义门禁检测到核心字段或结构风险，请先检查原因后再决定是否继续导入。
-              </li>
-            </ul>
-          </Tabs.TabPane>
-        </Tabs>
-      </Card>
-    </div>
-  )
-}
+              <li><strong>Q: 文件表头不在第一行怎么办？</strong>

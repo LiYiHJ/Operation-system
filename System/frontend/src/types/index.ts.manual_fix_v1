@@ -1,0 +1,300 @@
+// compile-safe type entry restored for current frontend pages and api layer
+
+export type ApiResponse<T = any> = {
+  success?: boolean
+  data: T
+  error?: string
+  message?: string
+}
+
+export interface TopSku {
+  sku: string
+  productName?: string
+  revenue?: number
+  orders?: number
+  margin?: number
+  abcClass?: string
+  trend?: string
+}
+
+export interface Alert {
+  id?: number
+  type?: string
+  priority?: string
+  sku?: string
+  message?: string
+  timestamp?: string
+}
+
+export interface TrendData {
+  dates?: string[]
+  revenue?: number[]
+  orders?: number[]
+  [key: string]: any
+}
+
+export interface ShopHealth {
+  shopName?: string
+  rating?: number
+  delayRate?: number
+  priceCompetitiveness?: { green?: number; red?: number }
+  totalOrders?: number
+  totalProducts?: number
+  [key: string]: any
+}
+
+export interface DashboardMetrics {
+  totalRevenue?: number
+  totalOrders?: number
+  avgOrderValue?: number
+  profitMargin?: number
+  totalProducts?: number
+  totalImpressions?: number
+  totalClicks?: number
+  overallConversionRate?: number
+  kpiDeltas?: {
+    revenue?: number | null
+    orders?: number | null
+    avgOrderValue?: number | null
+    margin?: number | null
+  }
+  trends?: TrendData
+  topSkus?: TopSku[]
+  alerts?: Alert[]
+  shopHealth?: ShopHealth[]
+  openingWorkbench?: any
+  [key: string]: any
+}
+
+export type ImportSessionStatus = 'success' | 'partial' | 'failed' | 'draft' | 'processing' | 'uploaded'
+export type DatasetKind = 'orders' | 'ads' | 'reviews' | string
+
+export interface DatasetRegistryItem {
+  datasetKind: string
+  importProfile?: string
+  label?: string
+  sourceType?: string
+  grain?: string
+  loaderTarget?: string
+  gatePolicy?: string
+  entityKeyField?: string
+  [key: string]: any
+}
+
+export interface ImportDiagnosis {
+  suggestions: string[]
+  keyField: string | null
+  unmappedFields: string[]
+  status: 'success' | 'partial' | 'failed'
+}
+
+export interface EntityKeySuggestion {
+  currentField?: string | null
+  suggestedField?: string | null
+  reason?: string
+  confidence?: number
+}
+
+export interface FieldMapping {
+  originalField: string
+  normalizedField?: string
+  standardField: string | null
+  mappingSource?: string
+  confidence: number
+  sampleValues: any[]
+  isManual: boolean
+  reasons?: string[]
+  conflicts?: string[]
+  dynamicCompanion?: boolean
+  excludeFromSemanticGate?: boolean
+  compressedHeader?: string | null
+}
+
+export interface ImportResult {
+  sessionId: number
+  fileName: string
+  fileSize?: number
+  sheetNames?: string[]
+  selectedSheet?: string
+  totalRows: number
+  totalColumns?: number
+  rawColumns?: number
+  normalizedColumns?: number
+  readerEngineUsed?: string | null
+  readerFallbackStage?: string | null
+  fieldRegistryVersion?: string
+  headerRow?: number
+  dataPreview?: any[][]
+  platform: string
+  fieldMappings: FieldMapping[]
+  mappedCount: number
+  unmappedCount: number
+  confidence: number
+  stats?: Record<string, any>
+  transportStatus?: 'passed' | 'failed'
+  semanticStatus?: 'passed' | 'risk' | 'failed'
+  finalStatus?: 'passed' | 'risk' | 'failed'
+  semanticGateReasons?: string[]
+  riskOverrideReasons?: string[]
+  semanticAcceptanceReason?: string[]
+  semanticMetrics?: Record<string, any>
+  coreFieldHitSummary?: Record<string, any>
+  headerBlock?: Record<string, any>
+  flattenedHeaders?: string[]
+  headerRecoveryApplied?: boolean
+  headerStructureScore?: number
+  headerStructureRiskSignals?: string[]
+  droppedPlaceholderColumns?: string[]
+  rescuedPlaceholderColumns?: string[]
+  preRecoveryStatus?: 'passed' | 'risk' | 'failed'
+  postRecoveryStatus?: 'passed' | 'risk' | 'failed'
+  recoveryAttempted?: boolean
+  recoveryImproved?: boolean
+  sampleHint?: string | null
+  recoveryDiff?: Record<string, any>
+  entityKeySuggestion?: EntityKeySuggestion | null
+  status: ImportSessionStatus
+  diagnosis: ImportDiagnosis
+  [key: string]: any
+}
+
+export interface ConfirmImportRequest {
+  sessionId: number
+  shopId: number
+  manualOverrides: FieldMapping[]
+  operator?: string
+  datasetKind?: DatasetKind | string
+  importProfile?: string
+}
+
+export interface ConfirmImportResponse {
+  sessionId?: number
+  batchId?: number
+  importedRows: number
+  errorRows: number
+  status: 'success' | 'failed' | 'processing'
+  warnings: string[]
+  errors: string[]
+  quarantineCount?: number
+  stagingRows?: number
+  factLoadErrors?: number
+  transportStatus?: 'passed' | 'failed'
+  semanticStatus?: 'passed' | 'risk' | 'failed'
+  finalStatus?: 'passed' | 'risk' | 'failed'
+  semanticGateReasons?: string[]
+  riskOverrideReasons?: string[]
+  semanticAcceptanceReason?: string[]
+  recoverySummary?: Record<string, any>
+  [key: string]: any
+}
+
+export interface FieldRegistryField {
+  canonical: string
+  aliases: Record<string, string[]>
+  type: string
+  unit?: string | null
+  enumValues?: string[]
+  validator?: string
+  factTarget?: string
+  displayLabel?: string
+}
+
+export interface FieldRegistryResponse {
+  version: string
+  fields: FieldRegistryField[]
+}
+
+export interface DiscountSimulation {
+  discount?: number
+  finalPrice?: number
+  profit?: number
+  margin?: number
+  roi?: number
+  [key: string]: any
+}
+
+export interface StrategyTask {
+  id?: number
+  taskId?: number
+  sku?: string
+  strategyType?: string
+  priority?: string
+  status?: string
+  issueSummary?: string
+  recommendedAction?: string
+  [key: string]: any
+}
+
+export interface StrategyListResponse {
+  data?: StrategyTask[]
+  rows?: StrategyTask[]
+  summary?: Record<string, any>
+  [key: string]: any
+}
+
+export interface DecisionInput {
+  [key: string]: any
+}
+
+export interface DecisionOutput {
+  decisions?: any[]
+  recommendations?: any[]
+  [key: string]: any
+}
+
+export interface ProfitResult {
+  [key: string]: any
+}
+
+export interface SkuAnalysis {
+  sku?: string
+  funnel?: Record<string, any>
+  netProfit?: number
+  netMargin?: number
+  breakEvenPrice?: number
+  discountSimulations?: DiscountSimulation[]
+  strategyTasks?: StrategyTask[]
+  [key: string]: any
+}
+
+export interface AbcAnalysis {
+  rows?: any[]
+  summary?: Record<string, any>
+  issues?: any[]
+  recommendedActions?: any[]
+  [key: string]: any
+}
+
+export interface FunnelAnalysis {
+  rows?: any[]
+  summary?: Record<string, any>
+  [key: string]: any
+}
+
+export interface PriceAnalysis {
+  rows?: any[]
+  summary?: Record<string, any>
+  [key: string]: any
+}
+
+export interface InventoryAnalysis {
+  rows?: any[]
+  summary?: Record<string, any>
+  [key: string]: any
+}
+
+export interface AdCampaign {
+  campaignId?: string
+  campaignName?: string
+  campaignStatus?: string
+  budget?: number
+  spent?: number
+  impressions?: number
+  clicks?: number
+  ctr?: number
+  conversions?: number
+  revenue?: number
+  roi?: number
+  acos?: number
+  [key: string]: any
+}
