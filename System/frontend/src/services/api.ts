@@ -138,6 +138,7 @@ export const dashboardApi = {
 // ========== Import API ==========
 
 export const importApi = {
+  getDatasetRegistry: (): Promise<{ contractVersion?: string; datasets?: DatasetRegistryItem[] }> => apiClient.get('/import/dataset-registry'),
   /**
    * 上传并解析文件
    */

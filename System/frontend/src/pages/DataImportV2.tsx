@@ -44,6 +44,18 @@ export default function DataImportV2() {
 
   useEffect(() => {
     importApi
+      .getDatasetRegistry()
+      .then((payload) => {
+        const datasets = Array.isArray(payload?.datasets) ? payload.datasets : []
+        setDatasetRegistry(datasets)
+      })
+      .catch(() => {
+        setDatasetRegistry([])
+      })
+  }, [])
+
+  useEffect(() => {
+    importApi
       .getFieldRegistry()
       .then((registry) => {
         const next: Record<string, StandardFieldConfig> = {}
