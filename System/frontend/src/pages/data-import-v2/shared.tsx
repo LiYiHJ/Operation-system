@@ -279,3 +279,12 @@ export const buildDisplayStats = (result: ImportResult | null) => {
     rawColumns: Number(result?.rawColumns ?? result?.totalColumns ?? 0),
   }
 }
+
+export const renderMappingConfidence = (val: number) => (
+  <Progress
+    percent={(val || 0) * 100}
+    size="small"
+    status={val > 0.7 ? 'success' : val > 0.4 ? 'normal' : 'exception'}
+    format={(percent) => `${percent?.toFixed(0)}%`}
+  />
+)
