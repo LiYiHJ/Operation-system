@@ -3,3 +3,62 @@ frontend/node_modules/
 frontend/dist/
 __pycache__/
 *.pyc
+
+# BEGIN STAGE CLEAN V1
+.venv/
+.venv_broken_*/
+**/__pycache__/
+*.pyc
+*.pyo
+_recovery_backup_*/
+_runtime_fix_backup_*/
+_core_recover_backup_*/
+frontend_build_output_*.txt
+frontend_build_summary_*.txt
+smoke_workspace_*/
+# END STAGE CLEAN V1
+
+
+# BEGIN STAGE CLEAN V4 SYSTEM
+.venv/
+.venv_broken_*/
+**/__pycache__/
+*.pyc
+_recovery_backup_*/
+_runtime_fix_backup_*/
+_core_recover_backup_*/
+frontend_build_output_*.txt
+frontend_build_summary_*.txt
+smoke_workspace_*/
+# END BEGIN STAGE CLEAN V4 SYSTEM
+
+
+# BEGIN STAGE CLEAN V5
+.venv/
+.venv_broken_*/
+.pytest_cache/
+**/.pytest_cache/
+**/__pycache__/
+**/*.pyc
+_recovery_backup_*/
+_runtime_fix_backup_*/
+_core_recover_backup_*/
+frontend_build_output_*.txt
+frontend_build_summary_*.txt
+smoke_workspace_*/
+# END STAGE CLEAN V5
+
+# BEGIN STAGE CLEAN MANUAL
+.venv/
+.venv_broken_*/
+.pytest_cache/
+**/.pytest_cache/
+**/__pycache__/
+**/*.pyc
+_recovery_backup_*/
+_runtime_fix_backup_*/
+_core_recover_backup_*/
+frontend_build_output_*.txt
+frontend_build_summary_*.txt
+smoke_workspace_*/
+# END STAGE CLEAN MANUAL

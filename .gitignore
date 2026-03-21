@@ -5,3 +5,30 @@ node_modules/
 *.png
 *.jpg
 *.ico
+
+# BEGIN STAGE CLEAN V1
+_patch_backup_*/
+# END STAGE CLEAN V1
+
+
+# BEGIN STAGE CLEAN V4 ROOT
+_patch_backup_*/
+stage_clean_summary_*.txt
+# END BEGIN STAGE CLEAN V4 ROOT
+
+
+# BEGIN STAGE CLEAN V5
+.pytest_cache/
+**/.pytest_cache/
+**/__pycache__/
+**/*.pyc
+_patch_backup_*/
+# END STAGE CLEAN V5
+
+# BEGIN STAGE CLEAN MANUAL
+.pytest_cache/
+**/.pytest_cache/
+**/__pycache__/
+**/*.pyc
+_patch_backup_*/
+# END STAGE CLEAN MANUAL
