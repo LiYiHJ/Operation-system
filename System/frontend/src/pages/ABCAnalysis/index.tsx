@@ -1,6 +1,6 @@
 import { Card, Row, Col, Table, Tag, Statistic, Progress, Tabs, Badge, Empty, Button, Space, Modal, Descriptions } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined, FilterOutlined, DownloadOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../../components/charts/LazyEChart'
 import { useState } from 'react'
 
 // ==================== 类型定义 ====================
@@ -153,7 +153,7 @@ function ABCPieChart({ distribution }: { distribution: ABCDistribution }) {
 
   return (
     <Card>
-      <ReactECharts option={option} style={{ height: '350px' }} />
+      <LazyEChart option={option} style={{ height: '350px' }} />
     </Card>
   )
 }
@@ -225,7 +225,7 @@ function RevenueShareChart({ distribution }: { distribution: ABCDistribution }) 
 
   return (
     <Card>
-      <ReactECharts option={option} style={{ height: '350px' }} />
+      <LazyEChart option={option} style={{ height: '350px' }} />
     </Card>
   )
 }

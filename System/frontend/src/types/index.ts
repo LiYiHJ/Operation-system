@@ -7,3 +7,5 @@ export * from './profit'
 export * from './ads'
 export * from './dataset'
 export * from './batch'
+
+export * from './gate'

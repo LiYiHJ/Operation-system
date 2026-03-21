@@ -16,14 +16,48 @@ class DatasetRegistryService:
         self._root_dir = root_dir
         self._registry_dir = self._root_dir / "config" / "dataset_registry"
 
+    @staticmethod
+    def _simple_yaml_load(text: str) -> Dict[str, Any]:
+        """        在 PyYAML 缺失时，为当前 registry manifest 提供一个足够用的轻量解析器。
+        仅支持：
+        - key: value
+        - key:
+  - item1
+  - item2
+        """
+        payload: Dict[str, Any] = {}
+        current_list_key: Optional[str] = None
+        for raw_line in text.splitlines():
+            line = raw_line.rstrip()
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
+                continue
+            if stripped.startswith('- '):
+                if current_list_key is None:
+                    continue
+                payload.setdefault(current_list_key, []).append(stripped[2:].strip())
+                continue
+            current_list_key = None
+            if ':' not in stripped:
+                continue
+            key, value = stripped.split(':', 1)
+            key = key.strip()
+            value = value.strip()
+            if value == '':
+                payload[key] = []
+                current_list_key = key
+            else:
+                payload[key] = value
+        return payload
+
     def _load_yaml(self, path: Path) -> Dict[str, Any]:
         if not path.exists():
             return {}
         text = path.read_text(encoding="utf-8")
-        if yaml is None:
-            return {}
-        data = yaml.safe_load(text)
-        return data if isinstance(data, dict) else {}
+        if yaml is not None:
+            data = yaml.safe_load(text)
+            return data if isinstance(data, dict) else {}
+        return self._simple_yaml_load(text)
 
     def _normalize_payload(self, payload: Dict[str, Any], *, fallback_stem: str) -> Dict[str, Any]:
         dataset_kind = str(payload.get("dataset_kind") or fallback_stem)

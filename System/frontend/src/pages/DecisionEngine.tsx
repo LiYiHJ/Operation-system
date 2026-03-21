@@ -40,7 +40,7 @@ import {
   TrophyOutlined,
   StarOutlined
 } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { strategyApi } from '../services/api'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { strategyTypeLabels, sourcePageLabels } from '../utils/labels'
@@ -806,12 +806,12 @@ export default function DecisionEngine() {
               <Row gutter={16}>
                 <Col span={12}>
                   <Card title="📊 优先级分布">
-                    <ReactECharts option={priorityChartOption} style={{ height: '300px' }} />
+                    <LazyEChart option={priorityChartOption} style={{ height: '300px' }} />
                   </Card>
                 </Col>
                 <Col span={12}>
                   <Card title="📈 问题类型分布">
-                    <ReactECharts option={typeChartOption} style={{ height: '300px' }} />
+                    <LazyEChart option={typeChartOption} style={{ height: '300px' }} />
                   </Card>
                 </Col>
               </Row>

@@ -11,6 +11,7 @@ import {
   BulbOutlined,
   ThunderboltOutlined,
   CalculatorOutlined,
+  InboxOutlined,
   UserOutlined,
   BellOutlined,
   SettingOutlined,
@@ -54,6 +55,7 @@ export default function Layout() {
 
   const menuItems = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: '运营总览' },
+    { key: '/import', icon: <InboxOutlined />, label: '数据工作台' },
     { key: '/profit', icon: <CalculatorOutlined />, label: '利润求解器' },
     { key: '/abc', icon: <BarChartOutlined />, label: 'ABC分析' },
     { key: '/price', icon: <DollarOutlined />, label: '价格竞争力' },

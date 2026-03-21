@@ -1,0 +1,77 @@
+{
+  "contractVersion": "p1.v1",
+  "datasets": [
+    {
+      "datasetKind": "ads",
+      "entityKeyField": "sku",
+      "gatePolicy": "ads_safe",
+      "grain": "sku_day",
+      "importProfile": "ozon_ads_report",
+      "label": "广告投放报表",
+      "loaderTarget": "fact_ads_daily",
+      "optionalCommonFields": [
+        "ad_spend",
+        "ad_revenue",
+        "clicks",
+        "impressions_total",
+        "ctr",
+        "cpc",
+        "roas"
+      ],
+      "platform": "ozon",
+      "requiredCoreFields": [
+        "sku"
+      ],
+      "schemaVersion": "v1",
+      "sourceType": "file"
+    },
+    {
+      "datasetKind": "orders",
+      "entityKeyField": "sku",
+      "gatePolicy": "core_safe",
+      "grain": "sku_day",
+      "importProfile": "ozon_orders_report",
+      "label": "订单/商品经营报表",
+      "loaderTarget": "fact_order_line_daily",
+      "optionalCommonFields": [
+        "order_amount",
+        "impressions_total",
+        "product_card_visits",
+        "add_to_cart_total",
+        "stock_total",
+        "rating_value",
+        "review_count",
+        "price_index_status"
+      ],
+      "platform": "ozon",
+      "requiredCoreFields": [
+        "sku",
+        "orders"
+      ],
+      "schemaVersion": "v1",
+      "sourceType": "file"
+    },
+    {
+      "datasetKind": "reviews",
+      "entityKeyField": "sku",
+      "gatePolicy": "review_safe",
+      "grain": "sku_snapshot",
+      "importProfile": "ozon_reviews_report",
+      "label": "评分/评价报表",
+      "loaderTarget": "fact_review_snapshot",
+      "optionalCommonFields": [
+        "rating_value",
+        "review_count",
+        "return_rate",
+        "cancel_rate"
+      ],
+      "platform": "ozon",
+      "requiredCoreFields": [
+        "sku"
+      ],
+      "schemaVersion": "v1",
+      "sourceType": "file"
+    }
+  ],
+  "_httpStatus": 200
+}

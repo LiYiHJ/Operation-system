@@ -1,0 +1,20 @@
+dataset_kind: ads
+import_profile: ozon_ads_report
+label: 广告投放报表
+source_type: file
+platform: ozon
+grain: sku_day
+required_core_fields:
+  - sku
+optional_common_fields:
+  - ad_spend
+  - ad_revenue
+  - clicks
+  - impressions_total
+  - ctr
+  - cpc
+  - roas
+loader_target: fact_ads_daily
+gate_policy: ads_safe
+schema_version: v1
+entity_key_field: sku

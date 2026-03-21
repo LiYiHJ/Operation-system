@@ -216,10 +216,28 @@ class ImportService:
     NUMERIC_CANONICALS = {
         "impressions_total",
         "impressions_search_catalog",
+        "search_catalog_position_avg",
+        "impression_to_order_cvr",
+        "search_catalog_to_card_cvr",
         "product_card_visits",
+        "search_catalog_to_cart_cvr",
+        "add_to_cart_from_search_catalog",
+        "card_to_cart_cvr",
+        "add_to_cart_from_card",
         "add_to_cart_total",
+        "add_to_cart_cvr_total",
+        "cart_to_order_cvr",
         "orders",
+        "items_ordered",
+        "items_delivered",
+        "order_to_purchase_cvr",
+        "items_purchased",
+        "items_canceled",
+        "items_returned",
         "order_amount",
+        "avg_sale_price",
+        "discount_pct",
+        "ad_revenue_rate",
         "stock_total",
         "review_count",
         "rating_value",
@@ -1286,8 +1304,8 @@ class ImportService:
         punctuation_count = sum(compact.count(ch) for ch in [",", ";", ":", "，", "；", "："])
 
         return (
-            len(compact) >= 40
-            or token_count >= 8
+            len(compact) >= 90
+            or token_count >= 14
             or punctuation_count >= 2
             or "оцениваем" in compact
             or "считаем" in compact
@@ -1534,9 +1552,19 @@ class ImportService:
                 df[col] = df[col].apply(self.cleaner.clean_rating)
             else:
                 df[col] = df[col].apply(self.cleaner.clean_numeric)
-        for col in [
-            c for c in df.columns if c in {"sku", "name", "price_index_status"}
-        ]:
+        text_columns = {
+            "sku",
+            "platform_sku",
+            "product_name",
+            "category_level_1",
+            "category_level_2",
+            "category_level_3",
+            "brand",
+            "model",
+            "fulfillment_scheme",
+            "price_index_status",
+        }
+        for col in [c for c in df.columns if c in text_columns]:
             df[col] = df[col].apply(self.cleaner.clean_text)
         return df
 
@@ -2424,6 +2452,12 @@ class ImportService:
             },
         }
         return response
+
+    def get_session_result(self, session_id: int) -> dict | None:
+        session = self._sessions.get(session_id)
+        if not session:
+            return None
+        return copy.deepcopy(session.get("result") or {})
 
     # ---------- 兼容旧接口 ----------
 

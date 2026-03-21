@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Table, Tag, Card, Row, Col, Statistic, Button, Select, Space, List, message, Empty, Tooltip, Tabs } from 'antd'
 import { TrophyOutlined, SendOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { thematicApi } from '../services/api'
@@ -50,8 +50,8 @@ export default function ABCAnalysis() {
       <Col xs={24} lg={6}><Card><Statistic title="平均毛利率" value={data?.summary?.avgMargin || 0} formatter={(v) => formatPercent(v, 1, true)} /></Card></Col>
     </Row>
     <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-      <Col xs={24} lg={12}><Card title="ABC分布"><ReactECharts option={pie} style={{ height: 320 }} /></Card></Col>
-      <Col xs={24} lg={12}><Card title="营收分布"><ReactECharts option={revenueBar} style={{ height: 320 }} /></Card></Col>
+      <Col xs={24} lg={12}><Card title="ABC分布"><LazyEChart option={pie} style={{ height: 320 }} /></Card></Col>
+      <Col xs={24} lg={12}><Card title="营收分布"><LazyEChart option={revenueBar} style={{ height: 320 }} /></Card></Col>
     </Row>
     <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
       <Col xs={24} lg={10}><Card title="问题识别">{data?.issues?.length ? <List size="small" dataSource={data?.issues || []} renderItem={(x: any) => <List.Item>{displayOrDash(x.sku)} / {displayOrDash(x.issue)}</List.Item>} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无问题" />}</Card></Col>

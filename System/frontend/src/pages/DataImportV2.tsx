@@ -83,7 +83,12 @@ const STANDARD_FIELDS = {
 }
 
 
-export default function DataImportV2() {
+type DataImportV2Props = {
+  datasetKind?: string
+  importProfile?: string
+}
+
+export default function DataImportV2({ datasetKind = 'orders', importProfile = 'ozon_orders_report' }: DataImportV2Props) {
   const [currentStep, setCurrentStep] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -170,7 +175,7 @@ export default function DataImportV2() {
     setCurrentStep(1)
 
     try {
-      const result = await importApi.uploadFile(selectedFile, 1)
+      const result = await importApi.uploadFile(selectedFile, 1, undefined, { datasetKind, importProfile })
       setImportResult(result)
       setCurrentStep(2)
       if (result.finalStatus === 'risk') {

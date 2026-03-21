@@ -1,0 +1,103 @@
+{
+  "algorithm_profile": "ozon_daily_profit",
+  "current": {
+    "break_even_discount_ratio": 0.5022,
+    "break_even_price": 75.3247,
+    "is_loss": false,
+    "net_margin": 0.2867,
+    "net_profit": 34.4
+  },
+  "customScenarios": [
+    {
+      "input": {
+        "fixed_cost_total": 69.0,
+        "list_price": 129.0,
+        "sale_price": 119.0,
+        "variable_rate_total": 0.29
+      },
+      "name": "promo_5",
+      "result": {
+        "break_even_discount_ratio": 0.7534,
+        "break_even_price": 97.1831,
+        "is_loss": false,
+        "net_margin": 0.1302,
+        "net_profit": 15.49
+      }
+    },
+    {
+      "input": {
+        "fixed_cost_total": 69.0,
+        "list_price": 129.0,
+        "sale_price": 119.0,
+        "variable_rate_total": 0.29
+      },
+      "name": "promo_10",
+      "result": {
+        "break_even_discount_ratio": 0.7534,
+        "break_even_price": 97.1831,
+        "is_loss": false,
+        "net_margin": 0.1302,
+        "net_profit": 15.49
+      }
+    }
+  ],
+  "discountScenarios": [
+    {
+      "deal_price": 150.0,
+      "discount_ratio": 1.0,
+      "is_loss": false,
+      "net_margin": 0.3833,
+      "net_profit": 57.5
+    },
+    {
+      "deal_price": 142.5,
+      "discount_ratio": 0.95,
+      "is_loss": false,
+      "net_margin": 0.363,
+      "net_profit": 51.725
+    },
+    {
+      "deal_price": 135.0,
+      "discount_ratio": 0.9,
+      "is_loss": false,
+      "net_margin": 0.3404,
+      "net_profit": 45.95
+    },
+    {
+      "deal_price": 127.5,
+      "discount_ratio": 0.85,
+      "is_loss": false,
+      "net_margin": 0.3151,
+      "net_profit": 40.175
+    }
+  ],
+  "input": {
+    "fixed_cost_total": 58.0,
+    "list_price": 150.0,
+    "sale_price": 120.0,
+    "variable_rate_total": 0.23
+  },
+  "pricingGuardrails": {
+    "breakEvenPrice": 75.3247,
+    "safetyFloorPrice": 79.0909,
+    "targetMargin10Price": 86.5672
+  },
+  "riskScan": [
+    {
+      "detail": "当前净利润为正",
+      "level": "低",
+      "risk": "亏损风险"
+    },
+    {
+      "detail": "变量费率 23.0%",
+      "level": "低",
+      "risk": "高费率风险"
+    },
+    {
+      "detail": "净利率 28.67%",
+      "level": "低",
+      "risk": "低毛利风险"
+    }
+  ],
+  "_httpStatus": 200
+}

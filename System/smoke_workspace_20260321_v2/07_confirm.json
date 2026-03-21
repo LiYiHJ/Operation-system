@@ -1,0 +1,4 @@
+{
+  "error": "'ImportService' object has no attribute 'get_session_result'",
+  "_httpStatus": 500
+}

@@ -1,0 +1,17 @@
+dataset_kind: reviews
+import_profile: ozon_reviews_report
+label: 评分/评价报表
+source_type: file
+platform: ozon
+grain: sku_snapshot
+required_core_fields:
+  - sku
+optional_common_fields:
+  - rating_value
+  - review_count
+  - return_rate
+  - cancel_rate
+loader_target: fact_review_snapshot
+gate_policy: review_safe
+schema_version: v1
+entity_key_field: sku

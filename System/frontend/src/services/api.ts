@@ -293,6 +293,19 @@ export const profitApi = {
     return apiClient.post('/profit/solve', data)
   },
 
+  simulate: (data: {
+    salePrice: number
+    listPrice: number
+    variableRateTotal: number
+    fixedCostTotal: number
+    algorithmProfile?: string
+    layeredParams?: any
+    discountRatios?: number[]
+    scenarios?: any[]
+  }): Promise<any> => {
+    return apiClient.post('/profit/simulate', data)
+  },
+
   saveSnapshot: (data: {
     shopId: number
     snapshotName: string

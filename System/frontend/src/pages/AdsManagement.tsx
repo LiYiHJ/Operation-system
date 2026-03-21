@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, Row, Col, Table, Tag, Button, Select, Space, Statistic, List, message, Empty } from 'antd'
 import { DollarOutlined, EyeOutlined, SendOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { thematicApi } from '../services/api'
@@ -55,7 +55,7 @@ export default function AdsManagement() {
       <Col xs={24} lg={6}><Card><Statistic title="活跃活动" value={data?.summary?.activeCampaigns || 0} formatter={(v) => formatInteger(v)} prefix={<EyeOutlined />} /></Card></Col>
     </Row>
     <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-      <Col xs={24} lg={14}><Card title="ROAS 分布"><ReactECharts option={roasChart} style={{ height: 320 }} /></Card></Col>
+      <Col xs={24} lg={14}><Card title="ROAS 分布"><LazyEChart option={roasChart} style={{ height: 320 }} /></Card></Col>
       <Col xs={24} lg={10}><Card title="问题识别 / 推荐动作">{data?.issues?.length ? <List size="small" dataSource={data?.issues || []} renderItem={(x: any) => <List.Item>{displayOrDash(x.sku)} / {performanceLabels[x.performance] || x.performance} / {displayOrDash(x.recommendation)}</List.Item>} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无问题" />}</Card></Col>
     </Row>
     <Card title="广告活动详情" extra={<Space><Select value={performanceFilter} onChange={setPerformanceFilter} options={[{ value: 'all', label: '全部' }, { value: 'excellent', label: '优秀' }, { value: 'good', label: '良好' }, { value: 'poor', label: '较差' }, { value: 'critical', label: '严重' }]} /><Button type="primary" onClick={() => navigate('/decision')}>去决策</Button></Space>}>

@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './auth'
 import './App.css'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
-const DataImport = lazy(() => import('./pages/DataImportV2'))
+const DataImport = lazy(() => import('./pages/DataWorkspace'))
 const ABCAnalysis = lazy(() => import('./pages/ABCAnalysis'))
 const PriceCompetitiveness = lazy(() => import('./pages/PriceCompetitiveness'))
 const FunnelAnalysis = lazy(() => import('./pages/FunnelAnalysis'))

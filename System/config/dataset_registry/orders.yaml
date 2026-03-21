@@ -1,0 +1,22 @@
+dataset_kind: orders
+import_profile: ozon_orders_report
+label: 订单/商品经营报表
+source_type: file
+platform: ozon
+grain: sku_day
+required_core_fields:
+  - sku
+  - orders
+optional_common_fields:
+  - order_amount
+  - impressions_total
+  - product_card_visits
+  - add_to_cart_total
+  - stock_total
+  - rating_value
+  - review_count
+  - price_index_status
+loader_target: fact_order_line_daily
+gate_policy: core_safe
+schema_version: v1
+entity_key_field: sku
