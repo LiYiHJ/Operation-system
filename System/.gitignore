@@ -1,3 +1,14 @@
+# Final cleanup
+stage_clean_summary_*.txt
+nulcd
+temSystem
+tttt.txt
+ecom_v51.db
+input.json
+p1_runtime_fix*.txt
+p1_runtime_fix*.json
+
+
 frontend/.env
 frontend/node_modules/
 frontend/dist/
