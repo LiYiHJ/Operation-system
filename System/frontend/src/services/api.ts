@@ -192,6 +192,10 @@ export const importApi = {
   getDatasetRegistry: (): Promise<{ contractVersion?: string; datasets?: DatasetRegistryItem[] }> => {
     return apiClient.get('/import/dataset-registry')
   },
+
+  listImportBatches: (limit = 10): Promise<{ contractVersion?: string; source?: string; total?: number; items?: any[] }> => {
+    return apiClient.get('/import/batches', { params: { limit } })
+  },
 }
 
 // ========== Analysis API ==========

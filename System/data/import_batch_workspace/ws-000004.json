@@ -1,0 +1,105 @@
+{
+  "workspaceBatchId": "ws-000004",
+  "sessionId": 4,
+  "datasetKind": "orders",
+  "importProfile": "ozon_orders_report",
+  "fileName": "销售数据分析.xlsx",
+  "filePath": null,
+  "fileSize": 35751,
+  "platform": "generic",
+  "sourceMode": "upload",
+  "shopId": 1,
+  "operator": "frontend_user",
+  "createdAt": "2026-03-22T11:01:21.946401+08:00",
+  "updatedAt": "2026-03-22T11:01:21.946401+08:00",
+  "parseSnapshot": {
+    "contractVersion": "p1.v1",
+    "datasetKind": "orders",
+    "batchStatus": "failed",
+    "transportStatus": "failed",
+    "semanticStatus": "failed",
+    "importabilityStatus": "failed",
+    "quarantineCount": 0,
+    "importedRows": 0,
+    "mappingSummary": {
+      "mappedCount": 0,
+      "unmappedCount": 0,
+      "mappingCoverage": 0.0,
+      "mappedConfidence": 0.0,
+      "mappedCanonicalFields": [],
+      "topUnmappedHeaders": []
+    },
+    "auditSummary": {
+      "sessionId": 4,
+      "fileName": "销售数据分析.xlsx",
+      "finalStatus": "failed",
+      "importProfile": "ozon_orders_report"
+    }
+  },
+  "finalSnapshot": {
+    "contractVersion": "p1.v1",
+    "datasetKind": "orders",
+    "batchStatus": "failed",
+    "transportStatus": "failed",
+    "semanticStatus": "failed",
+    "importabilityStatus": "failed",
+    "quarantineCount": 0,
+    "importedRows": 0,
+    "mappingSummary": {
+      "mappedCount": 0,
+      "unmappedCount": 0,
+      "mappingCoverage": 0.0,
+      "mappedConfidence": 0.0,
+      "mappedCanonicalFields": [],
+      "topUnmappedHeaders": []
+    },
+    "auditSummary": {
+      "sessionId": 4,
+      "fileName": "销售数据分析.xlsx",
+      "finalStatus": "failed",
+      "importProfile": "ozon_orders_report"
+    }
+  },
+  "parseResultMeta": {
+    "totalRows": 0,
+    "totalColumns": 0,
+    "status": "failed",
+    "finalStatus": "failed",
+    "mappedCount": 0,
+    "unmappedCount": 0,
+    "mappingCoverage": null,
+    "mappedConfidence": null,
+    "selectedSheet": "CSV",
+    "importabilityReasons": [],
+    "semanticGateReasons": [
+      "read_failed"
+    ],
+    "riskOverrideReasons": [],
+    "topUnmappedHeaders": []
+  },
+  "events": [
+    {
+      "eventType": "parse",
+      "at": "2026-03-22T11:01:21.946401+08:00",
+      "status": "failed",
+      "finalStatus": "failed",
+      "batchStatus": "failed",
+      "transportStatus": "failed",
+      "semanticStatus": "failed",
+      "importabilityStatus": "failed",
+      "importedRows": 0,
+      "quarantineCount": 0,
+      "errorRows": 0,
+      "reasonSummary": {
+        "errors": [],
+        "importabilityReasons": [],
+        "semanticGateReasons": [
+          "read_failed"
+        ],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": []
+      }
+    }
+  ],
+  "dbBatchId": 13
+}

@@ -51,6 +51,25 @@ def add_section(lines: list[str], title: str, payload_path: Path) -> None:
     lines.append('')
 
 
+
+
+def resolve_server_file(repo_root: Path, server_file_arg: str) -> Path:
+    raw = Path(server_file_arg)
+    if raw.is_absolute():
+        return raw
+
+    candidates = [
+        repo_root / raw,
+        repo_root / 'System' / raw,
+        repo_root / 'data' / raw.name,
+        repo_root / 'System' / 'data' / raw.name,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[-1]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--repo-root', required=True)
@@ -58,7 +77,7 @@ def main() -> int:
     parser.add_argument('--output-dir', default='smoke_workspace_latest')
     parser.add_argument('--dataset-kind', default='orders')
     parser.add_argument('--import-profile', default='ozon_orders_report')
-    parser.add_argument('--server-file', default='data/analytics_report_2026-03-12_23_49.xlsx')
+    parser.add_argument('--server-file', default='analytics_report_2026-03-12_23_49.xlsx')
     args = parser.parse_args()
 
     repo_root = Path(args.repo_root).resolve()
@@ -67,9 +86,7 @@ def main() -> int:
         out_dir = repo_root / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    server_file = Path(args.server_file)
-    if not server_file.is_absolute():
-        server_file = repo_root / server_file
+    server_file = resolve_server_file(repo_root, args.server_file)
 
     results: dict[str, Path] = {}
 
@@ -162,6 +179,12 @@ def main() -> int:
     write_json(profit_path, profit_payload)
     results['08_profit_simulate.json'] = profit_path
 
+    status, recent_batches_payload = request_json(args.base_url + '/api/import/batches?limit=10', method='GET')
+    recent_batches_payload.setdefault('_httpStatus', status)
+    recent_batches_path = out_dir / '09_recent_batches.json'
+    write_json(recent_batches_path, recent_batches_payload)
+    results['09_recent_batches.json'] = recent_batches_path
+
     summary_lines = [
         f'repo_root: {repo_root}',
         f'output_dir: {out_dir}',
@@ -180,7 +203,7 @@ def main() -> int:
         f"confirm_success: {json.loads(confirm_path.read_text(encoding='utf-8')).get('success')}",
     ]
 
-    for name in ['01_health.json','02_import_dataset_registry.json','03_ingestion_dataset_registry.json','04_batch_contract_template.json','05_parse.json','06_batch_snapshot.json','07_confirm.json','08_profit_simulate.json']:
+    for name in ['01_health.json','02_import_dataset_registry.json','03_ingestion_dataset_registry.json','04_batch_contract_template.json','05_parse.json','06_batch_snapshot.json','07_confirm.json','08_profit_simulate.json','09_recent_batches.json']:
         add_section(summary_lines, name, results[name])
 
     summary_path = out_dir / 'smoke_workspace_summary.txt'

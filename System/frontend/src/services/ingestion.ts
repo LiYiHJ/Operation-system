@@ -1,5 +1,13 @@
 import { importApi } from './api'
-import type { BatchSnapshot, ConfirmImportRequest, ConfirmImportResponse, DatasetRegistryItem, ImportResult } from '../types'
+import type {
+  BatchSnapshot,
+  ConfirmImportRequest,
+  ConfirmImportResponse,
+  DatasetRegistryItem,
+  ImportResult,
+  WorkspaceBatchDetail,
+  WorkspaceBatchListItem,
+} from '../types'
 
 export const ingestionApi = {
   getDatasetRegistry: async (): Promise<{ contractVersion?: string; datasets: DatasetRegistryItem[] }> => {
@@ -8,6 +16,30 @@ export const ingestionApi = {
       contractVersion: data?.contractVersion,
       datasets: data?.datasets || [],
     }
+  },
+
+  listBatches: async (
+    limit = 20,
+  ): Promise<{ contractVersion?: string; source?: string; total?: number; items: WorkspaceBatchListItem[] }> => {
+    const response = await fetch(`/api/import/batches?limit=${encodeURIComponent(String(limit))}`)
+    if (!response.ok) {
+      throw new Error(`批次列表读取失败: ${response.status}`)
+    }
+    const data = await response.json()
+    return {
+      contractVersion: data?.contractVersion,
+      source: data?.source,
+      total: data?.total,
+      items: data?.items || [],
+    }
+  },
+
+  getBatch: async (sessionId: number): Promise<WorkspaceBatchDetail> => {
+    const response = await fetch(`/api/import/batches/${encodeURIComponent(String(sessionId))}`)
+    if (!response.ok) {
+      throw new Error(`批次详情读取失败: ${response.status}`)
+    }
+    return response.json()
   },
 
   uploadFile: async (

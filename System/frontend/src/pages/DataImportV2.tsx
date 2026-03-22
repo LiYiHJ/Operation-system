@@ -100,10 +100,10 @@ export default function DataImportV2({ datasetKind = 'orders', importProfile = '
   const semanticRisk = importResult?.finalStatus === 'risk'
 
   const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
-    if (status === 'passed') return <Tag color="green">passed</Tag>
-    if (status === 'risk') return <Tag color="orange">risk</Tag>
-    if (status === 'failed') return <Tag color="red">failed</Tag>
-    return <Tag color="default">n/a</Tag>
+    if (status === 'passed') return <Tag color="green">通过</Tag>
+    if (status === 'risk') return <Tag color="orange">风险</Tag>
+    if (status === 'failed') return <Tag color="red">失败</Tag>
+    return <Tag color="default">未判定</Tag>
   }
 
   useEffect(() => {
@@ -126,6 +126,13 @@ export default function DataImportV2({ datasetKind = 'orders', importProfile = '
         // keep local fallback
       })
   }, [])
+
+  useEffect(() => {
+    setCurrentStep(0)
+    setFileList([])
+    setSelectedFile(null)
+    setImportResult(null)
+  }, [datasetKind, importProfile])
 
   const buildDisplayStats = (result: ImportResult) => {
     const ignoredFields = new Set(result.stats?.ignoredFields || [])
@@ -299,10 +306,26 @@ export default function DataImportV2({ datasetKind = 'orders', importProfile = '
         sessionId: importResult.sessionId,
         shopId: 1,
         manualOverrides: importResult.fieldMappings,
+        datasetKind: (importResult as any).datasetKind || datasetKind,
+        importProfile: (importResult as any).importProfile || importProfile,
       })
 
       if (result.status === 'success') {
-        message.success(`成功导入 ${result.importedRows} 条数据！`)
+        const uiOutcome = (result as any).uiOutcome
+        const userMessage = (result as any).userMessage
+        if (uiOutcome === 'blocked') {
+          message.warning(userMessage || `导入已阻断：0 条入库，${result.quarantineCount || 0} 条已隔离`)
+        } else if (uiOutcome === 'partial') {
+          message.warning(userMessage || `导入部分完成：已导入 ${result.importedRows || 0} 条`)
+        } else {
+          message.success(userMessage || `成功导入 ${result.importedRows || 0} 条数据！`)
+        }
+        setImportResult({
+          ...importResult,
+          ...(result as any),
+          datasetKind: (importResult as any).datasetKind || datasetKind,
+          importProfile: (importResult as any).importProfile || importProfile,
+        } as any)
         setCurrentStep(3)
       } else {
         throw new Error(result.errors?.[0] || '导入失败')
@@ -342,6 +365,11 @@ export default function DataImportV2({ datasetKind = 'orders', importProfile = '
             <p>✅ 智能字段映射（支持俄语/中文/英语）</p>
             <p>✅ 手动调整映射（针对特殊格式）</p>
             <p>✅ 保存映射模板（下次导入直接使用）</p>
+            <p>
+              当前导入目标：
+              <Tag color="blue" style={{ marginLeft: 8 }}>{datasetKind}</Tag>
+              <Tag color="purple">{importProfile}</Tag>
+            </p>
           </div>
         }
         type="info"
@@ -700,11 +728,16 @@ export default function DataImportV2({ datasetKind = 'orders', importProfile = '
         </Space>
 
         {/* 字段映射表格 */}
-        <Card title="字段映射调整" extra={<Tag color="blue">点击"映射到"列可手动调整</Tag>}>
+        <Card title="字段映射调整" extra={<Tag color="blue">点击“映射到”列可手动调整；大列表已恢复分页</Tag>}>
           <Table
             dataSource={importResult.fieldMappings}
             columns={columns}
-            pagination={false}
+            pagination={{
+              pageSize: 20,
+              showSizeChanger: true,
+              pageSizeOptions: ['20', '50', '100'],
+              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条 / 共 ${total} 条`,
+            }}
             rowKey="originalField"
             scroll={{ x: 1000 }}
           />
@@ -734,23 +767,58 @@ export default function DataImportV2({ datasetKind = 'orders', importProfile = '
   }
 
   // 步骤3: 完成
-  const renderCompleteStep = () => (
+  const renderCompleteStep = () => {
+    const result = importResult as any
+    const uiOutcome = result?.uiOutcome || (result?.quarantineCount && !result?.importedRows ? 'blocked' : 'imported')
+    const title =
+      uiOutcome === 'blocked'
+        ? '导入已阻断'
+        : uiOutcome === 'partial'
+        ? '导入部分完成'
+        : uiOutcome === 'empty'
+        ? '流程已完成'
+        : '导入成功'
+    const color =
+      uiOutcome === 'blocked'
+        ? '#faad14'
+        : uiOutcome === 'partial'
+        ? '#fa8c16'
+        : '#52c41a'
+    const importedRows = result?.importedRows ?? 0
+    const quarantineCount = result?.quarantineCount ?? 0
+
+    return (
     <div style={{ textAlign: 'center', padding: '48px' }}>
-      <CheckCircleOutlined style={{ fontSize: '64px', color: '#52c41a' }} />
-      <h2 style={{ marginTop: '24px' }}>导入成功！</h2>
+      <CheckCircleOutlined style={{ fontSize: '64px', color }} />
+      <h2 style={{ marginTop: '24px' }}>{title}</h2>
       <p style={{ color: '#8c8c8c', fontSize: '16px' }}>
-        已成功导入 {importResult?.totalRows.toLocaleString()} 条数据
+        本次 {importedRows} 条入库，{quarantineCount} 条数据已隔离
       </p>
 
       <Divider />
 
+      <Alert
+        type={uiOutcome === 'blocked' ? 'warning' : uiOutcome === 'partial' ? 'info' : 'success'}
+        showIcon
+        style={{ maxWidth: 720, margin: '0 auto 24px' }}
+        message="执行摘要"
+        description={
+          <div style={{ textAlign: 'left' }}>
+            <div>batchStatus: {result?.batchStatus || '—'}</div>
+            <div>importability: {result?.importabilityStatus || '—'}</div>
+            <div>原因: {(result?.errors || result?.importabilityReasons || []).join(' / ') || '—'}</div>
+          </div>
+        }
+      />
+
       <Space>
-        <Button type="primary" onClick={() => window.location.href = '/dashboard'}>
-          查看仪表盘
+        <Button type="primary" onClick={() => window.location.href = '/import'}>
+          查看工作台
         </Button>
         <Button onClick={() => {
           setCurrentStep(0)
           setFileList([])
+          setSelectedFile(null)
           setImportResult(null)
         }}>
           继续导入
@@ -758,6 +826,7 @@ export default function DataImportV2({ datasetKind = 'orders', importProfile = '
       </Space>
     </div>
   )
+  }
 
   return (
     <div style={{ padding: '24px' }}>

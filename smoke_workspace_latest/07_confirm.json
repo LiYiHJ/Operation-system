@@ -1,0 +1,52 @@
+{
+  "batchId": 10,
+  "batchSnapshot": {
+    "auditSummary": {
+      "importProfile": "ozon_orders_report"
+    },
+    "batchStatus": "failed",
+    "contractVersion": "p1.v1",
+    "datasetKind": "orders",
+    "importabilityStatus": "failed",
+    "importedRows": 0,
+    "mappingSummary": {
+      "mappedCanonicalFields": [],
+      "mappedConfidence": 0.0,
+      "mappedCount": 0,
+      "mappingCoverage": 0.0,
+      "topUnmappedHeaders": [],
+      "unmappedCount": 0
+    },
+    "quarantineCount": 0,
+    "semanticStatus": "failed",
+    "transportStatus": "failed"
+  },
+  "batchStatus": "failed",
+  "datasetKind": "orders",
+  "errorRows": 0,
+  "errors": [
+    "session not found"
+  ],
+  "finalStatus": "failed",
+  "importProfile": "ozon_orders_report",
+  "importabilityReasons": [
+    "session_not_found"
+  ],
+  "importabilityStatus": "failed",
+  "importedRows": 0,
+  "persistedBatchId": 10,
+  "recoverySummary": {},
+  "riskOverrideReasons": [],
+  "semanticAcceptanceReason": [],
+  "semanticGateReasons": [
+    "session_not_found"
+  ],
+  "semanticStatus": "failed",
+  "sessionId": 1,
+  "status": "failed",
+  "success": false,
+  "transportStatus": "failed",
+  "warnings": [],
+  "workspaceBatchId": "ws-000001",
+  "_httpStatus": 200
+}

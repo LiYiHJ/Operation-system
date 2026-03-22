@@ -1,0 +1,327 @@
+{
+  "workspaceBatchId": "ws-000002",
+  "sessionId": 2,
+  "datasetKind": "orders",
+  "importProfile": "ozon_orders_report",
+  "fileName": "销售数据分析.xlsx",
+  "fileSize": 35751,
+  "platform": "generic",
+  "sourceMode": "upload",
+  "shopId": 1,
+  "operator": "frontend_user",
+  "createdAt": "2026-03-22T00:45:32.225544+08:00",
+  "updatedAt": "2026-03-22T12:57:43.852425+08:00",
+  "parseSnapshot": {
+    "contractVersion": "p1.v1",
+    "datasetKind": "orders",
+    "batchStatus": "validated",
+    "transportStatus": "passed",
+    "semanticStatus": "passed",
+    "importabilityStatus": "risk",
+    "quarantineCount": 0,
+    "importedRows": 0,
+    "mappingSummary": {
+      "mappedCount": 27,
+      "unmappedCount": 5,
+      "mappingCoverage": 0.871,
+      "mappedConfidence": 0.835,
+      "mappedCanonicalFields": [
+        "order_amount",
+        "order_amount_share",
+        "impressions_total",
+        "impressions_search_catalog",
+        "search_catalog_to_cart_cvr",
+        "add_to_cart_from_search_catalog",
+        "search_catalog_to_card_cvr",
+        "product_card_visits",
+        "card_to_cart_cvr",
+        "add_to_cart_from_card",
+        "add_to_cart_cvr_total",
+        "add_to_cart_total",
+        "cart_to_order_cvr",
+        "orders",
+        "items_delivered",
+        "order_to_purchase_cvr",
+        "items_purchased",
+        "items_canceled",
+        "items_returned",
+        "avg_sale_price"
+      ],
+      "topUnmappedHeaders": [
+        "Unnamed: 0",
+        "ABC分析",
+        "在搜索结果和目录中的位置",
+        "从展示到点击的转化率",
+        "建议"
+      ]
+    },
+    "auditSummary": {
+      "sessionId": 2,
+      "fileName": "销售数据分析.xlsx",
+      "finalStatus": "passed",
+      "importProfile": "ozon_orders_report"
+    }
+  },
+  "finalSnapshot": {
+    "contractVersion": "p1.v1",
+    "datasetKind": "orders",
+    "batchStatus": "validated",
+    "transportStatus": "passed",
+    "semanticStatus": "passed",
+    "importabilityStatus": "risk",
+    "quarantineCount": 0,
+    "importedRows": 0,
+    "mappingSummary": {
+      "mappedCount": 27,
+      "unmappedCount": 5,
+      "mappingCoverage": 0.871,
+      "mappedConfidence": 0.835,
+      "mappedCanonicalFields": [
+        "order_amount",
+        "order_amount_share",
+        "impressions_total",
+        "impressions_search_catalog",
+        "search_catalog_to_cart_cvr",
+        "add_to_cart_from_search_catalog",
+        "search_catalog_to_card_cvr",
+        "product_card_visits",
+        "card_to_cart_cvr",
+        "add_to_cart_from_card",
+        "add_to_cart_cvr_total",
+        "add_to_cart_total",
+        "cart_to_order_cvr",
+        "orders",
+        "items_delivered",
+        "order_to_purchase_cvr",
+        "items_purchased",
+        "items_canceled",
+        "items_returned",
+        "avg_sale_price"
+      ],
+      "topUnmappedHeaders": [
+        "Unnamed: 0",
+        "ABC分析",
+        "在搜索结果和目录中的位置",
+        "从展示到点击的转化率",
+        "建议"
+      ]
+    },
+    "auditSummary": {
+      "sessionId": 2,
+      "fileName": "销售数据分析.xlsx",
+      "finalStatus": "passed",
+      "importProfile": "ozon_orders_report"
+    }
+  },
+  "parseResultMeta": {
+    "totalRows": 44,
+    "totalColumns": 32,
+    "status": "success",
+    "finalStatus": "passed",
+    "mappedCount": 27,
+    "unmappedCount": 5,
+    "mappingCoverage": 0.871,
+    "mappedConfidence": 0.835,
+    "selectedSheet": "Sheet1",
+    "importabilityReasons": [],
+    "semanticGateReasons": [],
+    "riskOverrideReasons": [],
+    "topUnmappedHeaders": [
+      "Unnamed: 0",
+      "ABC分析",
+      "在搜索结果和目录中的位置",
+      "从展示到点击的转化率",
+      "建议"
+    ]
+  },
+  "dbBatchId": 11,
+  "confirmSnapshot": null,
+  "confirmResultMeta": {},
+  "filePath": null,
+  "events": [
+    {
+      "eventType": "parse",
+      "at": "2026-03-22T10:57:57.827530+08:00",
+      "status": "failed",
+      "finalStatus": "failed",
+      "batchStatus": "failed",
+      "transportStatus": "failed",
+      "semanticStatus": "failed",
+      "importabilityStatus": "failed",
+      "importedRows": 0,
+      "quarantineCount": 0,
+      "errorRows": 0,
+      "reasonSummary": {
+        "errors": [],
+        "importabilityReasons": [],
+        "semanticGateReasons": [
+          "read_failed"
+        ],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": []
+      }
+    },
+    {
+      "eventType": "parse",
+      "at": "2026-03-22T11:23:32.047065+08:00",
+      "status": "success",
+      "finalStatus": "passed",
+      "batchStatus": "validated",
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "importabilityStatus": "risk",
+      "importedRows": 0,
+      "quarantineCount": 0,
+      "errorRows": 0,
+      "reasonSummary": {
+        "errors": [],
+        "importabilityReasons": [],
+        "semanticGateReasons": [],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": [
+          "Unnamed: 0",
+          "ABC分析",
+          "在搜索结果和目录中的位置",
+          "从展示到点击的转化率",
+          "建议"
+        ]
+      }
+    },
+    {
+      "eventType": "parse",
+      "at": "2026-03-22T11:49:24.323533+08:00",
+      "status": "success",
+      "finalStatus": "passed",
+      "batchStatus": "validated",
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "importabilityStatus": "risk",
+      "importedRows": 0,
+      "quarantineCount": 0,
+      "errorRows": 0,
+      "reasonSummary": {
+        "errors": [],
+        "importabilityReasons": [],
+        "semanticGateReasons": [],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": [
+          "Unnamed: 0",
+          "ABC分析",
+          "在搜索结果和目录中的位置",
+          "从展示到点击的转化率",
+          "建议"
+        ]
+      }
+    },
+    {
+      "eventType": "confirm",
+      "at": "2026-03-22T11:49:28.765040+08:00",
+      "status": "success",
+      "finalStatus": "passed",
+      "batchStatus": "blocked",
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "importabilityStatus": "risk",
+      "importedRows": 0,
+      "quarantineCount": 44,
+      "errorRows": 44,
+      "reasonSummary": {
+        "errors": [
+          "行1: SKU不能为空",
+          "行2: SKU不能为空",
+          "行3: SKU不能为空",
+          "行4: SKU不能为空",
+          "行5: SKU不能为空",
+          "行6: SKU不能为空"
+        ],
+        "importabilityReasons": [
+          "all_rows_quarantined"
+        ],
+        "semanticGateReasons": [],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": []
+      }
+    },
+    {
+      "eventType": "parse",
+      "at": "2026-03-22T12:34:28.708748+08:00",
+      "status": "success",
+      "finalStatus": "passed",
+      "batchStatus": "validated",
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "importabilityStatus": "risk",
+      "importedRows": 0,
+      "quarantineCount": 0,
+      "errorRows": 0,
+      "reasonSummary": {
+        "errors": [],
+        "importabilityReasons": [],
+        "semanticGateReasons": [],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": [
+          "Unnamed: 0",
+          "ABC分析",
+          "在搜索结果和目录中的位置",
+          "从展示到点击的转化率",
+          "建议"
+        ]
+      }
+    },
+    {
+      "eventType": "confirm",
+      "at": "2026-03-22T12:35:10.361008+08:00",
+      "status": "success",
+      "finalStatus": "passed",
+      "batchStatus": "blocked",
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "importabilityStatus": "risk",
+      "importedRows": 0,
+      "quarantineCount": 44,
+      "errorRows": 44,
+      "reasonSummary": {
+        "errors": [
+          "行1: SKU不能为空",
+          "行2: SKU不能为空",
+          "行3: SKU不能为空",
+          "行4: SKU不能为空",
+          "行5: SKU不能为空",
+          "行6: SKU不能为空"
+        ],
+        "importabilityReasons": [
+          "all_rows_quarantined"
+        ],
+        "semanticGateReasons": [],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": []
+      }
+    },
+    {
+      "eventType": "parse",
+      "at": "2026-03-22T12:57:43.852425+08:00",
+      "status": "success",
+      "finalStatus": "passed",
+      "batchStatus": "validated",
+      "transportStatus": "passed",
+      "semanticStatus": "passed",
+      "importabilityStatus": "risk",
+      "importedRows": 0,
+      "quarantineCount": 0,
+      "errorRows": 0,
+      "reasonSummary": {
+        "errors": [],
+        "importabilityReasons": [],
+        "semanticGateReasons": [],
+        "riskOverrideReasons": [],
+        "topUnmappedHeaders": [
+          "Unnamed: 0",
+          "ABC分析",
+          "在搜索结果和目录中的位置",
+          "从展示到点击的转化率",
+          "建议"
+        ]
+      }
+    }
+  ]
+}

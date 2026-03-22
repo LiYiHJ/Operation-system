@@ -1,0 +1,81 @@
+{
+  "batchStatus": "failed",
+  "confirmResultMeta": {},
+  "confirmSnapshot": null,
+  "createdAt": "2026-03-21T23:59:18.028341+08:00",
+  "datasetKind": "orders",
+  "dbBatchId": 10,
+  "fileName": "analytics_report_2026-03-12_23_49.xlsx",
+  "finalSnapshot": {
+    "auditSummary": {
+      "fileName": "analytics_report_2026-03-12_23_49.xlsx",
+      "finalStatus": "failed",
+      "importProfile": "ozon_orders_report",
+      "sessionId": 1
+    },
+    "batchStatus": "failed",
+    "contractVersion": "p1.v1",
+    "datasetKind": "orders",
+    "importabilityStatus": "failed",
+    "importedRows": 0,
+    "mappingSummary": {
+      "mappedCanonicalFields": [],
+      "mappedConfidence": 0.0,
+      "mappedCount": 0,
+      "mappingCoverage": 0.0,
+      "topUnmappedHeaders": [],
+      "unmappedCount": 0
+    },
+    "quarantineCount": 0,
+    "semanticStatus": "failed",
+    "transportStatus": "failed"
+  },
+  "importProfile": "ozon_orders_report",
+  "importabilityStatus": "failed",
+  "importedRows": 0,
+  "operator": "workspace_smoke",
+  "parseResultMeta": {
+    "finalStatus": "failed",
+    "mappedConfidence": null,
+    "mappedCount": 0,
+    "mappingCoverage": null,
+    "selectedSheet": "CSV",
+    "status": "failed",
+    "totalColumns": 0,
+    "totalRows": 0,
+    "unmappedCount": 0
+  },
+  "parseSnapshot": {
+    "auditSummary": {
+      "fileName": "analytics_report_2026-03-12_23_49.xlsx",
+      "finalStatus": "failed",
+      "importProfile": "ozon_orders_report",
+      "sessionId": 1
+    },
+    "batchStatus": "failed",
+    "contractVersion": "p1.v1",
+    "datasetKind": "orders",
+    "importabilityStatus": "failed",
+    "importedRows": 0,
+    "mappingSummary": {
+      "mappedCanonicalFields": [],
+      "mappedConfidence": 0.0,
+      "mappedCount": 0,
+      "mappingCoverage": 0.0,
+      "topUnmappedHeaders": [],
+      "unmappedCount": 0
+    },
+    "quarantineCount": 0,
+    "semanticStatus": "failed",
+    "transportStatus": "failed"
+  },
+  "quarantineCount": 0,
+  "semanticStatus": "failed",
+  "sessionId": 1,
+  "shopId": 1,
+  "sourceMode": "server_file",
+  "transportStatus": "failed",
+  "updatedAt": "2026-03-21T23:59:18.028341+08:00",
+  "workspaceBatchId": "ws-000001",
+  "_httpStatus": 200
+}
