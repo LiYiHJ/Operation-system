@@ -9,9 +9,39 @@ import type {
   WorkspaceBatchListItem,
 } from '../types'
 
+type JsonObject = Record<string, any>
+
+function unwrapData<T>(payload: any): T {
+  return (payload?.data ?? payload) as T
+}
+
+async function fetchJsonWithFallback<T>(
+  primaryUrl: string,
+  fallbackUrl: string | null,
+  errorLabel: string,
+): Promise<T> {
+  const primaryResponse = await fetch(primaryUrl)
+  if (primaryResponse.ok) {
+    return unwrapData<T>(await primaryResponse.json())
+  }
+
+  if (fallbackUrl) {
+    const fallbackResponse = await fetch(fallbackUrl)
+    if (fallbackResponse.ok) {
+      return (await fallbackResponse.json()) as T
+    }
+  }
+
+  throw new Error(`${errorLabel}: ${primaryResponse.status}`)
+}
+
 export const ingestionApi = {
   getDatasetRegistry: async (): Promise<{ contractVersion?: string; datasets: DatasetRegistryItem[] }> => {
-    const data = await importApi.getDatasetRegistry()
+    const data = await fetchJsonWithFallback<{ contractVersion?: string; datasets?: DatasetRegistryItem[] }>(
+      '/api/v1/registry/datasets',
+      '/api/import/dataset-registry',
+      '数据集注册表读取失败',
+    )
     return {
       contractVersion: data?.contractVersion,
       datasets: data?.datasets || [],
@@ -21,11 +51,12 @@ export const ingestionApi = {
   listBatches: async (
     limit = 20,
   ): Promise<{ contractVersion?: string; source?: string; total?: number; items: WorkspaceBatchListItem[] }> => {
-    const response = await fetch(`/api/import/batches?limit=${encodeURIComponent(String(limit))}`)
-    if (!response.ok) {
-      throw new Error(`批次列表读取失败: ${response.status}`)
-    }
-    const data = await response.json()
+    const query = `limit=${encodeURIComponent(String(limit))}`
+    const data = await fetchJsonWithFallback<{ contractVersion?: string; source?: string; total?: number; items?: WorkspaceBatchListItem[] }>(
+      `/api/v1/batches?${query}`,
+      `/api/import/batches?${query}`,
+      '批次列表读取失败',
+    )
     return {
       contractVersion: data?.contractVersion,
       source: data?.source,
@@ -35,11 +66,11 @@ export const ingestionApi = {
   },
 
   getBatch: async (sessionId: number): Promise<WorkspaceBatchDetail> => {
-    const response = await fetch(`/api/import/batches/${encodeURIComponent(String(sessionId))}`)
-    if (!response.ok) {
-      throw new Error(`批次详情读取失败: ${response.status}`)
-    }
-    return response.json()
+    return fetchJsonWithFallback<WorkspaceBatchDetail>(
+      `/api/v1/batches/${encodeURIComponent(String(sessionId))}`,
+      `/api/import/batches/${encodeURIComponent(String(sessionId))}`,
+      '批次详情读取失败',
+    )
   },
 
   uploadFile: async (

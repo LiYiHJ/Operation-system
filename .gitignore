@@ -1,23 +1,60 @@
-dist/
-build/
-node_modules/
-*.log
-*.png
-*.jpg
-*.ico
+frontend/.env
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
 
 # Stage hygiene
+.venv/
+.venv_broken_*/
 .pytest_cache/
 **/.pytest_cache/
 **/__pycache__/
 **/*.pyc
-_patch_backup_*/
-stage_clean_summary_*.txt
+_recovery_backup_*/
+_runtime_fix_backup_*/
+_core_recover_backup_*/
+frontend_build_output_*.txt
+frontend_build_summary_*.txt
+smoke_workspace_*/
+smoke_workspace_latest/
+p0a_round*_*.txt
+p0a_round*_*.json
+p0a_round*_*.md
+p0b_round*_*.txt
+p0b_round*_*.json
+p0b_round*_*.md
+data/import_batch_workspace/*.json
 
 # BEGIN STAGE CLEAN FINAL
+.venv/
+.venv_broken_*/
 .pytest_cache/
 **/.pytest_cache/
 **/__pycache__/
 **/*.pyc
-_patch_backup_*/
+_recovery_backup_*/
+_runtime_fix_backup_*/
+_core_recover_backup_*/
+frontend_build_output_*.txt
+frontend_build_summary_*.txt
+smoke_workspace_*/
+smoke_workspace_latest/
+p0a_round*_*.txt
+p0a_round*_*.json
+p0a_round*_*.md
+p0b_round*_*.txt
+p0b_round*_*.json
+p0b_round*_*.md
+data/import_batch_workspace/*.json
 # END STAGE CLEAN FINAL
+
+# BEGIN P0B ROUND 2 BOUNDARY
+System/frontend/.venv/
+System/frontend/.pytest_cache/
+System/frontend/coverage/
+System/frontend/*.log
+System/frontend/dist/
+System/data/import_batch_workspace/*.json
+patch_bundle_20260322_*.zip
+# END P0B ROUND 2 BOUNDARY

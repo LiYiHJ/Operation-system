@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // API 基础配置
 const api = axios.create({
-  baseURL: '/api',  // Vite 会自动代理到 http://localhost:5000
+  baseURL: '/api',  // Vite dev server will proxy API requests to the backend.
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

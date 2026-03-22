@@ -50,7 +50,7 @@ export default function SystemSettings() {
     actionToken: cfg?.credentials?.actionToken || '',
     sellerId: cfg?.credentials?.sellerId || '',
     useMockOzon: !!cfg?.settings?.useMockOzon,
-    salesPushUrl: cfg?.settings?.sales_push_url || 'http://127.0.0.1:5000/api/integration/mock/sales-backend',
+    salesPushUrl: cfg?.settings?.sales_push_url || '/api/integration/mock/sales-backend',
   }), [cfg])
 
   const syncColumns = [

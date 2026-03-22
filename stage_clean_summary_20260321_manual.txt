@@ -1,0 +1,2335 @@
+﻿repo_root: C:\Operation-system
+root_gitignore_updated: True
+system_gitignore_updated: True
+tracked_items_untracked_count: 4083
+
+sample_untracked_targets:
+System/.venv/Lib/site-packages/pandas/core/tools/__init__.py
+System/.venv/Lib/site-packages/pandas/core/tools/datetimes.py
+System/.venv/Lib/site-packages/pandas/core/tools/numeric.py
+System/.venv/Lib/site-packages/pandas/core/tools/timedeltas.py
+System/.venv/Lib/site-packages/pandas/core/tools/times.py
+System/.venv/Lib/site-packages/pandas/core/util/__init__.py
+System/.venv/Lib/site-packages/pandas/core/util/hashing.py
+System/.venv/Lib/site-packages/pandas/core/util/numba_.py
+System/.venv/Lib/site-packages/pandas/core/window/__init__.py
+System/.venv/Lib/site-packages/pandas/core/window/common.py
+System/.venv/Lib/site-packages/pandas/core/window/doc.py
+System/.venv/Lib/site-packages/pandas/core/window/ewm.py
+System/.venv/Lib/site-packages/pandas/core/window/expanding.py
+System/.venv/Lib/site-packages/pandas/core/window/numba_.py
+System/.venv/Lib/site-packages/pandas/core/window/online.py
+System/.venv/Lib/site-packages/pandas/core/window/rolling.py
+System/.venv/Lib/site-packages/pandas/errors/__init__.py
+System/.venv/Lib/site-packages/pandas/errors/cow.py
+System/.venv/Lib/site-packages/pandas/io/__init__.py
+System/.venv/Lib/site-packages/pandas/io/_util.py
+System/.venv/Lib/site-packages/pandas/io/api.py
+System/.venv/Lib/site-packages/pandas/io/clipboard/__init__.py
+System/.venv/Lib/site-packages/pandas/io/clipboards.py
+System/.venv/Lib/site-packages/pandas/io/common.py
+System/.venv/Lib/site-packages/pandas/io/excel/__init__.py
+System/.venv/Lib/site-packages/pandas/io/excel/_base.py
+System/.venv/Lib/site-packages/pandas/io/excel/_calamine.py
+System/.venv/Lib/site-packages/pandas/io/excel/_odfreader.py
+System/.venv/Lib/site-packages/pandas/io/excel/_odswriter.py
+System/.venv/Lib/site-packages/pandas/io/excel/_openpyxl.py
+
+git_diff_cached_stat:
+ .gitignore                                         |    27 +
+ System/.gitignore                                  |    59 +
+ .../Include/site/python3.12/greenlet/greenlet.h    |   164 -
+ .../site-packages/__editable__.ecom_v51-0.3.0.pth  |     1 -
+ .../Lib/site-packages/_distutils_hack/__init__.py  |   239 -
+ .../Lib/site-packages/_distutils_hack/override.py  |     1 -
+ System/.venv/Lib/site-packages/_yaml/__init__.py   |    33 -
+ .../blinker-1.9.0.dist-info/INSTALLER              |     1 -
+ .../blinker-1.9.0.dist-info/LICENSE.txt            |    20 -
+ .../site-packages/blinker-1.9.0.dist-info/METADATA |    60 -
+ .../site-packages/blinker-1.9.0.dist-info/RECORD   |    12 -
+ .../site-packages/blinker-1.9.0.dist-info/WHEEL    |     4 -
+ System/.venv/Lib/site-packages/blinker/__init__.py |    17 -
+ .../.venv/Lib/site-packages/blinker/_utilities.py  |    64 -
+ System/.venv/Lib/site-packages/blinker/base.py     |   512 -
+ System/.venv/Lib/site-packages/blinker/py.typed    |     0
+ .../site-packages/click-8.3.1.dist-info/INSTALLER  |     1 -
+ .../site-packages/click-8.3.1.dist-info/METADATA   |    84 -
+ .../Lib/site-packages/click-8.3.1.dist-info/RECORD |    40 -
+ .../Lib/site-packages/click-8.3.1.dist-info/WHEEL  |     4 -
+ .../click-8.3.1.dist-info/licenses/LICENSE.txt     |    28 -
+ System/.venv/Lib/site-packages/click/__init__.py   |   123 -
+ System/.venv/Lib/site-packages/click/_compat.py    |   622 -
+ .../.venv/Lib/site-packages/click/_termui_impl.py  |   852 -
+ System/.venv/Lib/site-packages/click/_textwrap.py  |    51 -
+ System/.venv/Lib/site-packages/click/_utils.py     |    36 -
+ .../.venv/Lib/site-packages/click/_winconsole.py   |   296 -
+ System/.venv/Lib/site-packages/click/core.py       |  3415 ----
+ System/.venv/Lib/site-packages/click/decorators.py |   551 -
+ System/.venv/Lib/site-packages/click/exceptions.py |   308 -
+ System/.venv/Lib/site-packages/click/formatting.py |   301 -
+ System/.venv/Lib/site-packages/click/globals.py    |    67 -
+ System/.venv/Lib/site-packages/click/parser.py     |   532 -
+ System/.venv/Lib/site-packages/click/py.typed      |     0
+ .../Lib/site-packages/click/shell_completion.py    |   667 -
+ System/.venv/Lib/site-packages/click/termui.py     |   883 -
+ System/.venv/Lib/site-packages/click/testing.py    |   577 -
+ System/.venv/Lib/site-packages/click/types.py      |  1209 --
+ System/.venv/Lib/site-packages/click/utils.py      |   627 -
+ .../colorama-0.4.6.dist-info/INSTALLER             |     1 -
+ .../colorama-0.4.6.dist-info/METADATA              |   441 -
+ .../site-packages/colorama-0.4.6.dist-info/RECORD  |    31 -
+ .../site-packages/colorama-0.4.6.dist-info/WHEEL   |     5 -
+ .../colorama-0.4.6.dist-info/licenses/LICENSE.txt  |    27 -
+ .../.venv/Lib/site-packages/colorama/__init__.py   |     7 -
+ System/.venv/Lib/site-packages/colorama/ansi.py    |   102 -
+ .../Lib/site-packages/colorama/ansitowin32.py      |   277 -
+ .../.venv/Lib/site-packages/colorama/initialise.py |   121 -
+ .../Lib/site-packages/colorama/tests/__init__.py   |     1 -
+ .../Lib/site-packages/colorama/tests/ansi_test.py  |    76 -
+ .../colorama/tests/ansitowin32_test.py             |   294 -
+ .../colorama/tests/initialise_test.py              |   189 -
+ .../site-packages/colorama/tests/isatty_test.py    |    57 -
+ .../Lib/site-packages/colorama/tests/utils.py      |    49 -
+ .../site-packages/colorama/tests/winterm_test.py   |   131 -
+ System/.venv/Lib/site-packages/colorama/win32.py   |   180 -
+ System/.venv/Lib/site-packages/colorama/winterm.py |   195 -
+ .../.venv/Lib/site-packages/dateutil/__init__.py   |    24 -
+ System/.venv/Lib/site-packages/dateutil/_common.py |    43 -
+ .../.venv/Lib/site-packages/dateutil/_version.py   |     4 -
+ System/.venv/Lib/site-packages/dateutil/easter.py  |    89 -
+ .../Lib/site-packages/dateutil/parser/__init__.py  |    61 -
+ .../Lib/site-packages/dateutil/parser/_parser.py   |  1613 --
+ .../Lib/site-packages/dateutil/parser/isoparser.py |   416 -
+ .../Lib/site-packages/dateutil/relativedelta.py    |   599 -
+ System/.venv/Lib/site-packages/dateutil/rrule.py   |  1737 --
+ .../Lib/site-packages/dateutil/tz/__init__.py      |    12 -
+ .../.venv/Lib/site-packages/dateutil/tz/_common.py |   419 -
+ .../Lib/site-packages/dateutil/tz/_factories.py    |    80 -
+ System/.venv/Lib/site-packages/dateutil/tz/tz.py   |  1849 --
+ System/.venv/Lib/site-packages/dateutil/tz/win.py  |   370 -
+ System/.venv/Lib/site-packages/dateutil/tzwin.py   |     2 -
+ System/.venv/Lib/site-packages/dateutil/utils.py   |    71 -
+ .../site-packages/dateutil/zoneinfo/__init__.py    |   167 -
+ .../dateutil/zoneinfo/dateutil-zoneinfo.tar.gz     |   Bin 156400 -> 0 bytes
+ .../Lib/site-packages/dateutil/zoneinfo/rebuild.py |    75 -
+ .../Lib/site-packages/distutils-precedence.pth     |     1 -
+ System/.venv/Lib/site-packages/dotenv/__init__.py  |    51 -
+ System/.venv/Lib/site-packages/dotenv/__main__.py  |     6 -
+ System/.venv/Lib/site-packages/dotenv/cli.py       |   236 -
+ System/.venv/Lib/site-packages/dotenv/ipython.py   |    50 -
+ System/.venv/Lib/site-packages/dotenv/main.py      |   480 -
+ System/.venv/Lib/site-packages/dotenv/parser.py    |   182 -
+ System/.venv/Lib/site-packages/dotenv/py.typed     |     1 -
+ System/.venv/Lib/site-packages/dotenv/variables.py |    86 -
+ System/.venv/Lib/site-packages/dotenv/version.py   |     1 -
+ .../ecom_v51-0.3.0.dist-info/INSTALLER             |     1 -
+ .../ecom_v51-0.3.0.dist-info/METADATA              |    16 -
+ .../site-packages/ecom_v51-0.3.0.dist-info/RECORD  |    10 -
+ .../ecom_v51-0.3.0.dist-info/REQUESTED             |     0
+ .../site-packages/ecom_v51-0.3.0.dist-info/WHEEL   |     5 -
+ .../ecom_v51-0.3.0.dist-info/direct_url.json       |     1 -
+ .../ecom_v51-0.3.0.dist-info/entry_points.txt      |     2 -
+ .../ecom_v51-0.3.0.dist-info/top_level.txt         |     2 -
+ .../et_xmlfile-2.0.0.dist-info/AUTHORS.txt         |     5 -
+ .../et_xmlfile-2.0.0.dist-info/INSTALLER           |     1 -
+ .../et_xmlfile-2.0.0.dist-info/LICENCE.python      |   298 -
+ .../et_xmlfile-2.0.0.dist-info/LICENCE.rst         |    23 -
+ .../et_xmlfile-2.0.0.dist-info/METADATA            |    51 -
+ .../et_xmlfile-2.0.0.dist-info/RECORD              |    14 -
+ .../site-packages/et_xmlfile-2.0.0.dist-info/WHEEL |     5 -
+ .../et_xmlfile-2.0.0.dist-info/top_level.txt       |     1 -
+ .../.venv/Lib/site-packages/et_xmlfile/__init__.py |     8 -
+ .../site-packages/et_xmlfile/incremental_tree.py   |   917 -
+ .../.venv/Lib/site-packages/et_xmlfile/xmlfile.py  |   158 -
+ .../site-packages/flask-3.1.3.dist-info/INSTALLER  |     1 -
+ .../site-packages/flask-3.1.3.dist-info/METADATA   |    91 -
+ .../Lib/site-packages/flask-3.1.3.dist-info/RECORD |    58 -
+ .../site-packages/flask-3.1.3.dist-info/REQUESTED  |     0
+ .../Lib/site-packages/flask-3.1.3.dist-info/WHEEL  |     4 -
+ .../flask-3.1.3.dist-info/entry_points.txt         |     3 -
+ .../flask-3.1.3.dist-info/licenses/LICENSE.txt     |    28 -
+ System/.venv/Lib/site-packages/flask/__init__.py   |    61 -
+ System/.venv/Lib/site-packages/flask/__main__.py   |     3 -
+ System/.venv/Lib/site-packages/flask/app.py        |  1536 --
+ System/.venv/Lib/site-packages/flask/blueprints.py |   128 -
+ System/.venv/Lib/site-packages/flask/cli.py        |  1135 --
+ System/.venv/Lib/site-packages/flask/config.py     |   367 -
+ System/.venv/Lib/site-packages/flask/ctx.py        |   459 -
+ .../.venv/Lib/site-packages/flask/debughelpers.py  |   178 -
+ System/.venv/Lib/site-packages/flask/globals.py    |    51 -
+ System/.venv/Lib/site-packages/flask/helpers.py    |   641 -
+ .../.venv/Lib/site-packages/flask/json/__init__.py |   170 -
+ .../.venv/Lib/site-packages/flask/json/provider.py |   215 -
+ System/.venv/Lib/site-packages/flask/json/tag.py   |   327 -
+ System/.venv/Lib/site-packages/flask/logging.py    |    79 -
+ System/.venv/Lib/site-packages/flask/py.typed      |     0
+ .../.venv/Lib/site-packages/flask/sansio/README.md |     6 -
+ System/.venv/Lib/site-packages/flask/sansio/app.py |   964 --
+ .../Lib/site-packages/flask/sansio/blueprints.py   |   632 -
+ .../Lib/site-packages/flask/sansio/scaffold.py     |   792 -
+ System/.venv/Lib/site-packages/flask/sessions.py   |   385 -
+ System/.venv/Lib/site-packages/flask/signals.py    |    17 -
+ System/.venv/Lib/site-packages/flask/templating.py |   220 -
+ System/.venv/Lib/site-packages/flask/testing.py    |   298 -
+ System/.venv/Lib/site-packages/flask/typing.py     |    93 -
+ System/.venv/Lib/site-packages/flask/views.py      |   191 -
+ System/.venv/Lib/site-packages/flask/wrappers.py   |   257 -
+ .../flask_cors-6.0.2.dist-info/INSTALLER           |     1 -
+ .../flask_cors-6.0.2.dist-info/METADATA            |   144 -
+ .../flask_cors-6.0.2.dist-info/RECORD              |    16 -
+ .../flask_cors-6.0.2.dist-info/REQUESTED           |     0
+ .../site-packages/flask_cors-6.0.2.dist-info/WHEEL |     5 -
+ .../flask_cors-6.0.2.dist-info/top_level.txt       |     1 -
+ .../.venv/Lib/site-packages/flask_cors/__init__.py |    17 -
+ System/.venv/Lib/site-packages/flask_cors/core.py  |   399 -
+ .../Lib/site-packages/flask_cors/decorator.py      |   129 -
+ .../Lib/site-packages/flask_cors/extension.py      |   206 -
+ .../.venv/Lib/site-packages/flask_cors/version.py  |     1 -
+ .../greenlet-3.3.2.dist-info/INSTALLER             |     1 -
+ .../greenlet-3.3.2.dist-info/METADATA              |    98 -
+ .../site-packages/greenlet-3.3.2.dist-info/RECORD  |   123 -
+ .../site-packages/greenlet-3.3.2.dist-info/WHEEL   |     5 -
+ .../greenlet-3.3.2.dist-info/licenses/LICENSE      |    30 -
+ .../greenlet-3.3.2.dist-info/licenses/LICENSE.PSF  |    47 -
+ .../greenlet-3.3.2.dist-info/top_level.txt         |     1 -
+ .../.venv/Lib/site-packages/greenlet/CObjects.cpp  |   157 -
+ .../Lib/site-packages/greenlet/PyGreenlet.cpp      |   795 -
+ .../Lib/site-packages/greenlet/PyGreenlet.hpp      |    35 -
+ .../greenlet/PyGreenletUnswitchable.cpp            |   147 -
+ .../.venv/Lib/site-packages/greenlet/PyModule.cpp  |   292 -
+ .../Lib/site-packages/greenlet/TBrokenGreenlet.cpp |    45 -
+ .../Lib/site-packages/greenlet/TExceptionState.cpp |    62 -
+ .../.venv/Lib/site-packages/greenlet/TGreenlet.cpp |   725 -
+ .../.venv/Lib/site-packages/greenlet/TGreenlet.hpp |   837 -
+ .../site-packages/greenlet/TGreenletGlobals.cpp    |    94 -
+ .../Lib/site-packages/greenlet/TMainGreenlet.cpp   |   160 -
+ .../Lib/site-packages/greenlet/TPythonState.cpp    |   439 -
+ .../Lib/site-packages/greenlet/TStackState.cpp     |   265 -
+ .../Lib/site-packages/greenlet/TThreadState.hpp    |   543 -
+ .../site-packages/greenlet/TThreadStateCreator.hpp |   102 -
+ .../site-packages/greenlet/TThreadStateDestroy.cpp |   223 -
+ .../Lib/site-packages/greenlet/TUserGreenlet.cpp   |   662 -
+ .../.venv/Lib/site-packages/greenlet/__init__.py   |    71 -
+ .../greenlet/_greenlet.cp312-win_amd64.pyd         |   Bin 73216 -> 0 bytes
+ .../.venv/Lib/site-packages/greenlet/greenlet.cpp  |   323 -
+ System/.venv/Lib/site-packages/greenlet/greenlet.h |   164 -
+ .../site-packages/greenlet/greenlet_allocator.hpp  |    76 -
+ .../greenlet/greenlet_compiler_compat.hpp          |    98 -
+ .../greenlet/greenlet_cpython_compat.hpp           |   156 -
+ .../site-packages/greenlet/greenlet_exceptions.hpp |   171 -
+ .../site-packages/greenlet/greenlet_internal.hpp   |   107 -
+ .../greenlet/greenlet_msvc_compat.hpp              |   100 -
+ .../Lib/site-packages/greenlet/greenlet_refs.hpp   |  1118 --
+ .../site-packages/greenlet/greenlet_slp_switch.hpp |   103 -
+ .../greenlet/greenlet_thread_support.hpp           |    31 -
+ .../site-packages/greenlet/platform/__init__.py    |     0
+ .../greenlet/platform/setup_switch_x64_masm.cmd    |     2 -
+ .../greenlet/platform/switch_aarch64_gcc.h         |   124 -
+ .../greenlet/platform/switch_alpha_unix.h          |    30 -
+ .../greenlet/platform/switch_amd64_unix.h          |    87 -
+ .../greenlet/platform/switch_arm32_gcc.h           |    79 -
+ .../greenlet/platform/switch_arm32_ios.h           |    67 -
+ .../greenlet/platform/switch_arm64_masm.asm        |    53 -
+ .../greenlet/platform/switch_arm64_masm.obj        |   Bin 746 -> 0 bytes
+ .../greenlet/platform/switch_arm64_msvc.h          |    17 -
+ .../greenlet/platform/switch_csky_gcc.h            |    48 -
+ .../greenlet/platform/switch_loongarch64_linux.h   |    31 -
+ .../greenlet/platform/switch_m68k_gcc.h            |    38 -
+ .../greenlet/platform/switch_mips_unix.h           |    65 -
+ .../greenlet/platform/switch_ppc64_aix.h           |   103 -
+ .../greenlet/platform/switch_ppc64_linux.h         |   105 -
+ .../greenlet/platform/switch_ppc_aix.h             |    87 -
+ .../greenlet/platform/switch_ppc_linux.h           |    84 -
+ .../greenlet/platform/switch_ppc_macosx.h          |    82 -
+ .../greenlet/platform/switch_ppc_unix.h            |    82 -
+ .../greenlet/platform/switch_riscv_unix.h          |    41 -
+ .../greenlet/platform/switch_s390_unix.h           |    87 -
+ .../greenlet/platform/switch_sh_gcc.h              |    36 -
+ .../greenlet/platform/switch_sparc_sun_gcc.h       |    92 -
+ .../greenlet/platform/switch_x32_unix.h            |    63 -
+ .../greenlet/platform/switch_x64_masm.asm          |   111 -
+ .../greenlet/platform/switch_x64_masm.obj          |   Bin 1078 -> 0 bytes
+ .../greenlet/platform/switch_x64_msvc.h            |    60 -
+ .../greenlet/platform/switch_x86_msvc.h            |   326 -
+ .../greenlet/platform/switch_x86_unix.h            |   105 -
+ .../site-packages/greenlet/slp_platformselect.h    |    77 -
+ .../Lib/site-packages/greenlet/tests/__init__.py   |   248 -
+ .../site-packages/greenlet/tests/_test_extension.c |   258 -
+ .../tests/_test_extension.cp312-win_amd64.pyd      |   Bin 14336 -> 0 bytes
+ .../tests/_test_extension_cpp.cp312-win_amd64.pyd  |   Bin 15872 -> 0 bytes
+ .../greenlet/tests/_test_extension_cpp.cpp         |   229 -
+ .../greenlet/tests/fail_clearing_run_switches.py   |    47 -
+ .../greenlet/tests/fail_cpp_exception.py           |    33 -
+ .../tests/fail_initialstub_already_started.py      |    78 -
+ .../greenlet/tests/fail_slp_switch.py              |    29 -
+ .../greenlet/tests/fail_switch_three_greenlets.py  |    44 -
+ .../greenlet/tests/fail_switch_three_greenlets2.py |    55 -
+ .../greenlet/tests/fail_switch_two_greenlets.py    |    41 -
+ .../Lib/site-packages/greenlet/tests/leakcheck.py  |   336 -
+ .../greenlet/tests/test_contextvars.py             |   312 -
+ .../Lib/site-packages/greenlet/tests/test_cpp.py   |    73 -
+ .../greenlet/tests/test_extension_interface.py     |   115 -
+ .../Lib/site-packages/greenlet/tests/test_gc.py    |    86 -
+ .../site-packages/greenlet/tests/test_generator.py |    59 -
+ .../greenlet/tests/test_generator_nested.py        |   168 -
+ .../site-packages/greenlet/tests/test_greenlet.py  |  1365 --
+ .../greenlet/tests/test_greenlet_trash.py          |   187 -
+ .../greenlet/tests/test_interpreter_shutdown.py    |   320 -
+ .../Lib/site-packages/greenlet/tests/test_leaks.py |   474 -
+ .../greenlet/tests/test_stack_saved.py             |    19 -
+ .../Lib/site-packages/greenlet/tests/test_throw.py |   128 -
+ .../site-packages/greenlet/tests/test_tracing.py   |   299 -
+ .../site-packages/greenlet/tests/test_version.py   |    41 -
+ .../site-packages/greenlet/tests/test_weakref.py   |    35 -
+ .../itsdangerous-2.2.0.dist-info/INSTALLER         |     1 -
+ .../itsdangerous-2.2.0.dist-info/LICENSE.txt       |    28 -
+ .../itsdangerous-2.2.0.dist-info/METADATA          |    60 -
+ .../itsdangerous-2.2.0.dist-info/RECORD            |    22 -
+ .../itsdangerous-2.2.0.dist-info/WHEEL             |     4 -
+ .../Lib/site-packages/itsdangerous/__init__.py     |    38 -
+ .../.venv/Lib/site-packages/itsdangerous/_json.py  |    18 -
+ .../Lib/site-packages/itsdangerous/encoding.py     |    54 -
+ System/.venv/Lib/site-packages/itsdangerous/exc.py |   106 -
+ .../.venv/Lib/site-packages/itsdangerous/py.typed  |     0
+ .../Lib/site-packages/itsdangerous/serializer.py   |   406 -
+ .../.venv/Lib/site-packages/itsdangerous/signer.py |   266 -
+ .../.venv/Lib/site-packages/itsdangerous/timed.py  |   228 -
+ .../Lib/site-packages/itsdangerous/url_safe.py     |    83 -
+ .../site-packages/jinja2-3.1.6.dist-info/INSTALLER |     1 -
+ .../site-packages/jinja2-3.1.6.dist-info/METADATA  |    84 -
+ .../site-packages/jinja2-3.1.6.dist-info/RECORD    |    57 -
+ .../Lib/site-packages/jinja2-3.1.6.dist-info/WHEEL |     4 -
+ .../jinja2-3.1.6.dist-info/entry_points.txt        |     3 -
+ .../jinja2-3.1.6.dist-info/licenses/LICENSE.txt    |    28 -
+ System/.venv/Lib/site-packages/jinja2/__init__.py  |    38 -
+ .../.venv/Lib/site-packages/jinja2/_identifier.py  |     6 -
+ .../.venv/Lib/site-packages/jinja2/async_utils.py  |    99 -
+ System/.venv/Lib/site-packages/jinja2/bccache.py   |   408 -
+ System/.venv/Lib/site-packages/jinja2/compiler.py  |  1998 ---
+ System/.venv/Lib/site-packages/jinja2/constants.py |    20 -
+ System/.venv/Lib/site-packages/jinja2/debug.py     |   191 -
+ System/.venv/Lib/site-packages/jinja2/defaults.py  |    48 -
+ .../.venv/Lib/site-packages/jinja2/environment.py  |  1672 --
+ .../.venv/Lib/site-packages/jinja2/exceptions.py   |   166 -
+ System/.venv/Lib/site-packages/jinja2/ext.py       |   870 -
+ System/.venv/Lib/site-packages/jinja2/filters.py   |  1873 ---
+ .../.venv/Lib/site-packages/jinja2/idtracking.py   |   318 -
+ System/.venv/Lib/site-packages/jinja2/lexer.py     |   868 -
+ System/.venv/Lib/site-packages/jinja2/loaders.py   |   693 -
+ System/.venv/Lib/site-packages/jinja2/meta.py      |   112 -
+ .../.venv/Lib/site-packages/jinja2/nativetypes.py  |   130 -
+ System/.venv/Lib/site-packages/jinja2/nodes.py     |  1206 --
+ System/.venv/Lib/site-packages/jinja2/optimizer.py |    48 -
+ System/.venv/Lib/site-packages/jinja2/parser.py    |  1049 --
+ System/.venv/Lib/site-packages/jinja2/py.typed     |     0
+ System/.venv/Lib/site-packages/jinja2/runtime.py   |  1062 --
+ System/.venv/Lib/site-packages/jinja2/sandbox.py   |   436 -
+ System/.venv/Lib/site-packages/jinja2/tests.py     |   256 -
+ System/.venv/Lib/site-packages/jinja2/utils.py     |   766 -
+ System/.venv/Lib/site-packages/jinja2/visitor.py   |    92 -
+ .../markupsafe-3.0.3.dist-info/INSTALLER           |     1 -
+ .../markupsafe-3.0.3.dist-info/METADATA            |    74 -
+ .../markupsafe-3.0.3.dist-info/RECORD              |    14 -
+ .../site-packages/markupsafe-3.0.3.dist-info/WHEEL |     5 -
+ .../licenses/LICENSE.txt                           |    28 -
+ .../markupsafe-3.0.3.dist-info/top_level.txt       |     1 -
+ .../.venv/Lib/site-packages/markupsafe/__init__.py |   396 -
+ .../.venv/Lib/site-packages/markupsafe/_native.py  |     8 -
+ .../.venv/Lib/site-packages/markupsafe/_speedups.c |   200 -
+ .../markupsafe/_speedups.cp312-win_amd64.pyd       |   Bin 13312 -> 0 bytes
+ .../Lib/site-packages/markupsafe/_speedups.pyi     |     1 -
+ System/.venv/Lib/site-packages/markupsafe/py.typed |     0
+ .../site-packages/numpy-2.4.3.dist-info/DELVEWHEEL |     2 -
+ .../site-packages/numpy-2.4.3.dist-info/INSTALLER  |     1 -
+ .../site-packages/numpy-2.4.3.dist-info/METADATA   |   139 -
+ .../Lib/site-packages/numpy-2.4.3.dist-info/RECORD |  1341 --
+ .../Lib/site-packages/numpy-2.4.3.dist-info/WHEEL  |     4 -
+ .../numpy-2.4.3.dist-info/entry_points.txt         |    13 -
+ .../numpy-2.4.3.dist-info/licenses/LICENSE.txt     |   914 -
+ .../_core/include/numpy/libdivide/LICENSE.txt      |    21 -
+ .../_core/src/common/pythoncapi-compat/COPYING     |    14 -
+ .../licenses/numpy/_core/src/highway/LICENSE       |   371 -
+ .../numpy/_core/src/multiarray/dragon4_LICENSE.txt |    27 -
+ .../licenses/numpy/_core/src/umath/svml/LICENSE    |    30 -
+ .../licenses/numpy/linalg/lapack_lite/LICENSE.txt  |    48 -
+ .../licenses/numpy/ma/LICENSE                      |    24 -
+ ...penblas64_-4bb64bb73b19ae7523581172b5c4a821.dll |   Bin 20407296 -> 0 bytes
+ .../msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll  |   Bin 575056 -> 0 bytes
+ System/.venv/Lib/site-packages/numpy/__config__.py |   170 -
+ .../.venv/Lib/site-packages/numpy/__config__.pyi   |   108 -
+ .../Lib/site-packages/numpy/__init__.cython-30.pxd |  1242 --
+ System/.venv/Lib/site-packages/numpy/__init__.pxd  |  1155 --
+ System/.venv/Lib/site-packages/numpy/__init__.py   |   955 --
+ System/.venv/Lib/site-packages/numpy/__init__.pyi  |  6202 -------
+ .../Lib/site-packages/numpy/_array_api_info.py     |   346 -
+ .../Lib/site-packages/numpy/_array_api_info.pyi    |   206 -
+ .../.venv/Lib/site-packages/numpy/_configtool.py   |    39 -
+ .../.venv/Lib/site-packages/numpy/_configtool.pyi  |     1 -
+ .../Lib/site-packages/numpy/_core/__init__.py      |   203 -
+ .../Lib/site-packages/numpy/_core/__init__.pyi     |   666 -
+ .../Lib/site-packages/numpy/_core/_add_newdocs.py  |  7151 --------
+ .../Lib/site-packages/numpy/_core/_add_newdocs.pyi |     2 -
+ .../numpy/_core/_add_newdocs_scalars.py            |   381 -
+ .../numpy/_core/_add_newdocs_scalars.pyi           |    16 -
+ .../Lib/site-packages/numpy/_core/_asarray.py      |   130 -
+ .../Lib/site-packages/numpy/_core/_asarray.pyi     |    43 -
+ .../.venv/Lib/site-packages/numpy/_core/_dtype.py  |   366 -
+ .../.venv/Lib/site-packages/numpy/_core/_dtype.pyi |    56 -
+ .../Lib/site-packages/numpy/_core/_dtype_ctypes.py |   120 -
+ .../site-packages/numpy/_core/_dtype_ctypes.pyi    |    83 -
+ .../Lib/site-packages/numpy/_core/_exceptions.py   |   162 -
+ .../Lib/site-packages/numpy/_core/_exceptions.pyi  |    54 -
+ .../Lib/site-packages/numpy/_core/_internal.py     |   968 --
+ .../Lib/site-packages/numpy/_core/_internal.pyi    |    61 -
+ .../Lib/site-packages/numpy/_core/_methods.py      |   252 -
+ .../Lib/site-packages/numpy/_core/_methods.pyi     |    22 -
+ .../_core/_multiarray_tests.cp312-win_amd64.lib    |   Bin 2418 -> 0 bytes
+ .../_core/_multiarray_tests.cp312-win_amd64.pyd    |   Bin 65536 -> 0 bytes
+ .../_core/_multiarray_umath.cp312-win_amd64.lib    |   Bin 2192 -> 0 bytes
+ .../_core/_multiarray_umath.cp312-win_amd64.pyd    |   Bin 3714560 -> 0 bytes
+ .../_core/_operand_flag_tests.cp312-win_amd64.lib  |   Bin 2228 -> 0 bytes
+ .../_core/_operand_flag_tests.cp312-win_amd64.pyd  |   Bin 12288 -> 0 bytes
+ .../_core/_rational_tests.cp312-win_amd64.lib      |   Bin 2156 -> 0 bytes
+ .../_core/_rational_tests.cp312-win_amd64.pyd      |   Bin 39936 -> 0 bytes
+ .../numpy/_core/_simd.cp312-win_amd64.lib          |   Bin 1976 -> 0 bytes
+ .../numpy/_core/_simd.cp312-win_amd64.pyd          |   Bin 832000 -> 0 bytes
+ .../.venv/Lib/site-packages/numpy/_core/_simd.pyi  |    35 -
+ .../site-packages/numpy/_core/_string_helpers.py   |   100 -
+ .../site-packages/numpy/_core/_string_helpers.pyi  |    12 -
+ .../_core/_struct_ufunc_tests.cp312-win_amd64.lib  |   Bin 2228 -> 0 bytes
+ .../_core/_struct_ufunc_tests.cp312-win_amd64.pyd  |   Bin 14336 -> 0 bytes
+ .../Lib/site-packages/numpy/_core/_type_aliases.py |   131 -
+ .../site-packages/numpy/_core/_type_aliases.pyi    |    86 -
+ .../Lib/site-packages/numpy/_core/_ufunc_config.py |   515 -
+ .../site-packages/numpy/_core/_ufunc_config.pyi    |    69 -
+ .../numpy/_core/_umath_tests.cp312-win_amd64.lib   |   Bin 2104 -> 0 bytes
+ .../numpy/_core/_umath_tests.cp312-win_amd64.pyd   |   Bin 33280 -> 0 bytes
+ .../Lib/site-packages/numpy/_core/_umath_tests.pyi |    47 -
+ .../Lib/site-packages/numpy/_core/arrayprint.py    |  1779 --
+ .../Lib/site-packages/numpy/_core/arrayprint.pyi   |   158 -
+ .../Lib/site-packages/numpy/_core/cversions.py     |    13 -
+ .../Lib/site-packages/numpy/_core/defchararray.py  |  1414 --
+ .../Lib/site-packages/numpy/_core/defchararray.pyi |  1150 --
+ .../Lib/site-packages/numpy/_core/einsumfunc.py    |  1650 --
+ .../Lib/site-packages/numpy/_core/einsumfunc.pyi   |   184 -
+ .../Lib/site-packages/numpy/_core/fromnumeric.py   |  4233 -----
+ .../Lib/site-packages/numpy/_core/fromnumeric.pyi  |  1735 --
+ .../Lib/site-packages/numpy/_core/function_base.py |   547 -
+ .../site-packages/numpy/_core/function_base.pyi    |   276 -
+ .../Lib/site-packages/numpy/_core/getlimits.py     |   462 -
+ .../Lib/site-packages/numpy/_core/getlimits.pyi    |   124 -
+ .../numpy/_core/include/numpy/__multiarray_api.c   |   376 -
+ .../numpy/_core/include/numpy/__multiarray_api.h   |  1628 --
+ .../numpy/_core/include/numpy/__ufunc_api.c        |    55 -
+ .../numpy/_core/include/numpy/__ufunc_api.h        |   349 -
+ .../include/numpy/_neighborhood_iterator_imp.h     |    90 -
+ .../numpy/_core/include/numpy/_numpyconfig.h       |    33 -
+ .../_core/include/numpy/_public_dtype_api_table.h  |    86 -
+ .../numpy/_core/include/numpy/arrayobject.h        |     7 -
+ .../numpy/_core/include/numpy/arrayscalars.h       |   198 -
+ .../numpy/_core/include/numpy/dtype_api.h          |   547 -
+ .../numpy/_core/include/numpy/halffloat.h          |    70 -
+ .../numpy/_core/include/numpy/ndarrayobject.h      |   304 -
+ .../numpy/_core/include/numpy/ndarraytypes.h       |  1982 ---
+ .../numpy/_core/include/numpy/npy_2_compat.h       |   249 -
+ .../_core/include/numpy/npy_2_complexcompat.h      |    28 -
+ .../numpy/_core/include/numpy/npy_3kcompat.h       |   374 -
+ .../numpy/_core/include/numpy/npy_common.h         |   989 --
+ .../numpy/_core/include/numpy/npy_cpu.h            |   126 -
+ .../numpy/_core/include/numpy/npy_endian.h         |    79 -
+ .../numpy/_core/include/numpy/npy_math.h           |   602 -
+ .../_core/include/numpy/npy_no_deprecated_api.h    |    20 -
+ .../numpy/_core/include/numpy/npy_os.h             |    42 -
+ .../numpy/_core/include/numpy/numpyconfig.h        |   185 -
+ .../numpy/_core/include/numpy/random/LICENSE.txt   |    21 -
+ .../numpy/_core/include/numpy/random/bitgen.h      |    20 -
+ .../_core/include/numpy/random/distributions.h     |   209 -
+ .../numpy/_core/include/numpy/random/libdivide.h   |  2079 ---
+ .../numpy/_core/include/numpy/ufuncobject.h        |   343 -
+ .../numpy/_core/include/numpy/utils.h              |    37 -
+ .../numpy/_core/lib/npy-pkg-config/mlib.ini        |    12 -
+ .../numpy/_core/lib/npy-pkg-config/npymath.ini     |    20 -
+ .../Lib/site-packages/numpy/_core/lib/npymath.lib  |   Bin 156686 -> 0 bytes
+ .../numpy/_core/lib/pkgconfig/numpy.pc             |     7 -
+ .../.venv/Lib/site-packages/numpy/_core/memmap.py  |   363 -
+ .../.venv/Lib/site-packages/numpy/_core/memmap.pyi |     3 -
+ .../Lib/site-packages/numpy/_core/multiarray.py    |  1740 --
+ .../Lib/site-packages/numpy/_core/multiarray.pyi   |  1328 --
+ .../.venv/Lib/site-packages/numpy/_core/numeric.py |  2771 ---
+ .../Lib/site-packages/numpy/_core/numeric.pyi      |  1276 --
+ .../Lib/site-packages/numpy/_core/numerictypes.py  |   633 -
+ .../Lib/site-packages/numpy/_core/numerictypes.pyi |   196 -
+ .../Lib/site-packages/numpy/_core/overrides.py     |   188 -
+ .../Lib/site-packages/numpy/_core/overrides.pyi    |    47 -
+ .../Lib/site-packages/numpy/_core/printoptions.py  |    32 -
+ .../Lib/site-packages/numpy/_core/printoptions.pyi |    28 -
+ .../.venv/Lib/site-packages/numpy/_core/records.py |  1088 --
+ .../Lib/site-packages/numpy/_core/records.pyi      |   340 -
+ .../Lib/site-packages/numpy/_core/shape_base.py    |   996 --
+ .../Lib/site-packages/numpy/_core/shape_base.pyi   |   182 -
+ .../.venv/Lib/site-packages/numpy/_core/strings.py |  1813 --
+ .../Lib/site-packages/numpy/_core/strings.pyi      |   536 -
+ .../site-packages/numpy/_core/tests/_locales.py    |    72 -
+ .../Lib/site-packages/numpy/_core/tests/_natype.py |   144 -
+ .../numpy/_core/tests/data/astype_copy.pkl         |   Bin 716 -> 0 bytes
+ .../tests/data/generate_umath_validation_data.cpp  |   170 -
+ .../numpy/_core/tests/data/recarray_from_file.fits |   Bin 8640 -> 0 bytes
+ .../tests/data/umath-validation-set-README.txt     |    15 -
+ .../tests/data/umath-validation-set-arccos.csv     |  1429 --
+ .../tests/data/umath-validation-set-arccosh.csv    |  1429 --
+ .../tests/data/umath-validation-set-arcsin.csv     |  1429 --
+ .../tests/data/umath-validation-set-arcsinh.csv    |  1429 --
+ .../tests/data/umath-validation-set-arctan.csv     |  1429 --
+ .../tests/data/umath-validation-set-arctanh.csv    |  1429 --
+ .../_core/tests/data/umath-validation-set-cbrt.csv |  1429 --
+ .../_core/tests/data/umath-validation-set-cos.csv  |  1375 --
+ .../_core/tests/data/umath-validation-set-cosh.csv |  1429 --
+ .../_core/tests/data/umath-validation-set-exp.csv  |   412 -
+ .../_core/tests/data/umath-validation-set-exp2.csv |  1429 --
+ .../tests/data/umath-validation-set-expm1.csv      |  1429 --
+ .../_core/tests/data/umath-validation-set-log.csv  |   271 -
+ .../tests/data/umath-validation-set-log10.csv      |  1629 --
+ .../tests/data/umath-validation-set-log1p.csv      |  1429 --
+ .../_core/tests/data/umath-validation-set-log2.csv |  1629 --
+ .../_core/tests/data/umath-validation-set-sin.csv  |  1370 --
+ .../_core/tests/data/umath-validation-set-sinh.csv |  1429 --
+ .../_core/tests/data/umath-validation-set-tan.csv  |  1429 --
+ .../_core/tests/data/umath-validation-set-tanh.csv |  1429 --
+ .../numpy/_core/tests/examples/cython/checks.pyx   |   374 -
+ .../numpy/_core/tests/examples/cython/meson.build  |    43 -
+ .../numpy/_core/tests/examples/cython/setup.py     |    39 -
+ .../tests/examples/limited_api/limited_api1.c      |    15 -
+ .../tests/examples/limited_api/limited_api2.pyx    |    11 -
+ .../examples/limited_api/limited_api_latest.c      |    19 -
+ .../_core/tests/examples/limited_api/meson.build   |    63 -
+ .../_core/tests/examples/limited_api/setup.py      |    24 -
+ .../numpy/_core/tests/test__exceptions.py          |    90 -
+ .../site-packages/numpy/_core/tests/test_abc.py    |    54 -
+ .../site-packages/numpy/_core/tests/test_api.py    |   655 -
+ .../numpy/_core/tests/test_argparse.py             |    90 -
+ .../numpy/_core/tests/test_array_api_info.py       |   113 -
+ .../numpy/_core/tests/test_array_coercion.py       |   928 -
+ .../numpy/_core/tests/test_array_interface.py      |   222 -
+ .../numpy/_core/tests/test_arraymethod.py          |    84 -
+ .../numpy/_core/tests/test_arrayobject.py          |    95 -
+ .../numpy/_core/tests/test_arrayprint.py           |  1324 --
+ .../tests/test_casting_floatingpoint_errors.py     |   154 -
+ .../numpy/_core/tests/test_casting_unittests.py    |   955 --
+ .../numpy/_core/tests/test_conversion_utils.py     |   209 -
+ .../numpy/_core/tests/test_cpu_dispatcher.py       |    48 -
+ .../numpy/_core/tests/test_cpu_features.py         |   450 -
+ .../numpy/_core/tests/test_custom_dtypes.py        |   393 -
+ .../site-packages/numpy/_core/tests/test_cython.py |   352 -
+ .../numpy/_core/tests/test_datetime.py             |  2797 ----
+ .../numpy/_core/tests/test_defchararray.py         |   858 -
+ .../numpy/_core/tests/test_deprecations.py         |   460 -
+ .../site-packages/numpy/_core/tests/test_dlpack.py |   190 -
+ .../site-packages/numpy/_core/tests/test_dtype.py  |  2110 ---
+ .../site-packages/numpy/_core/tests/test_einsum.py |  1351 --
+ .../numpy/_core/tests/test_errstate.py             |   131 -
+ .../numpy/_core/tests/test_extint128.py            |   217 -
+ .../site-packages/numpy/_core/tests/test_finfo.py  |    86 -
+ .../numpy/_core/tests/test_function_base.py        |   504 -
+ .../numpy/_core/tests/test_getlimits.py            |   171 -
+ .../site-packages/numpy/_core/tests/test_half.py   |   593 -
+ .../numpy/_core/tests/test_hashtable.py            |    36 -
+ .../numpy/_core/tests/test_indexerrors.py          |   122 -
+ .../numpy/_core/tests/test_indexing.py             |  1692 --
+ .../numpy/_core/tests/test_item_selection.py       |   167 -
+ .../numpy/_core/tests/test_limited_api.py          |   102 -
+ .../numpy/_core/tests/test_longdouble.py           |   370 -
+ .../numpy/_core/tests/test_mem_overlap.py          |   933 --
+ .../numpy/_core/tests/test_mem_policy.py           |   453 -
+ .../site-packages/numpy/_core/tests/test_memmap.py |   248 -
+ .../numpy/_core/tests/test_multiarray.py           | 11008 ------------
+ .../numpy/_core/tests/test_multiprocessing.py      |    55 -
+ .../numpy/_core/tests/test_multithreading.py       |   406 -
+ .../site-packages/numpy/_core/tests/test_nditer.py |  3533 ----
+ .../numpy/_core/tests/test_nep50_promotions.py     |   287 -
+ .../numpy/_core/tests/test_numeric.py              |  4301 -----
+ .../numpy/_core/tests/test_numerictypes.py         |   650 -
+ .../numpy/_core/tests/test_overrides.py            |   800 -
+ .../site-packages/numpy/_core/tests/test_print.py  |   202 -
+ .../numpy/_core/tests/test_protocols.py            |    46 -
+ .../numpy/_core/tests/test_records.py              |   544 -
+ .../numpy/_core/tests/test_regression.py           |  2677 ---
+ .../numpy/_core/tests/test_scalar_ctors.py         |   203 -
+ .../numpy/_core/tests/test_scalar_methods.py       |   328 -
+ .../numpy/_core/tests/test_scalarbuffer.py         |   153 -
+ .../numpy/_core/tests/test_scalarinherit.py        |   105 -
+ .../numpy/_core/tests/test_scalarmath.py           |  1168 --
+ .../numpy/_core/tests/test_scalarprint.py          |   403 -
+ .../numpy/_core/tests/test_shape_base.py           |   904 -
+ .../site-packages/numpy/_core/tests/test_simd.py   |  1345 --
+ .../numpy/_core/tests/test_simd_module.py          |   105 -
+ .../numpy/_core/tests/test_stringdtype.py          |  1855 --
+ .../numpy/_core/tests/test_strings.py              |  1523 --
+ .../site-packages/numpy/_core/tests/test_ufunc.py  |  3405 ----
+ .../site-packages/numpy/_core/tests/test_umath.py  |  4962 ------
+ .../numpy/_core/tests/test_umath_accuracy.py       |   132 -
+ .../numpy/_core/tests/test_umath_complex.py        |   631 -
+ .../numpy/_core/tests/test_unicode.py              |   369 -
+ .../.venv/Lib/site-packages/numpy/_core/umath.py   |    60 -
+ .../.venv/Lib/site-packages/numpy/_core/umath.pyi  |   232 -
+ .../Lib/site-packages/numpy/_distributor_init.py   |    15 -
+ .../Lib/site-packages/numpy/_distributor_init.pyi  |     1 -
+ .../Lib/site-packages/numpy/_expired_attrs_2_0.py  |    78 -
+ .../Lib/site-packages/numpy/_expired_attrs_2_0.pyi |    61 -
+ System/.venv/Lib/site-packages/numpy/_globals.py   |   121 -
+ System/.venv/Lib/site-packages/numpy/_globals.pyi  |    17 -
+ .../site-packages/numpy/_pyinstaller/__init__.py   |     0
+ .../site-packages/numpy/_pyinstaller/__init__.pyi  |     0
+ .../site-packages/numpy/_pyinstaller/hook-numpy.py |    36 -
+ .../numpy/_pyinstaller/hook-numpy.pyi              |     6 -
+ .../numpy/_pyinstaller/tests/__init__.py           |    16 -
+ .../numpy/_pyinstaller/tests/pyinstaller-smoke.py  |    32 -
+ .../numpy/_pyinstaller/tests/test_pyinstaller.py   |    35 -
+ .../.venv/Lib/site-packages/numpy/_pytesttester.py |   201 -
+ .../Lib/site-packages/numpy/_pytesttester.pyi      |    18 -
+ .../Lib/site-packages/numpy/_typing/__init__.py    |   173 -
+ .../site-packages/numpy/_typing/_add_docstring.py  |   153 -
+ .../Lib/site-packages/numpy/_typing/_array_like.py |   106 -
+ .../Lib/site-packages/numpy/_typing/_char_codes.py |   213 -
+ .../Lib/site-packages/numpy/_typing/_dtype_like.py |   114 -
+ .../numpy/_typing/_extended_precision.py           |    15 -
+ .../.venv/Lib/site-packages/numpy/_typing/_nbit.py |    19 -
+ .../Lib/site-packages/numpy/_typing/_nbit_base.py  |    94 -
+ .../Lib/site-packages/numpy/_typing/_nbit_base.pyi |    39 -
+ .../numpy/_typing/_nested_sequence.py              |    79 -
+ .../Lib/site-packages/numpy/_typing/_scalars.py    |    20 -
+ .../Lib/site-packages/numpy/_typing/_shape.py      |     8 -
+ .../Lib/site-packages/numpy/_typing/_ufunc.py      |     7 -
+ .../Lib/site-packages/numpy/_typing/_ufunc.pyi     |   975 --
+ .../Lib/site-packages/numpy/_utils/__init__.py     |    95 -
+ .../Lib/site-packages/numpy/_utils/__init__.pyi    |    28 -
+ .../Lib/site-packages/numpy/_utils/_convertions.py |    18 -
+ .../site-packages/numpy/_utils/_convertions.pyi    |     4 -
+ .../Lib/site-packages/numpy/_utils/_inspect.py     |   192 -
+ .../Lib/site-packages/numpy/_utils/_inspect.pyi    |    70 -
+ .../Lib/site-packages/numpy/_utils/_pep440.py      |   486 -
+ .../Lib/site-packages/numpy/_utils/_pep440.pyi     |   118 -
+ .../.venv/Lib/site-packages/numpy/char/__init__.py |     2 -
+ .../Lib/site-packages/numpy/char/__init__.pyi      |   111 -
+ System/.venv/Lib/site-packages/numpy/conftest.py   |   248 -
+ .../.venv/Lib/site-packages/numpy/core/__init__.py |    33 -
+ .../Lib/site-packages/numpy/core/__init__.pyi      |     0
+ .../.venv/Lib/site-packages/numpy/core/_dtype.py   |    10 -
+ .../.venv/Lib/site-packages/numpy/core/_dtype.pyi  |     0
+ .../Lib/site-packages/numpy/core/_dtype_ctypes.py  |    10 -
+ .../Lib/site-packages/numpy/core/_dtype_ctypes.pyi |     0
+ .../Lib/site-packages/numpy/core/_internal.py      |    27 -
+ .../site-packages/numpy/core/_multiarray_umath.py  |    57 -
+ .../.venv/Lib/site-packages/numpy/core/_utils.py   |    21 -
+ .../Lib/site-packages/numpy/core/arrayprint.py     |    10 -
+ .../Lib/site-packages/numpy/core/defchararray.py   |    10 -
+ .../Lib/site-packages/numpy/core/einsumfunc.py     |    10 -
+ .../Lib/site-packages/numpy/core/fromnumeric.py    |    10 -
+ .../Lib/site-packages/numpy/core/function_base.py  |    10 -
+ .../Lib/site-packages/numpy/core/getlimits.py      |    10 -
+ .../Lib/site-packages/numpy/core/multiarray.py     |    25 -
+ .../.venv/Lib/site-packages/numpy/core/numeric.py  |    12 -
+ .../Lib/site-packages/numpy/core/numerictypes.py   |    10 -
+ .../Lib/site-packages/numpy/core/overrides.py      |    10 -
+ .../Lib/site-packages/numpy/core/overrides.pyi     |     7 -
+ .../.venv/Lib/site-packages/numpy/core/records.py  |    10 -
+ .../Lib/site-packages/numpy/core/shape_base.py     |    10 -
+ System/.venv/Lib/site-packages/numpy/core/umath.py |    10 -
+ .../Lib/site-packages/numpy/ctypeslib/__init__.py  |    13 -
+ .../Lib/site-packages/numpy/ctypeslib/__init__.pyi |    15 -
+ .../site-packages/numpy/ctypeslib/_ctypeslib.py    |   603 -
+ .../site-packages/numpy/ctypeslib/_ctypeslib.pyi   |   236 -
+ System/.venv/Lib/site-packages/numpy/doc/ufuncs.py |   138 -
+ System/.venv/Lib/site-packages/numpy/dtypes.py     |    41 -
+ System/.venv/Lib/site-packages/numpy/dtypes.pyi    |   630 -
+ System/.venv/Lib/site-packages/numpy/exceptions.py |   246 -
+ .../.venv/Lib/site-packages/numpy/exceptions.pyi   |    27 -
+ .../.venv/Lib/site-packages/numpy/f2py/__init__.py |    86 -
+ .../Lib/site-packages/numpy/f2py/__init__.pyi      |     5 -
+ .../.venv/Lib/site-packages/numpy/f2py/__main__.py |     5 -
+ .../Lib/site-packages/numpy/f2py/__version__.py    |     1 -
+ .../Lib/site-packages/numpy/f2py/__version__.pyi   |     1 -
+ .../site-packages/numpy/f2py/_backends/__init__.py |     9 -
+ .../numpy/f2py/_backends/__init__.pyi              |     5 -
+ .../site-packages/numpy/f2py/_backends/_backend.py |    44 -
+ .../numpy/f2py/_backends/_backend.pyi              |    46 -
+ .../numpy/f2py/_backends/_distutils.py             |    76 -
+ .../numpy/f2py/_backends/_distutils.pyi            |    13 -
+ .../site-packages/numpy/f2py/_backends/_meson.py   |   244 -
+ .../site-packages/numpy/f2py/_backends/_meson.pyi  |    62 -
+ .../numpy/f2py/_backends/meson.build.template      |    58 -
+ .../Lib/site-packages/numpy/f2py/_isocbind.py      |    62 -
+ .../Lib/site-packages/numpy/f2py/_isocbind.pyi     |    13 -
+ .../.venv/Lib/site-packages/numpy/f2py/_src_pyf.py |   247 -
+ .../Lib/site-packages/numpy/f2py/_src_pyf.pyi      |    28 -
+ .../.venv/Lib/site-packages/numpy/f2py/auxfuncs.py |  1004 --
+ .../Lib/site-packages/numpy/f2py/auxfuncs.pyi      |   262 -
+ .../Lib/site-packages/numpy/f2py/capi_maps.py      |   811 -
+ .../Lib/site-packages/numpy/f2py/capi_maps.pyi     |    33 -
+ .../.venv/Lib/site-packages/numpy/f2py/cb_rules.py |   665 -
+ .../Lib/site-packages/numpy/f2py/cb_rules.pyi      |    17 -
+ .../.venv/Lib/site-packages/numpy/f2py/cfuncs.py   |  1563 --
+ .../.venv/Lib/site-packages/numpy/f2py/cfuncs.pyi  |    31 -
+ .../Lib/site-packages/numpy/f2py/common_rules.py   |   143 -
+ .../Lib/site-packages/numpy/f2py/common_rules.pyi  |     9 -
+ .../Lib/site-packages/numpy/f2py/crackfortran.py   |  3725 -----
+ .../Lib/site-packages/numpy/f2py/crackfortran.pyi  |   266 -
+ .../.venv/Lib/site-packages/numpy/f2py/diagnose.py |   149 -
+ .../Lib/site-packages/numpy/f2py/diagnose.pyi      |     1 -
+ .../.venv/Lib/site-packages/numpy/f2py/f2py2e.py   |   788 -
+ .../.venv/Lib/site-packages/numpy/f2py/f2py2e.pyi  |    74 -
+ .../Lib/site-packages/numpy/f2py/f90mod_rules.py   |   269 -
+ .../Lib/site-packages/numpy/f2py/f90mod_rules.pyi  |    16 -
+ .../Lib/site-packages/numpy/f2py/func2subr.py      |   329 -
+ .../Lib/site-packages/numpy/f2py/func2subr.pyi     |     7 -
+ System/.venv/Lib/site-packages/numpy/f2py/rules.py |  1629 --
+ .../.venv/Lib/site-packages/numpy/f2py/rules.pyi   |    41 -
+ .../.venv/Lib/site-packages/numpy/f2py/setup.cfg   |     3 -
+ .../site-packages/numpy/f2py/src/fortranobject.c   |  1436 --
+ .../site-packages/numpy/f2py/src/fortranobject.h   |   173 -
+ .../.venv/Lib/site-packages/numpy/f2py/symbolic.py |  1518 --
+ .../Lib/site-packages/numpy/f2py/symbolic.pyi      |   219 -
+ .../Lib/site-packages/numpy/f2py/tests/__init__.py |    16 -
+ .../f2py/tests/src/abstract_interface/foo.f90      |    34 -
+ .../tests/src/abstract_interface/gh18403_mod.f90   |     6 -
+ .../f2py/tests/src/array_from_pyobj/wrapmodule.c   |   235 -
+ .../f2py/tests/src/assumed_shape/.f2py_f2cmap      |     1 -
+ .../f2py/tests/src/assumed_shape/foo_free.f90      |    34 -
+ .../numpy/f2py/tests/src/assumed_shape/foo_mod.f90 |    41 -
+ .../numpy/f2py/tests/src/assumed_shape/foo_use.f90 |    19 -
+ .../f2py/tests/src/assumed_shape/precision.f90     |     4 -
+ .../numpy/f2py/tests/src/block_docstring/foo.f     |     6 -
+ .../numpy/f2py/tests/src/callback/foo.f            |    62 -
+ .../numpy/f2py/tests/src/callback/gh17797.f90      |     7 -
+ .../numpy/f2py/tests/src/callback/gh18335.f90      |    17 -
+ .../numpy/f2py/tests/src/callback/gh25211.f        |    10 -
+ .../numpy/f2py/tests/src/callback/gh25211.pyf      |    18 -
+ .../numpy/f2py/tests/src/callback/gh26681.f90      |    18 -
+ .../numpy/f2py/tests/src/cli/gh_22819.pyf          |     6 -
+ .../site-packages/numpy/f2py/tests/src/cli/hi77.f  |     3 -
+ .../numpy/f2py/tests/src/cli/hiworld.f90           |     3 -
+ .../numpy/f2py/tests/src/common/block.f            |    11 -
+ .../numpy/f2py/tests/src/common/gh19161.f90        |    10 -
+ .../f2py/tests/src/crackfortran/accesstype.f90     |    13 -
+ .../tests/src/crackfortran/common_with_division.f  |    17 -
+ .../f2py/tests/src/crackfortran/data_common.f      |     8 -
+ .../f2py/tests/src/crackfortran/data_multiplier.f  |     5 -
+ .../f2py/tests/src/crackfortran/data_stmts.f90     |    20 -
+ .../tests/src/crackfortran/data_with_comments.f    |     8 -
+ .../numpy/f2py/tests/src/crackfortran/foo_deps.f90 |     6 -
+ .../numpy/f2py/tests/src/crackfortran/gh15035.f    |    16 -
+ .../numpy/f2py/tests/src/crackfortran/gh17859.f    |    12 -
+ .../numpy/f2py/tests/src/crackfortran/gh22648.pyf  |     7 -
+ .../numpy/f2py/tests/src/crackfortran/gh23533.f    |     5 -
+ .../numpy/f2py/tests/src/crackfortran/gh23598.f90  |     4 -
+ .../f2py/tests/src/crackfortran/gh23598Warn.f90    |    11 -
+ .../numpy/f2py/tests/src/crackfortran/gh23879.f90  |    20 -
+ .../numpy/f2py/tests/src/crackfortran/gh27697.f90  |    12 -
+ .../numpy/f2py/tests/src/crackfortran/gh2848.f90   |    13 -
+ .../f2py/tests/src/crackfortran/operators.f90      |    49 -
+ .../f2py/tests/src/crackfortran/privatemod.f90     |    11 -
+ .../f2py/tests/src/crackfortran/publicmod.f90      |    10 -
+ .../f2py/tests/src/crackfortran/pubprivmod.f90     |    10 -
+ .../tests/src/crackfortran/unicode_comment.f90     |     4 -
+ .../numpy/f2py/tests/src/f2cmap/.f2py_f2cmap       |     1 -
+ .../f2py/tests/src/f2cmap/isoFortranEnvMap.f90     |     9 -
+ .../numpy/f2py/tests/src/isocintrin/isoCtests.f90  |    34 -
+ .../numpy/f2py/tests/src/kind/foo.f90              |    20 -
+ .../site-packages/numpy/f2py/tests/src/mixed/foo.f |     5 -
+ .../numpy/f2py/tests/src/mixed/foo_fixed.f90       |     8 -
+ .../numpy/f2py/tests/src/mixed/foo_free.f90        |     8 -
+ .../numpy/f2py/tests/src/modules/gh25337/data.f90  |     8 -
+ .../f2py/tests/src/modules/gh25337/use_data.f90    |     6 -
+ .../gh26920/two_mods_with_no_public_entities.f90   |    21 -
+ .../gh26920/two_mods_with_one_public_routine.f90   |    21 -
+ .../tests/src/modules/module_data_docstring.f90    |    12 -
+ .../numpy/f2py/tests/src/modules/use_modules.f90   |    20 -
+ .../f2py/tests/src/negative_bounds/issue_20853.f90 |     7 -
+ .../f2py/tests/src/parameter/constant_array.f90    |    45 -
+ .../f2py/tests/src/parameter/constant_both.f90     |    57 -
+ .../f2py/tests/src/parameter/constant_compound.f90 |    15 -
+ .../f2py/tests/src/parameter/constant_integer.f90  |    22 -
+ .../tests/src/parameter/constant_non_compound.f90  |    23 -
+ .../f2py/tests/src/parameter/constant_real.f90     |    23 -
+ .../numpy/f2py/tests/src/quoted_character/foo.f    |    14 -
+ .../numpy/f2py/tests/src/regression/AB.inc         |     1 -
+ .../f2py/tests/src/regression/assignOnlyModule.f90 |    25 -
+ .../numpy/f2py/tests/src/regression/datonly.f90    |    17 -
+ .../numpy/f2py/tests/src/regression/f77comments.f  |    26 -
+ .../f2py/tests/src/regression/f77fixedform.f95     |     5 -
+ .../f2py/tests/src/regression/f90continuation.f90  |     9 -
+ .../numpy/f2py/tests/src/regression/incfile.f90    |     5 -
+ .../numpy/f2py/tests/src/regression/inout.f90      |     9 -
+ .../tests/src/regression/lower_f2py_fortran.f90    |     5 -
+ .../tests/src/regression/mod_derived_types.f90     |    23 -
+ .../numpy/f2py/tests/src/return_character/foo77.f  |    45 -
+ .../f2py/tests/src/return_character/foo90.f90      |    48 -
+ .../numpy/f2py/tests/src/return_complex/foo77.f    |    45 -
+ .../numpy/f2py/tests/src/return_complex/foo90.f90  |    48 -
+ .../numpy/f2py/tests/src/return_integer/foo77.f    |    56 -
+ .../numpy/f2py/tests/src/return_integer/foo90.f90  |    59 -
+ .../numpy/f2py/tests/src/return_logical/foo77.f    |    56 -
+ .../numpy/f2py/tests/src/return_logical/foo90.f90  |    59 -
+ .../numpy/f2py/tests/src/return_real/foo77.f       |    45 -
+ .../numpy/f2py/tests/src/return_real/foo90.f90     |    48 -
+ .../f2py/tests/src/routines/funcfortranname.f      |     5 -
+ .../f2py/tests/src/routines/funcfortranname.pyf    |    11 -
+ .../numpy/f2py/tests/src/routines/subrout.f        |     4 -
+ .../numpy/f2py/tests/src/routines/subrout.pyf      |    10 -
+ .../numpy/f2py/tests/src/size/foo.f90              |    44 -
+ .../numpy/f2py/tests/src/string/char.f90           |    29 -
+ .../numpy/f2py/tests/src/string/fixed_string.f90   |    34 -
+ .../numpy/f2py/tests/src/string/gh24008.f          |     8 -
+ .../numpy/f2py/tests/src/string/gh24662.f90        |     7 -
+ .../numpy/f2py/tests/src/string/gh25286.f90        |    14 -
+ .../numpy/f2py/tests/src/string/gh25286.pyf        |    12 -
+ .../numpy/f2py/tests/src/string/gh25286_bc.pyf     |    12 -
+ .../numpy/f2py/tests/src/string/scalar_string.f90  |     9 -
+ .../numpy/f2py/tests/src/string/string.f           |    12 -
+ .../f2py/tests/src/value_attrspec/gh21665.f90      |     9 -
+ .../numpy/f2py/tests/test_abstract_interface.py    |    26 -
+ .../numpy/f2py/tests/test_array_from_pyobj.py      |   678 -
+ .../numpy/f2py/tests/test_assumed_shape.py         |    50 -
+ .../numpy/f2py/tests/test_block_docstring.py       |    20 -
+ .../numpy/f2py/tests/test_callback.py              |   263 -
+ .../numpy/f2py/tests/test_character.py             |   641 -
+ .../site-packages/numpy/f2py/tests/test_common.py  |    23 -
+ .../numpy/f2py/tests/test_crackfortran.py          |   421 -
+ .../site-packages/numpy/f2py/tests/test_data.py    |    71 -
+ .../site-packages/numpy/f2py/tests/test_docs.py    |    66 -
+ .../site-packages/numpy/f2py/tests/test_f2cmap.py  |    17 -
+ .../site-packages/numpy/f2py/tests/test_f2py2e.py  |   983 --
+ .../site-packages/numpy/f2py/tests/test_isoc.py    |    56 -
+ .../site-packages/numpy/f2py/tests/test_kind.py    |    52 -
+ .../site-packages/numpy/f2py/tests/test_mixed.py   |    35 -
+ .../site-packages/numpy/f2py/tests/test_modules.py |    83 -
+ .../numpy/f2py/tests/test_parameter.py             |   129 -
+ .../site-packages/numpy/f2py/tests/test_pyf_src.py |    43 -
+ .../numpy/f2py/tests/test_quoted_character.py      |    18 -
+ .../numpy/f2py/tests/test_regression.py            |   187 -
+ .../numpy/f2py/tests/test_return_character.py      |    48 -
+ .../numpy/f2py/tests/test_return_complex.py        |    67 -
+ .../numpy/f2py/tests/test_return_integer.py        |    55 -
+ .../numpy/f2py/tests/test_return_logical.py        |    65 -
+ .../numpy/f2py/tests/test_return_real.py           |   109 -
+ .../numpy/f2py/tests/test_routines.py              |    29 -
+ .../numpy/f2py/tests/test_semicolon_split.py       |    75 -
+ .../site-packages/numpy/f2py/tests/test_size.py    |    45 -
+ .../site-packages/numpy/f2py/tests/test_string.py  |   100 -
+ .../numpy/f2py/tests/test_symbolic.py              |   500 -
+ .../numpy/f2py/tests/test_value_attrspec.py        |    15 -
+ .../Lib/site-packages/numpy/f2py/tests/util.py     |   442 -
+ .../Lib/site-packages/numpy/f2py/use_rules.py      |    99 -
+ .../Lib/site-packages/numpy/f2py/use_rules.pyi     |     9 -
+ .../.venv/Lib/site-packages/numpy/fft/__init__.py  |   213 -
+ .../.venv/Lib/site-packages/numpy/fft/__init__.pyi |    38 -
+ .../.venv/Lib/site-packages/numpy/fft/_helper.py   |   235 -
+ .../.venv/Lib/site-packages/numpy/fft/_helper.pyi  |    44 -
+ .../Lib/site-packages/numpy/fft/_pocketfft.py      |  1693 --
+ .../Lib/site-packages/numpy/fft/_pocketfft.pyi     |   137 -
+ .../numpy/fft/_pocketfft_umath.cp312-win_amd64.lib |   Bin 2176 -> 0 bytes
+ .../numpy/fft/_pocketfft_umath.cp312-win_amd64.pyd |   Bin 276480 -> 0 bytes
+ .../Lib/site-packages/numpy/fft/tests/__init__.py  |     0
+ .../site-packages/numpy/fft/tests/test_helper.py   |   167 -
+ .../numpy/fft/tests/test_pocketfft.py              |   589 -
+ .../.venv/Lib/site-packages/numpy/lib/__init__.py  |    97 -
+ .../.venv/Lib/site-packages/numpy/lib/__init__.pyi |    52 -
+ .../site-packages/numpy/lib/_array_utils_impl.py   |    62 -
+ .../site-packages/numpy/lib/_array_utils_impl.pyi  |    10 -
+ .../Lib/site-packages/numpy/lib/_arraypad_impl.py  |   926 -
+ .../Lib/site-packages/numpy/lib/_arraypad_impl.pyi |    88 -
+ .../site-packages/numpy/lib/_arraysetops_impl.py   |  1158 --
+ .../site-packages/numpy/lib/_arraysetops_impl.pyi  |   462 -
+ .../site-packages/numpy/lib/_arrayterator_impl.py  |   224 -
+ .../site-packages/numpy/lib/_arrayterator_impl.pyi |    45 -
+ .../Lib/site-packages/numpy/lib/_datasource.py     |   700 -
+ .../Lib/site-packages/numpy/lib/_datasource.pyi    |    30 -
+ .../Lib/site-packages/numpy/lib/_format_impl.py    |  1036 --
+ .../Lib/site-packages/numpy/lib/_format_impl.pyi   |    56 -
+ .../site-packages/numpy/lib/_function_base_impl.py |  5760 -------
+ .../numpy/lib/_function_base_impl.pyi              |  2324 ---
+ .../site-packages/numpy/lib/_histograms_impl.py    |  1085 --
+ .../site-packages/numpy/lib/_histograms_impl.pyi   |    40 -
+ .../site-packages/numpy/lib/_index_tricks_impl.py  |  1048 --
+ .../site-packages/numpy/lib/_index_tricks_impl.pyi |   267 -
+ .../.venv/Lib/site-packages/numpy/lib/_iotools.py  |   900 -
+ .../.venv/Lib/site-packages/numpy/lib/_iotools.pyi |   116 -
+ .../site-packages/numpy/lib/_nanfunctions_impl.py  |  2006 ---
+ .../site-packages/numpy/lib/_nanfunctions_impl.pyi |    48 -
+ .../Lib/site-packages/numpy/lib/_npyio_impl.py     |  2583 ---
+ .../Lib/site-packages/numpy/lib/_npyio_impl.pyi    |   299 -
+ .../site-packages/numpy/lib/_polynomial_impl.py    |  1465 --
+ .../site-packages/numpy/lib/_polynomial_impl.pyi   |   338 -
+ .../Lib/site-packages/numpy/lib/_scimath_impl.py   |   642 -
+ .../Lib/site-packages/numpy/lib/_scimath_impl.pyi  |    93 -
+ .../site-packages/numpy/lib/_shape_base_impl.py    |  1289 --
+ .../site-packages/numpy/lib/_shape_base_impl.pyi   |   236 -
+ .../site-packages/numpy/lib/_stride_tricks_impl.py |   582 -
+ .../numpy/lib/_stride_tricks_impl.pyi              |    73 -
+ .../site-packages/numpy/lib/_twodim_base_impl.py   |  1201 --
+ .../site-packages/numpy/lib/_twodim_base_impl.pyi  |   408 -
+ .../site-packages/numpy/lib/_type_check_impl.py    |   710 -
+ .../site-packages/numpy/lib/_type_check_impl.pyi   |   348 -
+ .../Lib/site-packages/numpy/lib/_ufunclike_impl.py |   199 -
+ .../site-packages/numpy/lib/_ufunclike_impl.pyi    |    60 -
+ .../site-packages/numpy/lib/_user_array_impl.py    |   310 -
+ .../site-packages/numpy/lib/_user_array_impl.pyi   |   226 -
+ .../Lib/site-packages/numpy/lib/_utils_impl.py     |   784 -
+ .../Lib/site-packages/numpy/lib/_utils_impl.pyi    |    22 -
+ .../.venv/Lib/site-packages/numpy/lib/_version.py  |   153 -
+ .../.venv/Lib/site-packages/numpy/lib/_version.pyi |    17 -
+ .../Lib/site-packages/numpy/lib/array_utils.py     |     7 -
+ .../Lib/site-packages/numpy/lib/array_utils.pyi    |     6 -
+ System/.venv/Lib/site-packages/numpy/lib/format.py |    24 -
+ .../.venv/Lib/site-packages/numpy/lib/format.pyi   |    24 -
+ .../Lib/site-packages/numpy/lib/introspect.py      |    94 -
+ .../Lib/site-packages/numpy/lib/introspect.pyi     |     3 -
+ System/.venv/Lib/site-packages/numpy/lib/mixins.py |   180 -
+ .../.venv/Lib/site-packages/numpy/lib/mixins.pyi   |    78 -
+ System/.venv/Lib/site-packages/numpy/lib/npyio.py  |     1 -
+ System/.venv/Lib/site-packages/numpy/lib/npyio.pyi |     5 -
+ .../Lib/site-packages/numpy/lib/recfunctions.py    |  1681 --
+ .../Lib/site-packages/numpy/lib/recfunctions.pyi   |   444 -
+ .../.venv/Lib/site-packages/numpy/lib/scimath.py   |    13 -
+ .../.venv/Lib/site-packages/numpy/lib/scimath.pyi  |    12 -
+ .../Lib/site-packages/numpy/lib/stride_tricks.py   |     1 -
+ .../Lib/site-packages/numpy/lib/stride_tricks.pyi  |     4 -
+ .../Lib/site-packages/numpy/lib/tests/__init__.py  |     0
+ .../numpy/lib/tests/data/py2-np0-objarr.npy        |   Bin 258 -> 0 bytes
+ .../numpy/lib/tests/data/py2-objarr.npy            |   Bin 258 -> 0 bytes
+ .../numpy/lib/tests/data/py2-objarr.npz            |   Bin 366 -> 0 bytes
+ .../numpy/lib/tests/data/py3-objarr.npy            |   Bin 325 -> 0 bytes
+ .../numpy/lib/tests/data/py3-objarr.npz            |   Bin 453 -> 0 bytes
+ .../site-packages/numpy/lib/tests/data/python3.npy |   Bin 96 -> 0 bytes
+ .../numpy/lib/tests/data/win64python2.npy          |   Bin 96 -> 0 bytes
+ .../numpy/lib/tests/test__datasource.py            |   328 -
+ .../site-packages/numpy/lib/tests/test__iotools.py |   358 -
+ .../site-packages/numpy/lib/tests/test__version.py |    64 -
+ .../numpy/lib/tests/test_array_utils.py            |    32 -
+ .../site-packages/numpy/lib/tests/test_arraypad.py |  1427 --
+ .../numpy/lib/tests/test_arraysetops.py            |  1302 --
+ .../numpy/lib/tests/test_arrayterator.py           |    45 -
+ .../site-packages/numpy/lib/tests/test_format.py   |  1054 --
+ .../numpy/lib/tests/test_function_base.py          |  4756 ------
+ .../numpy/lib/tests/test_histograms.py             |   855 -
+ .../numpy/lib/tests/test_index_tricks.py           |   693 -
+ .../Lib/site-packages/numpy/lib/tests/test_io.py   |  2857 ----
+ .../site-packages/numpy/lib/tests/test_loadtxt.py  |  1099 --
+ .../site-packages/numpy/lib/tests/test_mixins.py   |   215 -
+ .../numpy/lib/tests/test_nanfunctions.py           |  1438 --
+ .../site-packages/numpy/lib/tests/test_packbits.py |   376 -
+ .../numpy/lib/tests/test_polynomial.py             |   325 -
+ .../numpy/lib/tests/test_recfunctions.py           |  1042 --
+ .../numpy/lib/tests/test_regression.py             |   231 -
+ .../numpy/lib/tests/test_shape_base.py             |   813 -
+ .../numpy/lib/tests/test_stride_tricks.py          |   655 -
+ .../numpy/lib/tests/test_twodim_base.py            |   559 -
+ .../numpy/lib/tests/test_type_check.py             |   473 -
+ .../numpy/lib/tests/test_ufunclike.py              |    97 -
+ .../site-packages/numpy/lib/tests/test_utils.py    |    80 -
+ .../Lib/site-packages/numpy/lib/user_array.py      |     1 -
+ .../Lib/site-packages/numpy/lib/user_array.pyi     |     1 -
+ .../Lib/site-packages/numpy/linalg/__init__.py     |    95 -
+ .../Lib/site-packages/numpy/linalg/__init__.pyi    |    71 -
+ .../Lib/site-packages/numpy/linalg/_linalg.py      |  3657 ----
+ .../Lib/site-packages/numpy/linalg/_linalg.pyi     |   548 -
+ .../numpy/linalg/_umath_linalg.cp312-win_amd64.lib |   Bin 2120 -> 0 bytes
+ .../numpy/linalg/_umath_linalg.cp312-win_amd64.pyd |   Bin 112128 -> 0 bytes
+ .../site-packages/numpy/linalg/_umath_linalg.pyi   |    60 -
+ .../numpy/linalg/lapack_lite.cp312-win_amd64.lib   |   Bin 2084 -> 0 bytes
+ .../numpy/linalg/lapack_lite.cp312-win_amd64.pyd   |   Bin 18944 -> 0 bytes
+ .../Lib/site-packages/numpy/linalg/lapack_lite.pyi |   143 -
+ .../site-packages/numpy/linalg/tests/__init__.py   |     0
+ .../numpy/linalg/tests/test_deprecations.py        |    21 -
+ .../numpy/linalg/tests/test_linalg.py              |  2442 ---
+ .../numpy/linalg/tests/test_regression.py          |   182 -
+ .../Lib/site-packages/numpy/ma/API_CHANGES.txt     |   135 -
+ System/.venv/Lib/site-packages/numpy/ma/LICENSE    |    24 -
+ System/.venv/Lib/site-packages/numpy/ma/README.rst |   236 -
+ .../.venv/Lib/site-packages/numpy/ma/__init__.py   |    53 -
+ .../.venv/Lib/site-packages/numpy/ma/__init__.pyi  |   458 -
+ System/.venv/Lib/site-packages/numpy/ma/core.py    |  8929 ----------
+ System/.venv/Lib/site-packages/numpy/ma/core.pyi   |  3733 -----
+ System/.venv/Lib/site-packages/numpy/ma/extras.py  |  2266 ---
+ System/.venv/Lib/site-packages/numpy/ma/extras.pyi |   297 -
+ .../.venv/Lib/site-packages/numpy/ma/mrecords.py   |   762 -
+ .../.venv/Lib/site-packages/numpy/ma/mrecords.pyi  |    96 -
+ .../Lib/site-packages/numpy/ma/tests/__init__.py   |     0
+ .../numpy/ma/tests/test_arrayobject.py             |    40 -
+ .../Lib/site-packages/numpy/ma/tests/test_core.py  |  6015 -------
+ .../numpy/ma/tests/test_deprecations.py            |    65 -
+ .../site-packages/numpy/ma/tests/test_extras.py    |  1945 ---
+ .../site-packages/numpy/ma/tests/test_mrecords.py  |   495 -
+ .../site-packages/numpy/ma/tests/test_old_ma.py    |   939 --
+ .../numpy/ma/tests/test_regression.py              |    83 -
+ .../numpy/ma/tests/test_subclassing.py             |   469 -
+ .../.venv/Lib/site-packages/numpy/ma/testutils.py  |   294 -
+ .../.venv/Lib/site-packages/numpy/ma/testutils.pyi |    69 -
+ System/.venv/Lib/site-packages/numpy/matlib.py     |   380 -
+ System/.venv/Lib/site-packages/numpy/matlib.pyi    |   582 -
+ .../Lib/site-packages/numpy/matrixlib/__init__.py  |    12 -
+ .../Lib/site-packages/numpy/matrixlib/__init__.pyi |     3 -
+ .../Lib/site-packages/numpy/matrixlib/defmatrix.py |  1119 --
+ .../site-packages/numpy/matrixlib/defmatrix.pyi    |   218 -
+ .../numpy/matrixlib/tests/__init__.py              |     0
+ .../numpy/matrixlib/tests/test_defmatrix.py        |   455 -
+ .../numpy/matrixlib/tests/test_interaction.py      |   360 -
+ .../numpy/matrixlib/tests/test_masked_matrix.py    |   240 -
+ .../numpy/matrixlib/tests/test_matrix_linalg.py    |   110 -
+ .../numpy/matrixlib/tests/test_multiarray.py       |    17 -
+ .../numpy/matrixlib/tests/test_numeric.py          |    18 -
+ .../numpy/matrixlib/tests/test_regression.py       |    31 -
+ .../Lib/site-packages/numpy/polynomial/__init__.py |   187 -
+ .../site-packages/numpy/polynomial/__init__.pyi    |    31 -
+ .../site-packages/numpy/polynomial/_polybase.py    |  1191 --
+ .../site-packages/numpy/polynomial/_polybase.pyi   |   262 -
+ .../site-packages/numpy/polynomial/_polytypes.pyi  |   501 -
+ .../site-packages/numpy/polynomial/chebyshev.py    |  2001 ---
+ .../site-packages/numpy/polynomial/chebyshev.pyi   |   180 -
+ .../Lib/site-packages/numpy/polynomial/hermite.py  |  1738 --
+ .../Lib/site-packages/numpy/polynomial/hermite.pyi |   106 -
+ .../site-packages/numpy/polynomial/hermite_e.py    |  1640 --
+ .../site-packages/numpy/polynomial/hermite_e.pyi   |   106 -
+ .../Lib/site-packages/numpy/polynomial/laguerre.py |  1673 --
+ .../site-packages/numpy/polynomial/laguerre.pyi    |   100 -
+ .../Lib/site-packages/numpy/polynomial/legendre.py |  1603 --
+ .../site-packages/numpy/polynomial/legendre.pyi    |   100 -
+ .../site-packages/numpy/polynomial/polynomial.py   |  1625 --
+ .../site-packages/numpy/polynomial/polynomial.pyi  |   109 -
+ .../site-packages/numpy/polynomial/polyutils.py    |   759 -
+ .../site-packages/numpy/polynomial/polyutils.pyi   |   307 -
+ .../numpy/polynomial/tests/__init__.py             |     0
+ .../numpy/polynomial/tests/test_chebyshev.py       |   618 -
+ .../numpy/polynomial/tests/test_classes.py         |   613 -
+ .../numpy/polynomial/tests/test_hermite.py         |   553 -
+ .../numpy/polynomial/tests/test_hermite_e.py       |   554 -
+ .../numpy/polynomial/tests/test_laguerre.py        |   535 -
+ .../numpy/polynomial/tests/test_legendre.py        |   566 -
+ .../numpy/polynomial/tests/test_polynomial.py      |   691 -
+ .../numpy/polynomial/tests/test_polyutils.py       |   123 -
+ .../numpy/polynomial/tests/test_printing.py        |   557 -
+ .../numpy/polynomial/tests/test_symbol.py          |   217 -
+ System/.venv/Lib/site-packages/numpy/py.typed      |     0
+ .../Lib/site-packages/numpy/random/__init__.pxd    |    14 -
+ .../Lib/site-packages/numpy/random/__init__.py     |   213 -
+ .../Lib/site-packages/numpy/random/__init__.pyi    |   124 -
+ .../random/_bounded_integers.cp312-win_amd64.lib   |   Bin 18000 -> 0 bytes
+ .../random/_bounded_integers.cp312-win_amd64.pyd   |   Bin 207360 -> 0 bytes
+ .../numpy/random/_bounded_integers.pxd             |    38 -
+ .../numpy/random/_bounded_integers.pyi             |     1 -
+ .../numpy/random/_common.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../numpy/random/_common.cp312-win_amd64.pyd       |   Bin 167424 -> 0 bytes
+ .../Lib/site-packages/numpy/random/_common.pxd     |   110 -
+ .../Lib/site-packages/numpy/random/_common.pyi     |    16 -
+ .../numpy/random/_examples/cffi/extending.py       |    44 -
+ .../numpy/random/_examples/cffi/parse.py           |    53 -
+ .../numpy/random/_examples/cython/extending.pyx    |    77 -
+ .../_examples/cython/extending_distributions.pyx   |   117 -
+ .../numpy/random/_examples/cython/meson.build      |    53 -
+ .../numpy/random/_examples/numba/extending.py      |    86 -
+ .../_examples/numba/extending_distributions.py     |    67 -
+ .../numpy/random/_generator.cp312-win_amd64.lib    |   Bin 18400 -> 0 bytes
+ .../numpy/random/_generator.cp312-win_amd64.pyd    |   Bin 585216 -> 0 bytes
+ .../Lib/site-packages/numpy/random/_generator.pyi  |   862 -
+ .../numpy/random/_mt19937.cp312-win_amd64.lib      |   Bin 2032 -> 0 bytes
+ .../numpy/random/_mt19937.cp312-win_amd64.pyd      |   Bin 83968 -> 0 bytes
+ .../Lib/site-packages/numpy/random/_mt19937.pyi    |    27 -
+ .../numpy/random/_pcg64.cp312-win_amd64.lib        |   Bin 1996 -> 0 bytes
+ .../numpy/random/_pcg64.cp312-win_amd64.pyd        |   Bin 94720 -> 0 bytes
+ .../Lib/site-packages/numpy/random/_pcg64.pyi      |    41 -
+ .../numpy/random/_philox.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../numpy/random/_philox.cp312-win_amd64.pyd       |   Bin 78336 -> 0 bytes
+ .../Lib/site-packages/numpy/random/_philox.pyi     |    36 -
+ .../Lib/site-packages/numpy/random/_pickle.py      |    88 -
+ .../Lib/site-packages/numpy/random/_pickle.pyi     |    43 -
+ .../numpy/random/_sfc64.cp312-win_amd64.lib        |   Bin 1996 -> 0 bytes
+ .../numpy/random/_sfc64.cp312-win_amd64.pyd        |   Bin 59904 -> 0 bytes
+ .../Lib/site-packages/numpy/random/_sfc64.pyi      |    25 -
+ .../numpy/random/bit_generator.cp312-win_amd64.lib |   Bin 2120 -> 0 bytes
+ .../numpy/random/bit_generator.cp312-win_amd64.pyd |   Bin 157696 -> 0 bytes
+ .../site-packages/numpy/random/bit_generator.pxd   |    40 -
+ .../site-packages/numpy/random/bit_generator.pyi   |   123 -
+ .../site-packages/numpy/random/c_distributions.pxd |   119 -
+ .../site-packages/numpy/random/lib/npyrandom.lib   |   Bin 149648 -> 0 bytes
+ .../numpy/random/mtrand.cp312-win_amd64.lib        |   Bin 17122 -> 0 bytes
+ .../numpy/random/mtrand.cp312-win_amd64.pyd        |   Bin 488960 -> 0 bytes
+ .../Lib/site-packages/numpy/random/mtrand.pyi      |   759 -
+ .../site-packages/numpy/random/tests/__init__.py   |     0
+ .../numpy/random/tests/data/__init__.py            |     0
+ .../random/tests/data/generator_pcg64_np121.pkl.gz |   Bin 203 -> 0 bytes
+ .../random/tests/data/generator_pcg64_np126.pkl.gz |   Bin 208 -> 0 bytes
+ .../numpy/random/tests/data/mt19937-testset-1.csv  |  1001 --
+ .../numpy/random/tests/data/mt19937-testset-2.csv  |  1001 --
+ .../numpy/random/tests/data/pcg64-testset-1.csv    |  1001 --
+ .../numpy/random/tests/data/pcg64-testset-2.csv    |  1001 --
+ .../random/tests/data/pcg64dxsm-testset-1.csv      |  1001 --
+ .../random/tests/data/pcg64dxsm-testset-2.csv      |  1001 --
+ .../numpy/random/tests/data/philox-testset-1.csv   |  1001 --
+ .../numpy/random/tests/data/philox-testset-2.csv   |  1001 --
+ .../numpy/random/tests/data/sfc64-testset-1.csv    |  1001 --
+ .../numpy/random/tests/data/sfc64-testset-2.csv    |  1001 --
+ .../numpy/random/tests/data/sfc64_np126.pkl.gz     |   Bin 290 -> 0 bytes
+ .../numpy/random/tests/test_direct.py              |   595 -
+ .../numpy/random/tests/test_extending.py           |   131 -
+ .../numpy/random/tests/test_generator_mt19937.py   |  2825 ----
+ .../tests/test_generator_mt19937_regressions.py    |   221 -
+ .../numpy/random/tests/test_random.py              |  1724 --
+ .../numpy/random/tests/test_randomstate.py         |  2099 ---
+ .../random/tests/test_randomstate_regression.py    |   213 -
+ .../numpy/random/tests/test_regression.py          |   175 -
+ .../numpy/random/tests/test_seed_sequence.py       |    79 -
+ .../site-packages/numpy/random/tests/test_smoke.py |   882 -
+ .../.venv/Lib/site-packages/numpy/rec/__init__.py  |     2 -
+ .../.venv/Lib/site-packages/numpy/rec/__init__.pyi |    23 -
+ .../Lib/site-packages/numpy/strings/__init__.py    |     2 -
+ .../Lib/site-packages/numpy/strings/__init__.pyi   |    97 -
+ .../Lib/site-packages/numpy/testing/__init__.py    |    22 -
+ .../Lib/site-packages/numpy/testing/__init__.pyi   |   107 -
+ .../numpy/testing/_private/__init__.py             |     0
+ .../numpy/testing/_private/__init__.pyi            |     0
+ .../numpy/testing/_private/extbuild.py             |   250 -
+ .../numpy/testing/_private/extbuild.pyi            |    25 -
+ .../site-packages/numpy/testing/_private/utils.py  |  2830 ----
+ .../site-packages/numpy/testing/_private/utils.pyi |   505 -
+ .../Lib/site-packages/numpy/testing/overrides.py   |    84 -
+ .../Lib/site-packages/numpy/testing/overrides.pyi  |    10 -
+ .../numpy/testing/print_coercion_tables.py         |   207 -
+ .../numpy/testing/print_coercion_tables.pyi        |    26 -
+ .../site-packages/numpy/testing/tests/__init__.py  |     0
+ .../numpy/testing/tests/test_utils.py              |  2123 ---
+ .../Lib/site-packages/numpy/tests/__init__.py      |     0
+ .../Lib/site-packages/numpy/tests/test__all__.py   |    10 -
+ .../site-packages/numpy/tests/test_configtool.py   |    51 -
+ .../site-packages/numpy/tests/test_ctypeslib.py    |   383 -
+ .../site-packages/numpy/tests/test_lazyloading.py  |    42 -
+ .../Lib/site-packages/numpy/tests/test_matlib.py   |    59 -
+ .../site-packages/numpy/tests/test_numpy_config.py |    47 -
+ .../numpy/tests/test_numpy_version.py              |    54 -
+ .../site-packages/numpy/tests/test_public_api.py   |   807 -
+ .../site-packages/numpy/tests/test_reloading.py    |    76 -
+ .../Lib/site-packages/numpy/tests/test_scripts.py  |    48 -
+ .../Lib/site-packages/numpy/tests/test_warnings.py |    79 -
+ .../Lib/site-packages/numpy/typing/__init__.py     |   233 -
+ .../Lib/site-packages/numpy/typing/__init__.pyi    |     3 -
+ .../Lib/site-packages/numpy/typing/mypy_plugin.py  |   200 -
+ .../site-packages/numpy/typing/tests/__init__.py   |     0
+ .../numpy/typing/tests/data/fail/arithmetic.pyi    |   126 -
+ .../typing/tests/data/fail/array_constructors.pyi  |    34 -
+ .../numpy/typing/tests/data/fail/array_like.pyi    |    15 -
+ .../numpy/typing/tests/data/fail/array_pad.pyi     |     6 -
+ .../numpy/typing/tests/data/fail/arrayprint.pyi    |    15 -
+ .../numpy/typing/tests/data/fail/arrayterator.pyi  |    14 -
+ .../numpy/typing/tests/data/fail/bitwise_ops.pyi   |    17 -
+ .../numpy/typing/tests/data/fail/char.pyi          |    63 -
+ .../numpy/typing/tests/data/fail/chararray.pyi     |    61 -
+ .../numpy/typing/tests/data/fail/comparisons.pyi   |    27 -
+ .../numpy/typing/tests/data/fail/constants.pyi     |     3 -
+ .../numpy/typing/tests/data/fail/datasource.pyi    |    16 -
+ .../numpy/typing/tests/data/fail/dtype.pyi         |    17 -
+ .../numpy/typing/tests/data/fail/einsumfunc.pyi    |    12 -
+ .../numpy/typing/tests/data/fail/flatiter.pyi      |    38 -
+ .../numpy/typing/tests/data/fail/fromnumeric.pyi   |   148 -
+ .../numpy/typing/tests/data/fail/histograms.pyi    |    12 -
+ .../numpy/typing/tests/data/fail/index_tricks.pyi  |    14 -
+ .../typing/tests/data/fail/lib_function_base.pyi   |    60 -
+ .../typing/tests/data/fail/lib_polynomial.pyi      |    29 -
+ .../numpy/typing/tests/data/fail/lib_utils.pyi     |     3 -
+ .../numpy/typing/tests/data/fail/lib_version.pyi   |     6 -
+ .../numpy/typing/tests/data/fail/linalg.pyi        |    52 -
+ .../numpy/typing/tests/data/fail/ma.pyi            |   155 -
+ .../numpy/typing/tests/data/fail/memmap.pyi        |     5 -
+ .../numpy/typing/tests/data/fail/modules.pyi       |    17 -
+ .../numpy/typing/tests/data/fail/multiarray.pyi    |    52 -
+ .../numpy/typing/tests/data/fail/ndarray.pyi       |    11 -
+ .../numpy/typing/tests/data/fail/ndarray_misc.pyi  |    49 -
+ .../numpy/typing/tests/data/fail/nditer.pyi        |     8 -
+ .../typing/tests/data/fail/nested_sequence.pyi     |    17 -
+ .../numpy/typing/tests/data/fail/npyio.pyi         |    24 -
+ .../numpy/typing/tests/data/fail/numerictypes.pyi  |     5 -
+ .../numpy/typing/tests/data/fail/random.pyi        |    62 -
+ .../numpy/typing/tests/data/fail/rec.pyi           |    17 -
+ .../numpy/typing/tests/data/fail/scalars.pyi       |    86 -
+ .../numpy/typing/tests/data/fail/shape.pyi         |     7 -
+ .../numpy/typing/tests/data/fail/shape_base.pyi    |     8 -
+ .../numpy/typing/tests/data/fail/stride_tricks.pyi |     9 -
+ .../numpy/typing/tests/data/fail/strings.pyi       |    52 -
+ .../numpy/typing/tests/data/fail/testing.pyi       |    28 -
+ .../numpy/typing/tests/data/fail/twodim_base.pyi   |    39 -
+ .../numpy/typing/tests/data/fail/type_check.pyi    |    12 -
+ .../numpy/typing/tests/data/fail/ufunc_config.pyi  |    21 -
+ .../numpy/typing/tests/data/fail/ufunclike.pyi     |    21 -
+ .../numpy/typing/tests/data/fail/ufuncs.pyi        |    17 -
+ .../typing/tests/data/fail/warnings_and_errors.pyi |     5 -
+ .../typing/tests/data/misc/extended_precision.pyi  |     9 -
+ .../site-packages/numpy/typing/tests/data/mypy.ini |     8 -
+ .../numpy/typing/tests/data/pass/arithmetic.py     |   614 -
+ .../typing/tests/data/pass/array_constructors.py   |   138 -
+ .../numpy/typing/tests/data/pass/array_like.py     |    43 -
+ .../numpy/typing/tests/data/pass/arrayprint.py     |    37 -
+ .../numpy/typing/tests/data/pass/arrayterator.py   |    28 -
+ .../numpy/typing/tests/data/pass/bitwise_ops.py    |   131 -
+ .../numpy/typing/tests/data/pass/comparisons.py    |   316 -
+ .../numpy/typing/tests/data/pass/dtype.py          |    57 -
+ .../numpy/typing/tests/data/pass/einsumfunc.py     |    36 -
+ .../numpy/typing/tests/data/pass/flatiter.py       |    26 -
+ .../numpy/typing/tests/data/pass/fromnumeric.py    |   272 -
+ .../numpy/typing/tests/data/pass/index_tricks.py   |    62 -
+ .../numpy/typing/tests/data/pass/lib_user_array.py |    22 -
+ .../numpy/typing/tests/data/pass/lib_utils.py      |    19 -
+ .../numpy/typing/tests/data/pass/lib_version.py    |    18 -
+ .../numpy/typing/tests/data/pass/literal.py        |    52 -
+ .../numpy/typing/tests/data/pass/ma.py             |   199 -
+ .../numpy/typing/tests/data/pass/mod.py            |   149 -
+ .../numpy/typing/tests/data/pass/modules.py        |    45 -
+ .../numpy/typing/tests/data/pass/multiarray.py     |    77 -
+ .../typing/tests/data/pass/ndarray_conversion.py   |    81 -
+ .../numpy/typing/tests/data/pass/ndarray_misc.py   |   199 -
+ .../tests/data/pass/ndarray_shape_manipulation.py  |    47 -
+ .../numpy/typing/tests/data/pass/nditer.py         |     4 -
+ .../numpy/typing/tests/data/pass/numeric.py        |    90 -
+ .../numpy/typing/tests/data/pass/numerictypes.py   |    17 -
+ .../numpy/typing/tests/data/pass/random.py         |  1498 --
+ .../numpy/typing/tests/data/pass/recfunctions.py   |   164 -
+ .../numpy/typing/tests/data/pass/scalars.py        |   249 -
+ .../numpy/typing/tests/data/pass/shape.py          |    19 -
+ .../numpy/typing/tests/data/pass/simple.py         |   170 -
+ .../numpy/typing/tests/data/pass/ufunc_config.py   |    64 -
+ .../numpy/typing/tests/data/pass/ufunclike.py      |    52 -
+ .../numpy/typing/tests/data/pass/ufuncs.py         |    16 -
+ .../typing/tests/data/pass/warnings_and_errors.py  |     6 -
+ .../numpy/typing/tests/data/reveal/arithmetic.pyi  |   719 -
+ .../typing/tests/data/reveal/array_api_info.pyi    |    70 -
+ .../tests/data/reveal/array_constructors.pyi       |   279 -
+ .../numpy/typing/tests/data/reveal/arraypad.pyi    |    27 -
+ .../numpy/typing/tests/data/reveal/arrayprint.pyi  |    25 -
+ .../numpy/typing/tests/data/reveal/arraysetops.pyi |    74 -
+ .../typing/tests/data/reveal/arrayterator.pyi      |    27 -
+ .../numpy/typing/tests/data/reveal/bitwise_ops.pyi |   166 -
+ .../numpy/typing/tests/data/reveal/char.pyi        |   225 -
+ .../numpy/typing/tests/data/reveal/chararray.pyi   |   138 -
+ .../numpy/typing/tests/data/reveal/comparisons.pyi |   264 -
+ .../numpy/typing/tests/data/reveal/constants.pyi   |    14 -
+ .../numpy/typing/tests/data/reveal/ctypeslib.pyi   |    81 -
+ .../numpy/typing/tests/data/reveal/datasource.pyi  |    23 -
+ .../numpy/typing/tests/data/reveal/dtype.pyi       |   132 -
+ .../numpy/typing/tests/data/reveal/einsumfunc.pyi  |    39 -
+ .../numpy/typing/tests/data/reveal/emath.pyi       |    54 -
+ .../numpy/typing/tests/data/reveal/fft.pyi         |    37 -
+ .../numpy/typing/tests/data/reveal/flatiter.pyi    |    86 -
+ .../numpy/typing/tests/data/reveal/fromnumeric.pyi |   347 -
+ .../numpy/typing/tests/data/reveal/getlimits.pyi   |    53 -
+ .../numpy/typing/tests/data/reveal/histograms.pyi  |    25 -
+ .../typing/tests/data/reveal/index_tricks.pyi      |    70 -
+ .../typing/tests/data/reveal/lib_function_base.pyi |   409 -
+ .../typing/tests/data/reveal/lib_polynomial.pyi    |   147 -
+ .../numpy/typing/tests/data/reveal/lib_utils.pyi   |    17 -
+ .../numpy/typing/tests/data/reveal/lib_version.pyi |    20 -
+ .../numpy/typing/tests/data/reveal/linalg.pyi      |   154 -
+ .../numpy/typing/tests/data/reveal/ma.pyi          |  1098 --
+ .../numpy/typing/tests/data/reveal/matrix.pyi      |    73 -
+ .../numpy/typing/tests/data/reveal/memmap.pyi      |    19 -
+ .../numpy/typing/tests/data/reveal/mod.pyi         |   178 -
+ .../numpy/typing/tests/data/reveal/modules.pyi     |    51 -
+ .../numpy/typing/tests/data/reveal/multiarray.pyi  |   197 -
+ .../typing/tests/data/reveal/nbit_base_example.pyi |    20 -
+ .../tests/data/reveal/ndarray_assignability.pyi    |    82 -
+ .../tests/data/reveal/ndarray_conversion.pyi       |    83 -
+ .../typing/tests/data/reveal/ndarray_misc.pyi      |   246 -
+ .../data/reveal/ndarray_shape_manipulation.pyi     |    47 -
+ .../numpy/typing/tests/data/reveal/nditer.pyi      |    49 -
+ .../typing/tests/data/reveal/nested_sequence.pyi   |    25 -
+ .../numpy/typing/tests/data/reveal/npyio.pyi       |    83 -
+ .../numpy/typing/tests/data/reveal/numeric.pyi     |   170 -
+ .../typing/tests/data/reveal/numerictypes.pyi      |    16 -
+ .../tests/data/reveal/polynomial_polybase.pyi      |   217 -
+ .../tests/data/reveal/polynomial_polyutils.pyi     |   218 -
+ .../typing/tests/data/reveal/polynomial_series.pyi |   138 -
+ .../numpy/typing/tests/data/reveal/random.pyi      |  1546 --
+ .../numpy/typing/tests/data/reveal/rec.pyi         |   171 -
+ .../numpy/typing/tests/data/reveal/scalars.pyi     |   191 -
+ .../numpy/typing/tests/data/reveal/shape.pyi       |    13 -
+ .../numpy/typing/tests/data/reveal/shape_base.pyi  |    52 -
+ .../typing/tests/data/reveal/stride_tricks.pyi     |    27 -
+ .../numpy/typing/tests/data/reveal/strings.pyi     |   196 -
+ .../numpy/typing/tests/data/reveal/testing.pyi     |   198 -
+ .../numpy/typing/tests/data/reveal/twodim_base.pyi |   225 -
+ .../numpy/typing/tests/data/reveal/type_check.pyi  |    67 -
+ .../typing/tests/data/reveal/ufunc_config.pyi      |    29 -
+ .../numpy/typing/tests/data/reveal/ufunclike.pyi   |    31 -
+ .../numpy/typing/tests/data/reveal/ufuncs.pyi      |   142 -
+ .../tests/data/reveal/warnings_and_errors.pyi      |    11 -
+ .../numpy/typing/tests/test_isfile.py              |    38 -
+ .../numpy/typing/tests/test_runtime.py             |   110 -
+ .../numpy/typing/tests/test_typing.py              |   205 -
+ System/.venv/Lib/site-packages/numpy/version.py    |    11 -
+ System/.venv/Lib/site-packages/numpy/version.pyi   |     9 -
+ .../openpyxl-3.1.5.dist-info/INSTALLER             |     1 -
+ .../openpyxl-3.1.5.dist-info/LICENCE.rst           |    23 -
+ .../openpyxl-3.1.5.dist-info/METADATA              |    86 -
+ .../site-packages/openpyxl-3.1.5.dist-info/RECORD  |   387 -
+ .../openpyxl-3.1.5.dist-info/REQUESTED             |     0
+ .../site-packages/openpyxl-3.1.5.dist-info/WHEEL   |     6 -
+ .../openpyxl-3.1.5.dist-info/top_level.txt         |     1 -
+ .../.venv/Lib/site-packages/openpyxl/__init__.py   |    19 -
+ .../.venv/Lib/site-packages/openpyxl/_constants.py |    13 -
+ .../Lib/site-packages/openpyxl/cell/__init__.py    |     4 -
+ .../Lib/site-packages/openpyxl/cell/_writer.py     |   136 -
+ .../.venv/Lib/site-packages/openpyxl/cell/cell.py  |   332 -
+ .../Lib/site-packages/openpyxl/cell/read_only.py   |   136 -
+ .../Lib/site-packages/openpyxl/cell/rich_text.py   |   202 -
+ .../.venv/Lib/site-packages/openpyxl/cell/text.py  |   184 -
+ .../.venv/Lib/site-packages/openpyxl/chart/_3d.py  |   105 -
+ .../Lib/site-packages/openpyxl/chart/__init__.py   |    19 -
+ .../Lib/site-packages/openpyxl/chart/_chart.py     |   199 -
+ .../Lib/site-packages/openpyxl/chart/area_chart.py |   106 -
+ .../.venv/Lib/site-packages/openpyxl/chart/axis.py |   401 -
+ .../Lib/site-packages/openpyxl/chart/bar_chart.py  |   144 -
+ .../site-packages/openpyxl/chart/bubble_chart.py   |    67 -
+ .../Lib/site-packages/openpyxl/chart/chartspace.py |   195 -
+ .../site-packages/openpyxl/chart/data_source.py    |   246 -
+ .../site-packages/openpyxl/chart/descriptors.py    |    43 -
+ .../Lib/site-packages/openpyxl/chart/error_bar.py  |    62 -
+ .../Lib/site-packages/openpyxl/chart/label.py      |   127 -
+ .../Lib/site-packages/openpyxl/chart/layout.py     |    74 -
+ .../Lib/site-packages/openpyxl/chart/legend.py     |    75 -
+ .../Lib/site-packages/openpyxl/chart/line_chart.py |   129 -
+ .../Lib/site-packages/openpyxl/chart/marker.py     |    90 -
+ .../Lib/site-packages/openpyxl/chart/picture.py    |    35 -
+ .../Lib/site-packages/openpyxl/chart/pie_chart.py  |   177 -
+ .../Lib/site-packages/openpyxl/chart/pivot.py      |    65 -
+ .../Lib/site-packages/openpyxl/chart/plotarea.py   |   162 -
+ .../site-packages/openpyxl/chart/print_settings.py |    57 -
+ .../site-packages/openpyxl/chart/radar_chart.py    |    55 -
+ .../Lib/site-packages/openpyxl/chart/reader.py     |    32 -
+ .../Lib/site-packages/openpyxl/chart/reference.py  |   124 -
+ .../site-packages/openpyxl/chart/scatter_chart.py  |    53 -
+ .../Lib/site-packages/openpyxl/chart/series.py     |   197 -
+ .../site-packages/openpyxl/chart/series_factory.py |    41 -
+ .../Lib/site-packages/openpyxl/chart/shapes.py     |    89 -
+ .../site-packages/openpyxl/chart/stock_chart.py    |    54 -
+ .../site-packages/openpyxl/chart/surface_chart.py  |   119 -
+ .../.venv/Lib/site-packages/openpyxl/chart/text.py |    78 -
+ .../Lib/site-packages/openpyxl/chart/title.py      |    76 -
+ .../Lib/site-packages/openpyxl/chart/trendline.py  |    98 -
+ .../site-packages/openpyxl/chart/updown_bars.py    |    31 -
+ .../site-packages/openpyxl/chartsheet/__init__.py  |     3 -
+ .../openpyxl/chartsheet/chartsheet.py              |   107 -
+ .../site-packages/openpyxl/chartsheet/custom.py    |    61 -
+ .../openpyxl/chartsheet/properties.py              |    28 -
+ .../openpyxl/chartsheet/protection.py              |    41 -
+ .../site-packages/openpyxl/chartsheet/publish.py   |    58 -
+ .../site-packages/openpyxl/chartsheet/relation.py  |    97 -
+ .../Lib/site-packages/openpyxl/chartsheet/views.py |    51 -
+ .../site-packages/openpyxl/comments/__init__.py    |     4 -
+ .../Lib/site-packages/openpyxl/comments/author.py  |    21 -
+ .../openpyxl/comments/comment_sheet.py             |   211 -
+ .../site-packages/openpyxl/comments/comments.py    |    62 -
+ .../openpyxl/comments/shape_writer.py              |   112 -
+ .../Lib/site-packages/openpyxl/compat/__init__.py  |    54 -
+ .../.venv/Lib/site-packages/openpyxl/compat/abc.py |     8 -
+ .../Lib/site-packages/openpyxl/compat/numbers.py   |    43 -
+ .../Lib/site-packages/openpyxl/compat/product.py   |    17 -
+ .../Lib/site-packages/openpyxl/compat/singleton.py |    40 -
+ .../Lib/site-packages/openpyxl/compat/strings.py   |    25 -
+ .../site-packages/openpyxl/descriptors/__init__.py |    58 -
+ .../Lib/site-packages/openpyxl/descriptors/base.py |   272 -
+ .../openpyxl/descriptors/container.py              |    41 -
+ .../site-packages/openpyxl/descriptors/excel.py    |   112 -
+ .../openpyxl/descriptors/namespace.py              |    12 -
+ .../site-packages/openpyxl/descriptors/nested.py   |   129 -
+ .../site-packages/openpyxl/descriptors/sequence.py |   136 -
+ .../openpyxl/descriptors/serialisable.py           |   240 -
+ .../site-packages/openpyxl/descriptors/slots.py    |    18 -
+ .../Lib/site-packages/openpyxl/drawing/__init__.py |     4 -
+ .../Lib/site-packages/openpyxl/drawing/colors.py   |   435 -
+ .../site-packages/openpyxl/drawing/connector.py    |   144 -
+ .../Lib/site-packages/openpyxl/drawing/drawing.py  |    92 -
+ .../Lib/site-packages/openpyxl/drawing/effect.py   |   407 -
+ .../Lib/site-packages/openpyxl/drawing/fill.py     |   425 -
+ .../Lib/site-packages/openpyxl/drawing/geometry.py |   584 -
+ .../Lib/site-packages/openpyxl/drawing/graphic.py  |   177 -
+ .../Lib/site-packages/openpyxl/drawing/image.py    |    65 -
+ .../Lib/site-packages/openpyxl/drawing/line.py     |   144 -
+ .../Lib/site-packages/openpyxl/drawing/picture.py  |   144 -
+ .../site-packages/openpyxl/drawing/properties.py   |   174 -
+ .../Lib/site-packages/openpyxl/drawing/relation.py |    17 -
+ .../openpyxl/drawing/spreadsheet_drawing.py        |   382 -
+ .../Lib/site-packages/openpyxl/drawing/text.py     |   717 -
+ .../Lib/site-packages/openpyxl/drawing/xdr.py      |    33 -
+ .../site-packages/openpyxl/formatting/__init__.py  |     3 -
+ .../openpyxl/formatting/formatting.py              |   114 -
+ .../Lib/site-packages/openpyxl/formatting/rule.py  |   291 -
+ .../Lib/site-packages/openpyxl/formula/__init__.py |     3 -
+ .../site-packages/openpyxl/formula/tokenizer.py    |   446 -
+ .../site-packages/openpyxl/formula/translate.py    |   166 -
+ .../site-packages/openpyxl/packaging/__init__.py   |     3 -
+ .../Lib/site-packages/openpyxl/packaging/core.py   |   115 -
+ .../Lib/site-packages/openpyxl/packaging/custom.py |   289 -
+ .../site-packages/openpyxl/packaging/extended.py   |   137 -
+ .../site-packages/openpyxl/packaging/interface.py  |    56 -
+ .../site-packages/openpyxl/packaging/manifest.py   |   194 -
+ .../openpyxl/packaging/relationship.py             |   158 -
+ .../site-packages/openpyxl/packaging/workbook.py   |   185 -
+ .../Lib/site-packages/openpyxl/pivot/__init__.py   |     1 -
+ .../Lib/site-packages/openpyxl/pivot/cache.py      |   965 --
+ .../Lib/site-packages/openpyxl/pivot/fields.py     |   326 -
+ .../Lib/site-packages/openpyxl/pivot/record.py     |   111 -
+ .../Lib/site-packages/openpyxl/pivot/table.py      |  1261 --
+ .../Lib/site-packages/openpyxl/reader/__init__.py  |     1 -
+ .../Lib/site-packages/openpyxl/reader/drawings.py  |    71 -
+ .../Lib/site-packages/openpyxl/reader/excel.py     |   349 -
+ .../Lib/site-packages/openpyxl/reader/strings.py   |    44 -
+ .../Lib/site-packages/openpyxl/reader/workbook.py  |   133 -
+ .../Lib/site-packages/openpyxl/styles/__init__.py  |    11 -
+ .../Lib/site-packages/openpyxl/styles/alignment.py |    62 -
+ .../Lib/site-packages/openpyxl/styles/borders.py   |   103 -
+ .../Lib/site-packages/openpyxl/styles/builtins.py  |  1397 --
+ .../site-packages/openpyxl/styles/cell_style.py    |   206 -
+ .../Lib/site-packages/openpyxl/styles/colors.py    |   172 -
+ .../site-packages/openpyxl/styles/differential.py  |    95 -
+ .../Lib/site-packages/openpyxl/styles/fills.py     |   224 -
+ .../Lib/site-packages/openpyxl/styles/fonts.py     |   113 -
+ .../site-packages/openpyxl/styles/named_styles.py  |   282 -
+ .../Lib/site-packages/openpyxl/styles/numbers.py   |   200 -
+ .../site-packages/openpyxl/styles/protection.py    |    17 -
+ .../Lib/site-packages/openpyxl/styles/proxy.py     |    62 -
+ .../Lib/site-packages/openpyxl/styles/styleable.py |   151 -
+ .../site-packages/openpyxl/styles/stylesheet.py    |   274 -
+ .../Lib/site-packages/openpyxl/styles/table.py     |    94 -
+ .../Lib/site-packages/openpyxl/utils/__init__.py   |    17 -
+ .../openpyxl/utils/bound_dictionary.py             |    26 -
+ .../.venv/Lib/site-packages/openpyxl/utils/cell.py |   240 -
+ .../Lib/site-packages/openpyxl/utils/dataframe.py  |    87 -
+ .../Lib/site-packages/openpyxl/utils/datetime.py   |   140 -
+ .../Lib/site-packages/openpyxl/utils/escape.py     |    43 -
+ .../Lib/site-packages/openpyxl/utils/exceptions.py |    34 -
+ .../Lib/site-packages/openpyxl/utils/formulas.py   |    24 -
+ .../site-packages/openpyxl/utils/indexed_list.py   |    49 -
+ .../Lib/site-packages/openpyxl/utils/inference.py  |    60 -
+ .../Lib/site-packages/openpyxl/utils/protection.py |    22 -
+ .../Lib/site-packages/openpyxl/utils/units.py      |   108 -
+ .../site-packages/openpyxl/workbook/__init__.py    |     4 -
+ .../Lib/site-packages/openpyxl/workbook/_writer.py |   197 -
+ .../Lib/site-packages/openpyxl/workbook/child.py   |   166 -
+ .../openpyxl/workbook/defined_name.py              |   189 -
+ .../openpyxl/workbook/external_link/__init__.py    |     3 -
+ .../openpyxl/workbook/external_link/external.py    |   190 -
+ .../openpyxl/workbook/external_reference.py        |    18 -
+ .../openpyxl/workbook/function_group.py            |    36 -
+ .../site-packages/openpyxl/workbook/properties.py  |   151 -
+ .../site-packages/openpyxl/workbook/protection.py  |   163 -
+ .../site-packages/openpyxl/workbook/smart_tags.py  |    56 -
+ .../Lib/site-packages/openpyxl/workbook/views.py   |   155 -
+ .../Lib/site-packages/openpyxl/workbook/web.py     |    98 -
+ .../site-packages/openpyxl/workbook/workbook.py    |   438 -
+ .../site-packages/openpyxl/worksheet/__init__.py   |     1 -
+ .../site-packages/openpyxl/worksheet/_read_only.py |   190 -
+ .../site-packages/openpyxl/worksheet/_reader.py    |   472 -
+ .../openpyxl/worksheet/_write_only.py              |   160 -
+ .../site-packages/openpyxl/worksheet/_writer.py    |   390 -
+ .../site-packages/openpyxl/worksheet/cell_range.py |   512 -
+ .../site-packages/openpyxl/worksheet/cell_watch.py |    34 -
+ .../site-packages/openpyxl/worksheet/controls.py   |   107 -
+ .../Lib/site-packages/openpyxl/worksheet/copier.py |    70 -
+ .../Lib/site-packages/openpyxl/worksheet/custom.py |    35 -
+ .../openpyxl/worksheet/datavalidation.py           |   202 -
+ .../site-packages/openpyxl/worksheet/dimensions.py |   306 -
+ .../site-packages/openpyxl/worksheet/drawing.py    |    14 -
+ .../Lib/site-packages/openpyxl/worksheet/errors.py |    93 -
+ .../site-packages/openpyxl/worksheet/filters.py    |   486 -
+ .../site-packages/openpyxl/worksheet/formula.py    |    51 -
+ .../openpyxl/worksheet/header_footer.py            |   270 -
+ .../site-packages/openpyxl/worksheet/hyperlink.py  |    46 -
+ .../Lib/site-packages/openpyxl/worksheet/merge.py  |   141 -
+ .../Lib/site-packages/openpyxl/worksheet/ole.py    |   133 -
+ .../Lib/site-packages/openpyxl/worksheet/page.py   |   174 -
+ .../site-packages/openpyxl/worksheet/pagebreak.py  |    94 -
+ .../site-packages/openpyxl/worksheet/picture.py    |     8 -
+ .../openpyxl/worksheet/print_settings.py           |   184 -
+ .../site-packages/openpyxl/worksheet/properties.py |    97 -
+ .../site-packages/openpyxl/worksheet/protection.py |   120 -
+ .../site-packages/openpyxl/worksheet/related.py    |    17 -
+ .../site-packages/openpyxl/worksheet/scenario.py   |   105 -
+ .../site-packages/openpyxl/worksheet/smart_tag.py  |    78 -
+ .../Lib/site-packages/openpyxl/worksheet/table.py  |   385 -
+ .../Lib/site-packages/openpyxl/worksheet/views.py  |   155 -
+ .../site-packages/openpyxl/worksheet/worksheet.py  |   907 -
+ .../Lib/site-packages/openpyxl/writer/__init__.py  |     1 -
+ .../Lib/site-packages/openpyxl/writer/excel.py     |   295 -
+ .../Lib/site-packages/openpyxl/writer/theme.py     |   291 -
+ .../Lib/site-packages/openpyxl/xml/__init__.py     |    42 -
+ .../Lib/site-packages/openpyxl/xml/constants.py    |   129 -
+ .../Lib/site-packages/openpyxl/xml/functions.py    |    87 -
+ .../packaging-26.0.dist-info/INSTALLER             |     1 -
+ .../packaging-26.0.dist-info/METADATA              |   107 -
+ .../site-packages/packaging-26.0.dist-info/RECORD  |    42 -
+ .../site-packages/packaging-26.0.dist-info/WHEEL   |     4 -
+ .../packaging-26.0.dist-info/licenses/LICENSE      |     3 -
+ .../licenses/LICENSE.APACHE                        |   177 -
+ .../packaging-26.0.dist-info/licenses/LICENSE.BSD  |    23 -
+ .../.venv/Lib/site-packages/packaging/__init__.py  |    15 -
+ .../.venv/Lib/site-packages/packaging/_elffile.py  |   108 -
+ .../Lib/site-packages/packaging/_manylinux.py      |   262 -
+ .../Lib/site-packages/packaging/_musllinux.py      |    85 -
+ .../.venv/Lib/site-packages/packaging/_parser.py   |   365 -
+ .../Lib/site-packages/packaging/_structures.py     |    69 -
+ .../Lib/site-packages/packaging/_tokenizer.py      |   193 -
+ .../site-packages/packaging/licenses/__init__.py   |   147 -
+ .../Lib/site-packages/packaging/licenses/_spdx.py  |   799 -
+ .../.venv/Lib/site-packages/packaging/markers.py   |   388 -
+ .../.venv/Lib/site-packages/packaging/metadata.py  |   978 --
+ System/.venv/Lib/site-packages/packaging/py.typed  |     0
+ System/.venv/Lib/site-packages/packaging/pylock.py |   635 -
+ .../Lib/site-packages/packaging/requirements.py    |    86 -
+ .../Lib/site-packages/packaging/specifiers.py      |  1068 --
+ System/.venv/Lib/site-packages/packaging/tags.py   |   651 -
+ System/.venv/Lib/site-packages/packaging/utils.py  |   158 -
+ .../.venv/Lib/site-packages/packaging/version.py   |   792 -
+ .../pandas-3.0.1.dist-info/DELVEWHEEL              |     2 -
+ .../site-packages/pandas-3.0.1.dist-info/INSTALLER |     1 -
+ .../site-packages/pandas-3.0.1.dist-info/LICENSE   |    31 -
+ .../site-packages/pandas-3.0.1.dist-info/METADATA  |   355 -
+ .../site-packages/pandas-3.0.1.dist-info/RECORD    |  2989 ----
+ .../site-packages/pandas-3.0.1.dist-info/REQUESTED |     0
+ .../Lib/site-packages/pandas-3.0.1.dist-info/WHEEL |     4 -
+ .../pandas-3.0.1.dist-info/entry_points.txt        |     3 -
+ .../msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll  |   Bin 575056 -> 0 bytes
+ System/.venv/Lib/site-packages/pandas/__init__.py  |   365 -
+ .../Lib/site-packages/pandas/_config/__init__.py   |    45 -
+ .../Lib/site-packages/pandas/_config/config.py     |   954 --
+ .../Lib/site-packages/pandas/_config/dates.py      |    26 -
+ .../Lib/site-packages/pandas/_config/display.py    |    62 -
+ .../site-packages/pandas/_config/localization.py   |   176 -
+ .../Lib/site-packages/pandas/_libs/__init__.py     |    27 -
+ .../pandas/_libs/_cyutility.cp312-win_amd64.lib    |   Bin 2068 -> 0 bytes
+ .../pandas/_libs/_cyutility.cp312-win_amd64.pyd    |   Bin 128000 -> 0 bytes
+ .../pandas/_libs/algos.cp312-win_amd64.lib         |   Bin 1976 -> 0 bytes
+ .../pandas/_libs/algos.cp312-win_amd64.pyd         |   Bin 1421312 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/algos.pyi |   443 -
+ .../pandas/_libs/arrays.cp312-win_amd64.lib        |   Bin 1996 -> 0 bytes
+ .../pandas/_libs/arrays.cp312-win_amd64.pyd        |   Bin 81408 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/arrays.pyi      |    40 -
+ .../pandas/_libs/byteswap.cp312-win_amd64.lib      |   Bin 2032 -> 0 bytes
+ .../pandas/_libs/byteswap.cp312-win_amd64.pyd      |   Bin 38912 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/byteswap.pyi    |     5 -
+ .../pandas/_libs/groupby.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../pandas/_libs/groupby.cp312-win_amd64.pyd       |   Bin 1721856 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/groupby.pyi     |   234 -
+ .../pandas/_libs/hashing.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../pandas/_libs/hashing.cp312-win_amd64.pyd       |   Bin 67584 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/hashing.pyi     |     9 -
+ .../pandas/_libs/hashtable.cp312-win_amd64.lib     |   Bin 2048 -> 0 bytes
+ .../pandas/_libs/hashtable.cp312-win_amd64.pyd     |   Bin 1555456 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/hashtable.pyi   |   274 -
+ .../pandas/_libs/index.cp312-win_amd64.lib         |   Bin 1976 -> 0 bytes
+ .../pandas/_libs/index.cp312-win_amd64.pyd         |   Bin 521728 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/index.pyi |   107 -
+ .../pandas/_libs/indexing.cp312-win_amd64.lib      |   Bin 2032 -> 0 bytes
+ .../pandas/_libs/indexing.cp312-win_amd64.pyd      |   Bin 47104 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/indexing.pyi    |    17 -
+ .../pandas/_libs/internals.cp312-win_amd64.lib     |   Bin 2048 -> 0 bytes
+ .../pandas/_libs/internals.cp312-win_amd64.pyd     |   Bin 205312 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/internals.pyi   |    96 -
+ .../pandas/_libs/interval.cp312-win_amd64.lib      |   Bin 2032 -> 0 bytes
+ .../pandas/_libs/interval.cp312-win_amd64.pyd      |   Bin 765440 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/interval.pyi    |   174 -
+ .../pandas/_libs/join.cp312-win_amd64.lib          |   Bin 1960 -> 0 bytes
+ .../pandas/_libs/join.cp312-win_amd64.pyd          |   Bin 755200 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/join.pyi  |    79 -
+ .../pandas/_libs/json.cp312-win_amd64.lib          |   Bin 2576 -> 0 bytes
+ .../pandas/_libs/json.cp312-win_amd64.pyd          |   Bin 52224 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/json.pyi  |    23 -
+ .../pandas/_libs/lib.cp312-win_amd64.lib           |   Bin 1940 -> 0 bytes
+ .../pandas/_libs/lib.cp312-win_amd64.pyd           |   Bin 436736 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/lib.pyi   |   238 -
+ .../pandas/_libs/missing.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../pandas/_libs/missing.cp312-win_amd64.pyd       |   Bin 138752 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/missing.pyi     |    17 -
+ .../pandas/_libs/ops.cp312-win_amd64.lib           |   Bin 1940 -> 0 bytes
+ .../pandas/_libs/ops.cp312-win_amd64.pyd           |   Bin 96256 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/ops.pyi   |    53 -
+ .../pandas/_libs/ops_dispatch.cp312-win_amd64.lib  |   Bin 2104 -> 0 bytes
+ .../pandas/_libs/ops_dispatch.cp312-win_amd64.pyd  |   Bin 43520 -> 0 bytes
+ .../site-packages/pandas/_libs/ops_dispatch.pyi    |     5 -
+ .../_libs/pandas_datetime.cp312-win_amd64.lib      |   Bin 2156 -> 0 bytes
+ .../_libs/pandas_datetime.cp312-win_amd64.pyd      |   Bin 35840 -> 0 bytes
+ .../pandas/_libs/pandas_parser.cp312-win_amd64.lib |   Bin 2120 -> 0 bytes
+ .../pandas/_libs/pandas_parser.cp312-win_amd64.pyd |   Bin 30720 -> 0 bytes
+ .../pandas/_libs/parsers.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../pandas/_libs/parsers.cp312-win_amd64.pyd       |   Bin 265728 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/parsers.pyi     |    77 -
+ .../pandas/_libs/properties.cp312-win_amd64.lib    |   Bin 2068 -> 0 bytes
+ .../pandas/_libs/properties.cp312-win_amd64.pyd    |   Bin 56320 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/properties.pyi  |    27 -
+ .../pandas/_libs/reshape.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../pandas/_libs/reshape.cp312-win_amd64.pyd       |   Bin 131584 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/reshape.pyi     |    16 -
+ .../pandas/_libs/sas.cp312-win_amd64.lib           |   Bin 1940 -> 0 bytes
+ .../pandas/_libs/sas.cp312-win_amd64.pyd           |   Bin 89600 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/sas.pyi   |     7 -
+ .../pandas/_libs/sparse.cp312-win_amd64.lib        |   Bin 1996 -> 0 bytes
+ .../pandas/_libs/sparse.cp312-win_amd64.pyd        |   Bin 604160 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/sparse.pyi      |    51 -
+ .../pandas/_libs/testing.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../pandas/_libs/testing.cp312-win_amd64.pyd       |   Bin 72192 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/testing.pyi     |    14 -
+ .../pandas/_libs/tslib.cp312-win_amd64.lib         |   Bin 1976 -> 0 bytes
+ .../pandas/_libs/tslib.cp312-win_amd64.pyd         |   Bin 107520 -> 0 bytes
+ .../.venv/Lib/site-packages/pandas/_libs/tslib.pyi |    33 -
+ .../site-packages/pandas/_libs/tslibs/__init__.py  |    89 -
+ .../pandas/_libs/tslibs/base.cp312-win_amd64.lib   |   Bin 1960 -> 0 bytes
+ .../pandas/_libs/tslibs/base.cp312-win_amd64.pyd   |   Bin 43008 -> 0 bytes
+ .../_libs/tslibs/ccalendar.cp312-win_amd64.lib     |   Bin 2048 -> 0 bytes
+ .../_libs/tslibs/ccalendar.cp312-win_amd64.pyd     |   Bin 58368 -> 0 bytes
+ .../pandas/_libs/tslibs/ccalendar.pyi              |    12 -
+ .../_libs/tslibs/conversion.cp312-win_amd64.lib    |   Bin 2068 -> 0 bytes
+ .../_libs/tslibs/conversion.cp312-win_amd64.pyd    |   Bin 127488 -> 0 bytes
+ .../pandas/_libs/tslibs/conversion.pyi             |    14 -
+ .../pandas/_libs/tslibs/dtypes.cp312-win_amd64.lib |   Bin 1996 -> 0 bytes
+ .../pandas/_libs/tslibs/dtypes.cp312-win_amd64.pyd |   Bin 114688 -> 0 bytes
+ .../site-packages/pandas/_libs/tslibs/dtypes.pyi   |    86 -
+ .../pandas/_libs/tslibs/fields.cp312-win_amd64.lib |   Bin 1996 -> 0 bytes
+ .../pandas/_libs/tslibs/fields.cp312-win_amd64.pyd |   Bin 150528 -> 0 bytes
+ .../site-packages/pandas/_libs/tslibs/fields.pyi   |    62 -
+ .../_libs/tslibs/nattype.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../_libs/tslibs/nattype.cp312-win_amd64.pyd       |   Bin 147456 -> 0 bytes
+ .../site-packages/pandas/_libs/tslibs/nattype.pyi  |   184 -
+ .../_libs/tslibs/np_datetime.cp312-win_amd64.lib   |   Bin 2084 -> 0 bytes
+ .../_libs/tslibs/np_datetime.cp312-win_amd64.pyd   |   Bin 95232 -> 0 bytes
+ .../pandas/_libs/tslibs/np_datetime.pyi            |    27 -
+ .../_libs/tslibs/offsets.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../_libs/tslibs/offsets.cp312-win_amd64.pyd       |   Bin 751104 -> 0 bytes
+ .../site-packages/pandas/_libs/tslibs/offsets.pyi  |   308 -
+ .../_libs/tslibs/parsing.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../_libs/tslibs/parsing.cp312-win_amd64.pyd       |   Bin 159744 -> 0 bytes
+ .../site-packages/pandas/_libs/tslibs/parsing.pyi  |    30 -
+ .../pandas/_libs/tslibs/period.cp312-win_amd64.lib |   Bin 1996 -> 0 bytes
+ .../pandas/_libs/tslibs/period.cp312-win_amd64.pyd |   Bin 272896 -> 0 bytes
+ .../site-packages/pandas/_libs/tslibs/period.pyi   |   135 -
+ .../_libs/tslibs/strptime.cp312-win_amd64.lib      |   Bin 2032 -> 0 bytes
+ .../_libs/tslibs/strptime.cp312-win_amd64.pyd      |   Bin 160256 -> 0 bytes
+ .../site-packages/pandas/_libs/tslibs/strptime.pyi |    14 -
+ .../_libs/tslibs/timedeltas.cp312-win_amd64.lib    |   Bin 2068 -> 0 bytes
+ .../_libs/tslibs/timedeltas.cp312-win_amd64.pyd    |   Bin 341504 -> 0 bytes
+ .../pandas/_libs/tslibs/timedeltas.pyi             |   168 -
+ .../_libs/tslibs/timestamps.cp312-win_amd64.lib    |   Bin 2068 -> 0 bytes
+ .../_libs/tslibs/timestamps.cp312-win_amd64.pyd    |   Bin 369664 -> 0 bytes
+ .../pandas/_libs/tslibs/timestamps.pyi             |   242 -
+ .../_libs/tslibs/timezones.cp312-win_amd64.lib     |   Bin 2048 -> 0 bytes
+ .../_libs/tslibs/timezones.cp312-win_amd64.pyd     |   Bin 96768 -> 0 bytes
+ .../pandas/_libs/tslibs/timezones.pyi              |    21 -
+ .../_libs/tslibs/tzconversion.cp312-win_amd64.lib  |   Bin 2104 -> 0 bytes
+ .../_libs/tslibs/tzconversion.cp312-win_amd64.pyd  |   Bin 138240 -> 0 bytes
+ .../pandas/_libs/tslibs/tzconversion.pyi           |    21 -
+ .../_libs/tslibs/vectorized.cp312-win_amd64.lib    |   Bin 2068 -> 0 bytes
+ .../_libs/tslibs/vectorized.cp312-win_amd64.pyd    |   Bin 77312 -> 0 bytes
+ .../pandas/_libs/tslibs/vectorized.pyi             |    41 -
+ .../site-packages/pandas/_libs/window/__init__.py  |     0
+ .../_libs/window/aggregations.cp312-win_amd64.lib  |   Bin 2104 -> 0 bytes
+ .../_libs/window/aggregations.cp312-win_amd64.pyd  |   Bin 334848 -> 0 bytes
+ .../pandas/_libs/window/aggregations.pyi           |   145 -
+ .../_libs/window/indexers.cp312-win_amd64.lib      |   Bin 2032 -> 0 bytes
+ .../_libs/window/indexers.cp312-win_amd64.pyd      |   Bin 145920 -> 0 bytes
+ .../site-packages/pandas/_libs/window/indexers.pyi |    12 -
+ .../pandas/_libs/writers.cp312-win_amd64.lib       |   Bin 2012 -> 0 bytes
+ .../pandas/_libs/writers.cp312-win_amd64.pyd       |   Bin 89088 -> 0 bytes
+ .../Lib/site-packages/pandas/_libs/writers.pyi     |    20 -
+ .../Lib/site-packages/pandas/_testing/__init__.py  |   645 -
+ .../site-packages/pandas/_testing/_hypothesis.py   |    89 -
+ .../.venv/Lib/site-packages/pandas/_testing/_io.py |   129 -
+ .../Lib/site-packages/pandas/_testing/_warnings.py |   266 -
+ .../Lib/site-packages/pandas/_testing/asserters.py |  1503 --
+ .../Lib/site-packages/pandas/_testing/compat.py    |    30 -
+ .../Lib/site-packages/pandas/_testing/contexts.py  |   151 -
+ System/.venv/Lib/site-packages/pandas/_typing.py   |   578 -
+ System/.venv/Lib/site-packages/pandas/_version.py  |   692 -
+ .../Lib/site-packages/pandas/_version_meson.py     |     2 -
+ .../.venv/Lib/site-packages/pandas/api/__init__.py |    19 -
+ .../site-packages/pandas/api/executors/__init__.py |     7 -
+ .../pandas/api/extensions/__init__.py              |    33 -
+ .../site-packages/pandas/api/indexers/__init__.py  |    17 -
+ .../pandas/api/interchange/__init__.py             |     8 -
+ .../Lib/site-packages/pandas/api/internals.py      |    62 -
+ .../Lib/site-packages/pandas/api/types/__init__.py |    23 -
+ .../site-packages/pandas/api/typing/__init__.py    |    61 -
+ .../Lib/site-packages/pandas/api/typing/aliases.py |   145 -
+ .../Lib/site-packages/pandas/arrays/__init__.py    |    37 -
+ .../Lib/site-packages/pandas/compat/__init__.py    |   173 -
+ .../Lib/site-packages/pandas/compat/_constants.py  |    35 -
+ .../Lib/site-packages/pandas/compat/_optional.py   |   191 -
+ .../site-packages/pandas/compat/numpy/__init__.py  |    48 -
+ .../site-packages/pandas/compat/numpy/function.py  |   376 -
+ .../site-packages/pandas/compat/pickle_compat.py   |   143 -
+ .../Lib/site-packages/pandas/compat/pyarrow.py     |    91 -
+ System/.venv/Lib/site-packages/pandas/conftest.py  |  2159 ---
+ .../Lib/site-packages/pandas/core/__init__.py      |     0
+ .../site-packages/pandas/core/_numba/__init__.py   |     0
+ .../site-packages/pandas/core/_numba/executor.py   |   246 -
+ .../site-packages/pandas/core/_numba/extensions.py |   586 -
+ .../pandas/core/_numba/kernels/__init__.py         |    27 -
+ .../pandas/core/_numba/kernels/mean_.py            |   198 -
+ .../pandas/core/_numba/kernels/min_max_.py         |   178 -
+ .../pandas/core/_numba/kernels/shared.py           |    29 -
+ .../pandas/core/_numba/kernels/sum_.py             |   255 -
+ .../pandas/core/_numba/kernels/var_.py             |   251 -
+ .../Lib/site-packages/pandas/core/accessor.py      |   588 -
+ .../Lib/site-packages/pandas/core/algorithms.py    |  1712 --
+ System/.venv/Lib/site-packages/pandas/core/api.py  |   138 -
+ .../.venv/Lib/site-packages/pandas/core/apply.py   |  2132 ---
+ .../pandas/core/array_algos/__init__.py            |     9 -
+ .../core/array_algos/datetimelike_accumulations.py |    73 -
+ .../core/array_algos/masked_accumulations.py       |    97 -
+ .../pandas/core/array_algos/masked_reductions.py   |   201 -
+ .../pandas/core/array_algos/putmask.py             |   150 -
+ .../pandas/core/array_algos/quantile.py            |   226 -
+ .../pandas/core/array_algos/replace.py             |   157 -
+ .../site-packages/pandas/core/array_algos/take.py  |   546 -
+ .../pandas/core/array_algos/transforms.py          |    50 -
+ .../Lib/site-packages/pandas/core/arraylike.py     |   534 -
+ .../site-packages/pandas/core/arrays/__init__.py   |    43 -
+ .../pandas/core/arrays/_arrow_string_mixins.py     |   426 -
+ .../site-packages/pandas/core/arrays/_mixins.py    |   539 -
+ .../site-packages/pandas/core/arrays/_ranges.py    |   209 -
+ .../Lib/site-packages/pandas/core/arrays/_utils.py |    75 -
+ .../pandas/core/arrays/arrow/__init__.py           |     7 -
+ .../pandas/core/arrays/arrow/_arrow_utils.py       |    50 -
+ .../pandas/core/arrays/arrow/accessors.py          |   501 -
+ .../pandas/core/arrays/arrow/array.py              |  3247 ----
+ .../pandas/core/arrays/arrow/extension_types.py    |   174 -
+ .../Lib/site-packages/pandas/core/arrays/base.py   |  3049 ----
+ .../site-packages/pandas/core/arrays/boolean.py    |   438 -
+ .../pandas/core/arrays/categorical.py              |  3182 ----
+ .../pandas/core/arrays/datetimelike.py             |  2746 ---
+ .../site-packages/pandas/core/arrays/datetimes.py  |  3044 ----
+ .../site-packages/pandas/core/arrays/floating.py   |   192 -
+ .../site-packages/pandas/core/arrays/integer.py    |   296 -
+ .../site-packages/pandas/core/arrays/interval.py   |  2198 ---
+ .../Lib/site-packages/pandas/core/arrays/masked.py |  2011 ---
+ .../site-packages/pandas/core/arrays/numeric.py    |   305 -
+ .../Lib/site-packages/pandas/core/arrays/numpy_.py |   652 -
+ .../Lib/site-packages/pandas/core/arrays/period.py |  1500 --
+ .../pandas/core/arrays/sparse/__init__.py          |    19 -
+ .../pandas/core/arrays/sparse/accessor.py          |   488 -
+ .../pandas/core/arrays/sparse/array.py             |  1968 ---
+ .../pandas/core/arrays/sparse/scipy_sparse.py      |   208 -
+ .../site-packages/pandas/core/arrays/string_.py    |  1232 --
+ .../pandas/core/arrays/string_arrow.py             |   592 -
+ .../site-packages/pandas/core/arrays/timedeltas.py |  1294 --
+ System/.venv/Lib/site-packages/pandas/core/base.py |  1653 --
+ System/.venv/Lib/site-packages/pandas/core/col.py  |   374 -
+ .../.venv/Lib/site-packages/pandas/core/common.py  |   685 -
+ .../pandas/core/computation/__init__.py            |     0
+ .../site-packages/pandas/core/computation/align.py |   227 -
+ .../site-packages/pandas/core/computation/api.py   |     2 -
+ .../site-packages/pandas/core/computation/check.py |     8 -
+ .../pandas/core/computation/common.py              |    48 -
+ .../pandas/core/computation/engines.py             |   151 -
+ .../site-packages/pandas/core/computation/eval.py  |   454 -
+ .../site-packages/pandas/core/computation/expr.py  |   850 -
+ .../pandas/core/computation/expressions.py         |   290 -
+ .../site-packages/pandas/core/computation/ops.py   |   561 -
+ .../pandas/core/computation/parsing.py             |   252 -
+ .../pandas/core/computation/pytables.py            |   678 -
+ .../site-packages/pandas/core/computation/scope.py |   356 -
+ .../Lib/site-packages/pandas/core/config_init.py   |   923 -
+ .../Lib/site-packages/pandas/core/construction.py  |   852 -
+ .../site-packages/pandas/core/dtypes/__init__.py   |     0
+ .../Lib/site-packages/pandas/core/dtypes/api.py    |    83 -
+ .../Lib/site-packages/pandas/core/dtypes/astype.py |   328 -
+ .../Lib/site-packages/pandas/core/dtypes/base.py   |   597 -
+ .../Lib/site-packages/pandas/core/dtypes/cast.py   |  1879 ---
+ .../Lib/site-packages/pandas/core/dtypes/common.py |  1988 ---
+ .../Lib/site-packages/pandas/core/dtypes/concat.py |   342 -
+ .../Lib/site-packages/pandas/core/dtypes/dtypes.py |  2480 ---
+ .../site-packages/pandas/core/dtypes/generic.py    |   148 -
+ .../site-packages/pandas/core/dtypes/inference.py  |   518 -
+ .../site-packages/pandas/core/dtypes/missing.py    |   739 -
+ .../.venv/Lib/site-packages/pandas/core/flags.py   |   129 -
+ .../.venv/Lib/site-packages/pandas/core/frame.py   | 16710 -------------------
+ .../.venv/Lib/site-packages/pandas/core/generic.py | 13769 ---------------
+ .../site-packages/pandas/core/groupby/__init__.py  |    15 -
+ .../Lib/site-packages/pandas/core/groupby/base.py  |   121 -
+ .../pandas/core/groupby/categorical.py             |    83 -
+ .../site-packages/pandas/core/groupby/generic.py   |  4073 -----
+ .../site-packages/pandas/core/groupby/groupby.py   |  6291 -------
+ .../site-packages/pandas/core/groupby/grouper.py   |   960 --
+ .../site-packages/pandas/core/groupby/indexing.py  |   304 -
+ .../site-packages/pandas/core/groupby/numba_.py    |   183 -
+ .../Lib/site-packages/pandas/core/groupby/ops.py   |  1281 --
+ .../site-packages/pandas/core/indexers/__init__.py |    33 -
+ .../site-packages/pandas/core/indexers/objects.py  |   689 -
+ .../site-packages/pandas/core/indexers/utils.py    |   584 -
+ .../site-packages/pandas/core/indexes/__init__.py  |     0
+ .../site-packages/pandas/core/indexes/accessors.py |   698 -
+ .../Lib/site-packages/pandas/core/indexes/api.py   |   342 -
+ .../Lib/site-packages/pandas/core/indexes/base.py  |  8192 ---------
+ .../site-packages/pandas/core/indexes/category.py  |   552 -
+ .../pandas/core/indexes/datetimelike.py            |  1146 --
+ .../site-packages/pandas/core/indexes/datetimes.py |  1618 --
+ .../site-packages/pandas/core/indexes/extension.py |   176 -
+ .../site-packages/pandas/core/indexes/frozen.py    |   121 -
+ .../site-packages/pandas/core/indexes/interval.py  |  1470 --
+ .../Lib/site-packages/pandas/core/indexes/multi.py |  4807 ------
+ .../site-packages/pandas/core/indexes/period.py    |   628 -
+ .../Lib/site-packages/pandas/core/indexes/range.py |  1584 --
+ .../pandas/core/indexes/timedeltas.py              |   417 -
+ .../Lib/site-packages/pandas/core/indexing.py      |  2796 ----
+ .../pandas/core/interchange/__init__.py            |     0
+ .../pandas/core/interchange/buffer.py              |   135 -
+ .../pandas/core/interchange/column.py              |   479 -
+ .../pandas/core/interchange/dataframe.py           |   113 -
+ .../pandas/core/interchange/dataframe_protocol.py  |   468 -
+ .../pandas/core/interchange/from_dataframe.py      |   613 -
+ .../site-packages/pandas/core/interchange/utils.py |   183 -
+ .../pandas/core/internals/__init__.py              |    65 -
+ .../Lib/site-packages/pandas/core/internals/api.py |   177 -
+ .../site-packages/pandas/core/internals/blocks.py  |  2395 ---
+ .../site-packages/pandas/core/internals/concat.py  |   479 -
+ .../pandas/core/internals/construction.py          |  1055 --
+ .../pandas/core/internals/managers.py              |  2556 ---
+ .../Lib/site-packages/pandas/core/internals/ops.py |   155 -
+ .../site-packages/pandas/core/methods/__init__.py  |     0
+ .../site-packages/pandas/core/methods/describe.py  |   375 -
+ .../site-packages/pandas/core/methods/selectn.py   |   300 -
+ .../site-packages/pandas/core/methods/to_dict.py   |   289 -
+ .../.venv/Lib/site-packages/pandas/core/missing.py |  1103 --
+ .../.venv/Lib/site-packages/pandas/core/nanops.py  |  1777 --
+ .../Lib/site-packages/pandas/core/ops/__init__.py  |    94 -
+ .../Lib/site-packages/pandas/core/ops/array_ops.py |   620 -
+ .../Lib/site-packages/pandas/core/ops/common.py    |   157 -
+ .../Lib/site-packages/pandas/core/ops/dispatch.py  |    31 -
+ .../site-packages/pandas/core/ops/docstrings.py    |   785 -
+ .../Lib/site-packages/pandas/core/ops/invalid.py   |    77 -
+ .../Lib/site-packages/pandas/core/ops/mask_ops.py  |   194 -
+ .../Lib/site-packages/pandas/core/ops/missing.py   |   176 -
+ .../Lib/site-packages/pandas/core/resample.py      |  3150 ----
+ .../site-packages/pandas/core/reshape/__init__.py  |     0
+ .../Lib/site-packages/pandas/core/reshape/api.py   |    41 -
+ .../site-packages/pandas/core/reshape/concat.py    |   998 --
+ .../site-packages/pandas/core/reshape/encoding.py  |   589 -
+ .../Lib/site-packages/pandas/core/reshape/melt.py  |   676 -
+ .../Lib/site-packages/pandas/core/reshape/merge.py |  3136 ----
+ .../Lib/site-packages/pandas/core/reshape/pivot.py |  1275 --
+ .../site-packages/pandas/core/reshape/reshape.py   |  1124 --
+ .../Lib/site-packages/pandas/core/reshape/tile.py  |   682 -
+ .../Lib/site-packages/pandas/core/roperator.py     |    63 -
+ .../.venv/Lib/site-packages/pandas/core/sample.py  |   163 -
+ .../.venv/Lib/site-packages/pandas/core/series.py  |  8771 ----------
+ .../Lib/site-packages/pandas/core/shared_docs.py   |   639 -
+ .../.venv/Lib/site-packages/pandas/core/sorting.py |   736 -
+ .../site-packages/pandas/core/sparse/__init__.py   |     0
+ .../Lib/site-packages/pandas/core/sparse/api.py    |     5 -
+ .../site-packages/pandas/core/strings/__init__.py  |    24 -
+ .../site-packages/pandas/core/strings/accessor.py  |  4882 ------
+ .../pandas/core/strings/object_array.py            |   532 -
+ .../site-packages/pandas/core/tools/__init__.py    |     0
+ .../site-packages/pandas/core/tools/datetimes.py   |  1213 --
+ .../Lib/site-packages/pandas/core/tools/numeric.py |   327 -
+ .../site-packages/pandas/core/tools/timedeltas.py  |   246 -
+ .../Lib/site-packages/pandas/core/tools/times.py   |   153 -
+ .../Lib/site-packages/pandas/core/util/__init__.py |     0
+ .../Lib/site-packages/pandas/core/util/hashing.py  |   361 -
+ .../Lib/site-packages/pandas/core/util/numba_.py   |   150 -
+ .../site-packages/pandas/core/window/__init__.py   |    23 -
+ .../Lib/site-packages/pandas/core/window/common.py |   171 -
+ .../Lib/site-packages/pandas/core/window/doc.py    |   174 -
+ .../Lib/site-packages/pandas/core/window/ewm.py    |  1175 --
+ .../site-packages/pandas/core/window/expanding.py  |  1412 --
+ .../Lib/site-packages/pandas/core/window/numba_.py |   357 -
+ .../Lib/site-packages/pandas/core/window/online.py |   117 -
+ .../site-packages/pandas/core/window/rolling.py    |  3516 ----
+ .../Lib/site-packages/pandas/errors/__init__.py    |  1087 --
+ .../.venv/Lib/site-packages/pandas/errors/cow.py   |    43 -
+ .../.venv/Lib/site-packages/pandas/io/__init__.py  |    13 -
+ System/.venv/Lib/site-packages/pandas/io/_util.py  |   191 -
+ System/.venv/Lib/site-packages/pandas/io/api.py    |    65 -
+ .../site-packages/pandas/io/clipboard/__init__.py  |   747 -
+ .../Lib/site-packages/pandas/io/clipboards.py      |   200 -
+ System/.venv/Lib/site-packages/pandas/io/common.py |  1327 --
+ .../Lib/site-packages/pandas/io/excel/__init__.py  |    19 -
+ .../Lib/site-packages/pandas/io/excel/_base.py     |  1871 ---
+ .../Lib/site-packages/pandas/io/excel/_calamine.py |   129 -
+ .../site-packages/pandas/io/excel/_odfreader.py    |   249 -
+ .../site-packages/pandas/io/excel/_odswriter.py    |   362 -
+ .../Lib/site-packages/pandas/io/excel/_openpyxl.py |   646 -
+ .../Lib/site-packages/pandas/io/excel/_pyxlsb.py   |   131 -
+ .../Lib/site-packages/pandas/io/excel/_util.py     |   328 -
+ .../Lib/site-packages/pandas/io/excel/_xlrd.py     |   147 -
+ .../site-packages/pandas/io/excel/_xlsxwriter.py   |   288 -
+ .../Lib/site-packages/pandas/io/feather_format.py  |   181 -
+ .../site-packages/pandas/io/formats/__init__.py    |     9 -
+ .../site-packages/pandas/io/formats/_color_data.py |   157 -
+ .../Lib/site-packages/pandas/io/formats/console.py |    95 -
+ .../Lib/site-packages/pandas/io/formats/css.py     |   425 -
+ .../Lib/site-packages/pandas/io/formats/csvs.py    |   336 -
+ .../Lib/site-packages/pandas/io/formats/excel.py   |  1023 --
+ .../Lib/site-packages/pandas/io/formats/format.py  |  2080 ---
+ .../Lib/site-packages/pandas/io/formats/html.py    |   657 -
+ .../Lib/site-packages/pandas/io/formats/info.py    |   943 --
+ .../site-packages/pandas/io/formats/printing.py    |   587 -
+ .../Lib/site-packages/pandas/io/formats/string.py  |   207 -
+ .../Lib/site-packages/pandas/io/formats/style.py   |  4536 -----
+ .../pandas/io/formats/style_render.py              |  2681 ---
+ .../pandas/io/formats/templates/html.tpl           |    16 -
+ .../pandas/io/formats/templates/html_style.tpl     |    26 -
+ .../pandas/io/formats/templates/html_table.tpl     |    63 -
+ .../pandas/io/formats/templates/latex.tpl          |     5 -
+ .../io/formats/templates/latex_longtable.tpl       |    82 -
+ .../pandas/io/formats/templates/latex_table.tpl    |    57 -
+ .../pandas/io/formats/templates/string.tpl         |    12 -
+ .../pandas/io/formats/templates/typst.tpl          |    12 -
+ .../Lib/site-packages/pandas/io/formats/xml.py     |   566 -
+ System/.venv/Lib/site-packages/pandas/io/html.py   |  1245 --
+ .../.venv/Lib/site-packages/pandas/io/iceberg.py   |   155 -
+ .../Lib/site-packages/pandas/io/json/__init__.py   |    15 -
+ .../Lib/site-packages/pandas/io/json/_json.py      |  1476 --
+ .../Lib/site-packages/pandas/io/json/_normalize.py |   648 -
+ .../site-packages/pandas/io/json/_table_schema.py  |   402 -
+ System/.venv/Lib/site-packages/pandas/io/orc.py    |   243 -
+ .../.venv/Lib/site-packages/pandas/io/parquet.py   |   680 -
+ .../site-packages/pandas/io/parsers/__init__.py    |     9 -
+ .../pandas/io/parsers/arrow_parser_wrapper.py      |   328 -
+ .../site-packages/pandas/io/parsers/base_parser.py |   997 --
+ .../pandas/io/parsers/c_parser_wrapper.py          |   395 -
+ .../pandas/io/parsers/python_parser.py             |  1557 --
+ .../Lib/site-packages/pandas/io/parsers/readers.py |  2389 ---
+ System/.venv/Lib/site-packages/pandas/io/pickle.py |   239 -
+ .../.venv/Lib/site-packages/pandas/io/pytables.py  |  5599 -------
+ .../Lib/site-packages/pandas/io/sas/__init__.py    |     3 -
+ .../Lib/site-packages/pandas/io/sas/sas7bdat.py    |   738 -
+ .../site-packages/pandas/io/sas/sas_constants.py   |   310 -
+ .../Lib/site-packages/pandas/io/sas/sas_xport.py   |   501 -
+ .../Lib/site-packages/pandas/io/sas/sasreader.py   |   197 -
+ System/.venv/Lib/site-packages/pandas/io/spss.py   |    95 -
+ System/.venv/Lib/site-packages/pandas/io/sql.py    |  2960 ----
+ System/.venv/Lib/site-packages/pandas/io/stata.py  |  3925 -----
+ System/.venv/Lib/site-packages/pandas/io/xml.py    |  1155 --
+ .../Lib/site-packages/pandas/plotting/__init__.py  |    99 -
+ .../Lib/site-packages/pandas/plotting/_core.py     |  2255 ---
+ .../pandas/plotting/_matplotlib/__init__.py        |    93 -
+ .../pandas/plotting/_matplotlib/boxplot.py         |   563 -
+ .../pandas/plotting/_matplotlib/converter.py       |  1130 --
+ .../pandas/plotting/_matplotlib/core.py            |  2207 ---
+ .../pandas/plotting/_matplotlib/groupby.py         |   141 -
+ .../pandas/plotting/_matplotlib/hist.py            |   574 -
+ .../pandas/plotting/_matplotlib/misc.py            |   480 -
+ .../pandas/plotting/_matplotlib/style.py           |   293 -
+ .../pandas/plotting/_matplotlib/timeseries.py      |   364 -
+ .../pandas/plotting/_matplotlib/tools.py           |   491 -
+ .../Lib/site-packages/pandas/plotting/_misc.py     |   780 -
+ .../.venv/Lib/site-packages/pandas/pyproject.toml  |   835 -
+ System/.venv/Lib/site-packages/pandas/testing.py   |    17 -
+ .../Lib/site-packages/pandas/tests/__init__.py     |     0
+ .../Lib/site-packages/pandas/tests/api/__init__.py |     0
+ .../Lib/site-packages/pandas/tests/api/test_api.py |   577 -
+ .../site-packages/pandas/tests/api/test_types.py   |    61 -
+ .../site-packages/pandas/tests/apply/__init__.py   |     0
+ .../Lib/site-packages/pandas/tests/apply/common.py |     7 -
+ .../site-packages/pandas/tests/apply/conftest.py   |    63 -
+ .../pandas/tests/apply/test_frame_apply.py         |  1875 ---
+ .../tests/apply/test_frame_apply_relabeling.py     |   105 -
+ .../pandas/tests/apply/test_frame_transform.py     |   264 -
+ .../pandas/tests/apply/test_invalid_arg.py         |   375 -
+ .../site-packages/pandas/tests/apply/test_numba.py |   129 -
+ .../pandas/tests/apply/test_series_apply.py        |   669 -
+ .../tests/apply/test_series_apply_relabeling.py    |    33 -
+ .../pandas/tests/apply/test_series_transform.py    |    84 -
+ .../site-packages/pandas/tests/apply/test_str.py   |   307 -
+ .../pandas/tests/arithmetic/__init__.py            |     0
+ .../pandas/tests/arithmetic/common.py              |   158 -
+ .../pandas/tests/arithmetic/conftest.py            |   139 -
+ .../pandas/tests/arithmetic/test_array_ops.py      |    78 -
+ .../pandas/tests/arithmetic/test_bool.py           |    28 -
+ .../pandas/tests/arithmetic/test_categorical.py    |    25 -
+ .../pandas/tests/arithmetic/test_datetime64.py     |  2500 ---
+ .../pandas/tests/arithmetic/test_interval.py       |   308 -
+ .../pandas/tests/arithmetic/test_numeric.py        |  1585 --
+ .../pandas/tests/arithmetic/test_object.py         |   410 -
+ .../pandas/tests/arithmetic/test_period.py         |  1679 --
+ .../pandas/tests/arithmetic/test_string.py         |   472 -
+ .../pandas/tests/arithmetic/test_timedelta64.py    |  2331 ---
+ .../site-packages/pandas/tests/arrays/__init__.py  |     0
+ .../pandas/tests/arrays/boolean/__init__.py        |     0
+ .../pandas/tests/arrays/boolean/test_arithmetic.py |   134 -
+ .../pandas/tests/arrays/boolean/test_astype.py     |    59 -
+ .../pandas/tests/arrays/boolean/test_comparison.py |    60 -
+ .../tests/arrays/boolean/test_construction.py      |   335 -
+ .../pandas/tests/arrays/boolean/test_function.py   |   126 -
+ .../pandas/tests/arrays/boolean/test_indexing.py   |    13 -
+ .../pandas/tests/arrays/boolean/test_logical.py    |   255 -
+ .../pandas/tests/arrays/boolean/test_ops.py        |    27 -
+ .../pandas/tests/arrays/boolean/test_reduction.py  |    71 -
+ .../pandas/tests/arrays/boolean/test_repr.py       |    13 -
+ .../pandas/tests/arrays/categorical/__init__.py    |     0
+ .../pandas/tests/arrays/categorical/test_algos.py  |    96 -
+ .../tests/arrays/categorical/test_analytics.py     |   353 -
+ .../pandas/tests/arrays/categorical/test_api.py    |   493 -
+ .../pandas/tests/arrays/categorical/test_astype.py |   167 -
+ .../tests/arrays/categorical/test_constructors.py  |   836 -
+ .../pandas/tests/arrays/categorical/test_dtypes.py |   147 -
+ .../tests/arrays/categorical/test_indexing.py      |   386 -
+ .../pandas/tests/arrays/categorical/test_map.py    |   136 -
+ .../tests/arrays/categorical/test_missing.py       |   136 -
+ .../tests/arrays/categorical/test_operators.py     |   408 -
+ .../tests/arrays/categorical/test_replace.py       |    71 -
+ .../pandas/tests/arrays/categorical/test_repr.py   |   561 -
+ .../tests/arrays/categorical/test_sorting.py       |   128 -
+ .../tests/arrays/categorical/test_subclass.py      |    26 -
+ .../pandas/tests/arrays/categorical/test_take.py   |    89 -
+ .../tests/arrays/categorical/test_warnings.py      |    19 -
+ .../pandas/tests/arrays/datetimes/__init__.py      |     0
+ .../tests/arrays/datetimes/test_constructors.py    |   193 -
+ .../tests/arrays/datetimes/test_cumulative.py      |    44 -
+ .../tests/arrays/datetimes/test_reductions.py      |   176 -
+ .../pandas/tests/arrays/floating/__init__.py       |     0
+ .../pandas/tests/arrays/floating/conftest.py       |    43 -
+ .../tests/arrays/floating/test_arithmetic.py       |   248 -
+ .../pandas/tests/arrays/floating/test_astype.py    |   135 -
+ .../tests/arrays/floating/test_comparison.py       |    73 -
+ .../pandas/tests/arrays/floating/test_concat.py    |    20 -
+ .../tests/arrays/floating/test_construction.py     |   211 -
+ .../pandas/tests/arrays/floating/test_contains.py  |    15 -
+ .../pandas/tests/arrays/floating/test_function.py  |   218 -
+ .../pandas/tests/arrays/floating/test_repr.py      |    47 -
+ .../pandas/tests/arrays/floating/test_to_numpy.py  |   178 -
+ .../pandas/tests/arrays/integer/__init__.py        |     0
+ .../pandas/tests/arrays/integer/conftest.py        |    67 -
+ .../pandas/tests/arrays/integer/test_arithmetic.py |   355 -
+ .../pandas/tests/arrays/integer/test_comparison.py |    39 -
+ .../pandas/tests/arrays/integer/test_concat.py     |    69 -
+ .../tests/arrays/integer/test_construction.py      |   273 -
+ .../pandas/tests/arrays/integer/test_dtypes.py     |   315 -
+ .../pandas/tests/arrays/integer/test_function.py   |   231 -
+ .../pandas/tests/arrays/integer/test_indexing.py   |    19 -
+ .../pandas/tests/arrays/integer/test_reduction.py  |   123 -
+ .../pandas/tests/arrays/integer/test_repr.py       |    67 -
+ .../pandas/tests/arrays/interval/__init__.py       |     0
+ .../pandas/tests/arrays/interval/test_astype.py    |    28 -
+ .../pandas/tests/arrays/interval/test_formats.py   |    11 -
+ .../pandas/tests/arrays/interval/test_interval.py  |   264 -
+ .../tests/arrays/interval/test_interval_pyarrow.py |   160 -
+ .../pandas/tests/arrays/interval/test_overlaps.py  |    94 -
+ .../pandas/tests/arrays/masked/__init__.py         |     0
+ .../pandas/tests/arrays/masked/test_arithmetic.py  |   273 -
+ .../tests/arrays/masked/test_arrow_compat.py       |   210 -
+ .../pandas/tests/arrays/masked/test_function.py    |    75 -
+ .../pandas/tests/arrays/masked/test_indexing.py    |   106 -
+ .../pandas/tests/arrays/masked_shared.py           |   155 -
+ .../pandas/tests/arrays/numpy_/__init__.py         |     0
+ .../pandas/tests/arrays/numpy_/test_indexing.py    |    41 -
+ .../pandas/tests/arrays/numpy_/test_numpy.py       |   411 -
+ .../pandas/tests/arrays/period/__init__.py         |     0
+ .../tests/arrays/period/test_arrow_compat.py       |   124 -
+ .../pandas/tests/arrays/period/test_astype.py      |    67 -
+ .../tests/arrays/period/test_constructors.py       |   145 -
+ .../pandas/tests/arrays/period/test_reductions.py  |    39 -
+ .../pandas/tests/arrays/sparse/__init__.py         |     0
+ .../pandas/tests/arrays/sparse/test_accessor.py    |   258 -
+ .../pandas/tests/arrays/sparse/test_arithmetics.py |   524 -
+ .../pandas/tests/arrays/sparse/test_array.py       |   535 -
+ .../pandas/tests/arrays/sparse/test_astype.py      |   133 -
+ .../tests/arrays/sparse/test_combine_concat.py     |    62 -
+ .../tests/arrays/sparse/test_constructors.py       |   280 -
+ .../pandas/tests/arrays/sparse/test_dtype.py       |   231 -
+ .../pandas/tests/arrays/sparse/test_indexing.py    |   302 -
+ .../pandas/tests/arrays/sparse/test_libsparse.py   |   549 -
+ .../pandas/tests/arrays/sparse/test_reductions.py  |   304 -
+ .../pandas/tests/arrays/sparse/test_unary.py       |    79 -
+ .../pandas/tests/arrays/string_/__init__.py        |     0
+ .../pandas/tests/arrays/string_/test_concat.py     |    73 -
+ .../pandas/tests/arrays/string_/test_string.py     |   623 -
+ .../tests/arrays/string_/test_string_arrow.py      |   271 -
+ .../pandas/tests/arrays/test_array.py              |   539 -
+ .../pandas/tests/arrays/test_datetimelike.py       |  1390 --
+ .../pandas/tests/arrays/test_datetimes.py          |   848 -
+ .../pandas/tests/arrays/test_ndarray_backed.py     |    76 -
+ .../pandas/tests/arrays/test_period.py             |   184 -
+ .../pandas/tests/arrays/test_timedeltas.py         |   312 -
+ .../pandas/tests/arrays/timedeltas/__init__.py     |     0
+ .../tests/arrays/timedeltas/test_constructors.py   |    58 -
+ .../tests/arrays/timedeltas/test_cumulative.py     |    20 -
+ .../tests/arrays/timedeltas/test_reductions.py     |   219 -
+ .../site-packages/pandas/tests/base/__init__.py    |     0
+ .../Lib/site-packages/pandas/tests/base/common.py  |     9 -
+ .../pandas/tests/base/test_constructors.py         |   192 -
+ .../pandas/tests/base/test_conversion.py           |   603 -
+ .../site-packages/pandas/tests/base/test_fillna.py |    61 -
+ .../site-packages/pandas/tests/base/test_misc.py   |   189 -
+ .../pandas/tests/base/test_transpose.py            |    56 -
+ .../site-packages/pandas/tests/base/test_unique.py |   128 -
+ .../pandas/tests/base/test_value_counts.py         |   420 -
+ .../pandas/tests/computation/__init__.py           |     0
+ .../pandas/tests/computation/test_compat.py        |    32 -
+ .../pandas/tests/computation/test_eval.py          |  2044 ---
+ .../site-packages/pandas/tests/config/__init__.py  |     0
+ .../pandas/tests/config/test_config.py             |   499 -
+ .../pandas/tests/config/test_localization.py       |   155 -
+ .../pandas/tests/construction/__init__.py          |     0
+ .../tests/construction/test_extract_array.py       |    18 -
+ .../pandas/tests/copy_view/__init__.py             |     0
+ .../pandas/tests/copy_view/index/__init__.py       |     0
+ .../tests/copy_view/index/test_datetimeindex.py    |    86 -
+ .../pandas/tests/copy_view/index/test_index.py     |   177 -
+ .../tests/copy_view/index/test_intervalindex.py    |    29 -
+ .../tests/copy_view/index/test_periodindex.py      |    47 -
+ .../tests/copy_view/index/test_timedeltaindex.py   |    59 -
+ .../pandas/tests/copy_view/test_array.py           |   229 -
+ .../pandas/tests/copy_view/test_astype.py          |   230 -
+ .../test_chained_assignment_deprecation.py         |   104 -
+ .../pandas/tests/copy_view/test_clip.py            |    72 -
+ .../pandas/tests/copy_view/test_constructors.py    |   382 -
+ .../tests/copy_view/test_copy_deprecation.py       |   100 -
+ .../tests/copy_view/test_core_functionalities.py   |    93 -
+ .../pandas/tests/copy_view/test_functions.py       |   332 -
+ .../pandas/tests/copy_view/test_indexing.py        |   902 -
+ .../pandas/tests/copy_view/test_internals.py       |   112 -
+ .../pandas/tests/copy_view/test_interp_fillna.py   |   307 -
+ .../pandas/tests/copy_view/test_methods.py         |  1601 --
+ .../pandas/tests/copy_view/test_replace.py         |   356 -
+ .../pandas/tests/copy_view/test_setitem.py         |   142 -
+ .../pandas/tests/copy_view/test_util.py            |    14 -
+ .../site-packages/pandas/tests/copy_view/util.py   |    30 -
+ .../site-packages/pandas/tests/dtypes/__init__.py  |     0
+ .../pandas/tests/dtypes/cast/__init__.py           |     0
+ .../pandas/tests/dtypes/cast/test_box_unbox.py     |   104 -
+ .../tests/dtypes/cast/test_can_hold_element.py     |   108 -
+ .../dtypes/cast/test_construct_from_scalar.py      |    55 -
+ .../tests/dtypes/cast/test_construct_ndarray.py    |    36 -
+ .../tests/dtypes/cast/test_construct_object_arr.py |    20 -
+ .../pandas/tests/dtypes/cast/test_dict_compat.py   |    14 -
+ .../pandas/tests/dtypes/cast/test_downcast.py      |    54 -
+ .../tests/dtypes/cast/test_find_common_type.py     |   175 -
+ .../tests/dtypes/cast/test_infer_datetimelike.py   |    28 -
+ .../pandas/tests/dtypes/cast/test_infer_dtype.py   |   216 -
+ .../pandas/tests/dtypes/cast/test_promote.py       |   530 -
+ .../pandas/tests/dtypes/test_common.py             |   882 -
+ .../pandas/tests/dtypes/test_concat.py             |    66 -
+ .../pandas/tests/dtypes/test_dtypes.py             |  1258 --
+ .../pandas/tests/dtypes/test_generic.py            |   130 -
+ .../pandas/tests/dtypes/test_inference.py          |  2155 ---
+ .../pandas/tests/dtypes/test_missing.py            |   876 -
+ .../pandas/tests/extension/__init__.py             |     0
+ .../tests/extension/array_with_attr/__init__.py    |     6 -
+ .../tests/extension/array_with_attr/array.py       |    89 -
+ .../array_with_attr/test_array_with_attr.py        |    33 -
+ .../pandas/tests/extension/base/__init__.py        |    89 -
+ .../pandas/tests/extension/base/accumulate.py      |    40 -
+ .../pandas/tests/extension/base/base.py            |     2 -
+ .../pandas/tests/extension/base/casting.py         |    96 -
+ .../pandas/tests/extension/base/constructors.py    |   142 -
+ .../pandas/tests/extension/base/dim2.py            |   356 -
+ .../pandas/tests/extension/base/dtype.py           |   123 -
+ .../pandas/tests/extension/base/getitem.py         |   499 -
+ .../pandas/tests/extension/base/groupby.py         |   172 -
+ .../pandas/tests/extension/base/index.py           |    20 -
+ .../pandas/tests/extension/base/interface.py       |   172 -
+ .../pandas/tests/extension/base/io.py              |    39 -
+ .../pandas/tests/extension/base/methods.py         |   738 -
+ .../pandas/tests/extension/base/missing.py         |   195 -
+ .../pandas/tests/extension/base/ops.py             |   287 -
+ .../pandas/tests/extension/base/printing.py        |    41 -
+ .../pandas/tests/extension/base/reduce.py          |   128 -
+ .../pandas/tests/extension/base/reshaping.py       |   389 -
+ .../pandas/tests/extension/base/setitem.py         |   536 -
+ .../pandas/tests/extension/conftest.py             |   214 -
+ .../pandas/tests/extension/date/__init__.py        |     6 -
+ .../pandas/tests/extension/date/array.py           |   193 -
+ .../pandas/tests/extension/decimal/__init__.py     |     8 -
+ .../pandas/tests/extension/decimal/array.py        |   315 -
+ .../pandas/tests/extension/decimal/test_decimal.py |   438 -
+ .../pandas/tests/extension/json/__init__.py        |     7 -
+ .../pandas/tests/extension/json/array.py           |   282 -
+ .../pandas/tests/extension/json/test_json.py       |   501 -
+ .../pandas/tests/extension/list/__init__.py        |     7 -
+ .../pandas/tests/extension/list/array.py           |   136 -
+ .../pandas/tests/extension/list/test_list.py       |    33 -
+ .../pandas/tests/extension/test_arrow.py           |  3951 -----
+ .../pandas/tests/extension/test_categorical.py     |   192 -
+ .../pandas/tests/extension/test_common.py          |   110 -
+ .../pandas/tests/extension/test_datetime.py        |   148 -
+ .../pandas/tests/extension/test_extension.py       |    27 -
+ .../pandas/tests/extension/test_interval.py        |   147 -
+ .../pandas/tests/extension/test_masked.py          |   375 -
+ .../pandas/tests/extension/test_numpy.py           |   439 -
+ .../pandas/tests/extension/test_period.py          |   116 -
+ .../pandas/tests/extension/test_sparse.py          |   517 -
+ .../pandas/tests/extension/test_string.py          |   308 -
+ .../pandas/tests/extension/uuid/__init__.py        |     0
+ .../pandas/tests/extension/uuid/test_uuid.py       |    93 -
+ .../site-packages/pandas/tests/frame/__init__.py   |     0
+ .../Lib/site-packages/pandas/tests/frame/common.py |    63 -
+ .../site-packages/pandas/tests/frame/conftest.py   |   100 -
+ .../pandas/tests/frame/constructors/__init__.py    |     0
+ .../tests/frame/constructors/test_from_dict.py     |   223 -
+ .../tests/frame/constructors/test_from_records.py  |   529 -
+ .../pandas/tests/frame/indexing/__init__.py        |     0
+ .../pandas/tests/frame/indexing/test_coercion.py   |   176 -
+ .../pandas/tests/frame/indexing/test_delitem.py    |    60 -
+ .../pandas/tests/frame/indexing/test_get.py        |    27 -
+ .../pandas/tests/frame/indexing/test_get_value.py  |    22 -
+ .../pandas/tests/frame/indexing/test_getitem.py    |   470 -
+ .../pandas/tests/frame/indexing/test_indexing.py   |  1946 ---
+ .../pandas/tests/frame/indexing/test_insert.py     |   119 -
+ .../pandas/tests/frame/indexing/test_mask.py       |   157 -
+ .../pandas/tests/frame/indexing/test_set_value.py  |    74 -
+ .../pandas/tests/frame/indexing/test_setitem.py    |  1481 --
+ .../pandas/tests/frame/indexing/test_take.py       |    92 -
+ .../pandas/tests/frame/indexing/test_where.py      |  1086 --
+ .../pandas/tests/frame/indexing/test_xs.py         |   387 -
+ .../pandas/tests/frame/methods/__init__.py         |     7 -
+ .../tests/frame/methods/test_add_prefix_suffix.py  |    49 -
+ .../pandas/tests/frame/methods/test_align.py       |   338 -
+ .../pandas/tests/frame/methods/test_asfreq.py      |   296 -
+ .../pandas/tests/frame/methods/test_asof.py        |   185 -
+ .../pandas/tests/frame/methods/test_assign.py      |    84 -
+ .../pandas/tests/frame/methods/test_astype.py      |   920 -
+ .../pandas/tests/frame/methods/test_at_time.py     |   153 -
+ .../tests/frame/methods/test_between_time.py       |   227 -
+ .../pandas/tests/frame/methods/test_clip.py        |   200 -
+ .../pandas/tests/frame/methods/test_combine.py     |    63 -
+ .../tests/frame/methods/test_combine_first.py      |   597 -
+ .../pandas/tests/frame/methods/test_compare.py     |   304 -
+ .../tests/frame/methods/test_convert_dtypes.py     |   242 -
+ .../pandas/tests/frame/methods/test_copy.py        |    41 -
+ .../pandas/tests/frame/methods/test_count.py       |    39 -
+ .../pandas/tests/frame/methods/test_cov_corr.py    |   495 -
+ .../pandas/tests/frame/methods/test_describe.py    |   463 -
+ .../pandas/tests/frame/methods/test_diff.py        |   308 -
+ .../pandas/tests/frame/methods/test_dot.py         |   171 -
+ .../pandas/tests/frame/methods/test_drop.py        |   554 -
+ .../tests/frame/methods/test_drop_duplicates.py    |   516 -
+ .../pandas/tests/frame/methods/test_droplevel.py   |    36 -
+ .../pandas/tests/frame/methods/test_dropna.py      |   285 -
+ .../pandas/tests/frame/methods/test_dtypes.py      |   141 -
+ .../pandas/tests/frame/methods/test_duplicated.py  |   117 -
+ .../pandas/tests/frame/methods/test_equals.py      |    99 -
+ .../pandas/tests/frame/methods/test_explode.py     |   307 -
+ .../pandas/tests/frame/methods/test_fillna.py      |   856 -
+ .../pandas/tests/frame/methods/test_filter.py      |   153 -
+ .../tests/frame/methods/test_first_valid_index.py  |    79 -
+ .../tests/frame/methods/test_get_numeric_data.py   |   104 -
+ .../pandas/tests/frame/methods/test_head_tail.py   |    57 -
+ .../tests/frame/methods/test_infer_objects.py      |    42 -
+ .../pandas/tests/frame/methods/test_info.py        |   586 -
+ .../pandas/tests/frame/methods/test_interpolate.py |   443 -
+ .../frame/methods/test_is_homogeneous_dtype.py     |    53 -
+ .../pandas/tests/frame/methods/test_isetitem.py    |    50 -
+ .../pandas/tests/frame/methods/test_isin.py        |   227 -
+ .../pandas/tests/frame/methods/test_iterrows.py    |    16 -
+ .../pandas/tests/frame/methods/test_join.py        |   578 -
+ .../pandas/tests/frame/methods/test_map.py         |   208 -
+ .../pandas/tests/frame/methods/test_matmul.py      |    98 -
+ .../pandas/tests/frame/methods/test_nlargest.py    |   241 -
+ .../pandas/tests/frame/methods/test_pct_change.py  |   125 -
+ .../pandas/tests/frame/methods/test_pipe.py        |    39 -
+ .../pandas/tests/frame/methods/test_pop.py         |    71 -
+ .../pandas/tests/frame/methods/test_quantile.py    |   939 --
+ .../pandas/tests/frame/methods/test_rank.py        |   500 -
+ .../pandas/tests/frame/methods/test_reindex.py     |  1296 --
+ .../tests/frame/methods/test_reindex_like.py       |    43 -
+ .../pandas/tests/frame/methods/test_rename.py      |   442 -
+ .../pandas/tests/frame/methods/test_rename_axis.py |   123 -
+ .../tests/frame/methods/test_reorder_levels.py     |    74 -
+ .../pandas/tests/frame/methods/test_replace.py     |  1570 --
+ .../pandas/tests/frame/methods/test_reset_index.py |   813 -
+ .../pandas/tests/frame/methods/test_round.py       |   229 -
+ .../pandas/tests/frame/methods/test_sample.py      |   393 -
+ .../tests/frame/methods/test_select_dtypes.py      |   528 -
+ .../pandas/tests/frame/methods/test_set_axis.py    |   130 -
+ .../pandas/tests/frame/methods/test_set_index.py   |   739 -
+ .../pandas/tests/frame/methods/test_shift.py       |   814 -
+ .../pandas/tests/frame/methods/test_size.py        |    21 -
+ .../pandas/tests/frame/methods/test_sort_index.py  |  1032 --
+ .../pandas/tests/frame/methods/test_sort_values.py |   909 -
+ .../pandas/tests/frame/methods/test_swaplevel.py   |    36 -
+ .../pandas/tests/frame/methods/test_to_csv.py      |  1470 --
+ .../pandas/tests/frame/methods/test_to_dict.py     |   541 -
+ .../tests/frame/methods/test_to_dict_of_blocks.py  |    35 -
+ .../pandas/tests/frame/methods/test_to_numpy.py    |    83 -
+ .../pandas/tests/frame/methods/test_to_period.py   |    89 -
+ .../pandas/tests/frame/methods/test_to_records.py  |   523 -
+ .../tests/frame/methods/test_to_timestamp.py       |   154 -
+ .../pandas/tests/frame/methods/test_transpose.py   |   197 -
+ .../pandas/tests/frame/methods/test_truncate.py    |   154 -
+ .../pandas/tests/frame/methods/test_tz_convert.py  |   140 -
+ .../pandas/tests/frame/methods/test_tz_localize.py |    67 -
+ .../pandas/tests/frame/methods/test_update.py      |   248 -
+ .../tests/frame/methods/test_value_counts.py       |   205 -
+ .../pandas/tests/frame/methods/test_values.py      |   263 -
+ .../pandas/tests/frame/test_alter_axes.py          |    31 -
+ .../site-packages/pandas/tests/frame/test_api.py   |   408 -
+ .../pandas/tests/frame/test_arithmetic.py          |  2203 ---
+ .../pandas/tests/frame/test_arrow_interface.py     |    94 -
+ .../pandas/tests/frame/test_block_internals.py     |   455 -
+ .../pandas/tests/frame/test_constructors.py        |  3376 ----
+ .../pandas/tests/frame/test_cumulative.py          |   107 -
+ .../pandas/tests/frame/test_iteration.py           |   160 -
+ .../pandas/tests/frame/test_logical_ops.py         |   211 -
+ .../pandas/tests/frame/test_nonunique_indexes.py   |   336 -
+ .../pandas/tests/frame/test_npfuncs.py             |    84 -
+ .../pandas/tests/frame/test_query_eval.py          |  1609 --
+ .../pandas/tests/frame/test_reductions.py          |  2234 ---
+ .../site-packages/pandas/tests/frame/test_repr.py  |   498 -
+ .../pandas/tests/frame/test_stack_unstack.py       |  2781 ---
+ .../pandas/tests/frame/test_subclass.py            |   817 -
+ .../site-packages/pandas/tests/frame/test_ufunc.py |   312 -
+ .../site-packages/pandas/tests/frame/test_unary.py |   180 -
+ .../pandas/tests/frame/test_validate.py            |    37 -
+ .../site-packages/pandas/tests/generic/__init__.py |     0
+ .../pandas/tests/generic/test_duplicate_labels.py  |   390 -
+ .../pandas/tests/generic/test_finalize.py          |   792 -
+ .../pandas/tests/generic/test_frame.py             |   202 -
+ .../pandas/tests/generic/test_generic.py           |   494 -
+ .../tests/generic/test_label_or_level_utils.py     |   329 -
+ .../pandas/tests/generic/test_series.py            |   119 -
+ .../pandas/tests/generic/test_to_xarray.py         |   126 -
+ .../site-packages/pandas/tests/groupby/__init__.py |    25 -
+ .../pandas/tests/groupby/aggregate/__init__.py     |     0
+ .../tests/groupby/aggregate/test_aggregate.py      |  1984 ---
+ .../pandas/tests/groupby/aggregate/test_cython.py  |   415 -
+ .../pandas/tests/groupby/aggregate/test_numba.py   |   441 -
+ .../pandas/tests/groupby/aggregate/test_other.py   |   667 -
+ .../site-packages/pandas/tests/groupby/conftest.py |   166 -
+ System/frontend_build_output_20260321_v2.txt       |   Bin 9826 -> 0 bytes
+ System/frontend_build_output_20260321_v3.txt       |   Bin 9826 -> 0 bytes
+ System/frontend_build_output_20260321_v4.txt       |   Bin 12774 -> 0 bytes
+ System/frontend_build_summary_20260321_v4.txt      |    94 -
+ _patch_backup_20260321/frontend/src/App.tsx        |   161 -
+ .../frontend/src/layout/Layout.tsx                 |   161 -
+ .../frontend/src/pages/Dashboard/index.tsx         |   688 -
+ .../frontend/src/pages/DataImport.tsx              |   306 -
+ .../frontend/src/pages/DataImport/index.tsx        |   679 -
+ .../frontend/src/services/api.ts                   |   475 -
+ _patch_backup_20260321/frontend/src/types/index.ts |     9 -
+ _patch_backup_20260321/src/ecom_v51/api/app.py     |   108 -
+ .../src/ecom_v51/api/routes/__init__.py            |    17 -
+ .../src/ecom_v51/api/routes/import_route.py        |   116 -
+ .../src/ecom_v51/api/routes/profit.py              |   123 -
+ .../src/ecom_v51/registry/dataset_registry.py      |    88 -
+ .../src/ecom_v51/services/import_service.py        |  2560 ---
+ .../src/ecom_v51/services/profit_service.py        |   259 -
+ .../config/import_field_registry.json              |   876 -
+ _patch_backup_20260321_v2/frontend/vite.config.ts  |    26 -
+ .../src/ecom_v51/services/import_service.py        |  2566 ---
+ .../frontend/src/pages/DataImportV2.tsx            |   824 -
+ .../frontend/src/pages/DataWorkspace/index.tsx     |    71 -
+ _patch_backup_20260321_v3/frontend/vite.config.ts  |    72 -
+ .../src/ecom_v51/services/import_service.py        |  2594 ---
+ .../frontend/src/pages/ABCAnalysis.tsx             |    64 -
+ .../frontend/src/pages/ABCAnalysis/index.tsx       |   545 -
+ .../frontend/src/pages/AdsManagement.tsx           |    65 -
+ .../frontend/src/pages/AdsManagement/index.tsx     |   154 -
+ .../frontend/src/pages/Dashboard.tsx               |   157 -
+ .../frontend/src/pages/Dashboard/index.tsx         |     1 -
+ .../frontend/src/pages/Dashboard_RealAPI.tsx       |   402 -
+ .../frontend/src/pages/DataWorkspace/index.tsx     |    89 -
+ .../frontend/src/pages/DecisionEngine.tsx          |   991 --
+ .../frontend/src/pages/FunnelAnalysis.tsx          |    68 -
+ .../frontend/src/pages/FunnelAnalysis/index.tsx    |   157 -
+ .../frontend/src/pages/InventoryAlert.tsx          |    59 -
+ .../frontend/src/pages/InventoryAlert/index.tsx    |   176 -
+ .../frontend/src/pages/PriceCompetitiveness.tsx    |   183 -
+ .../src/pages/PriceCompetitiveness/index.tsx       |   139 -
+ .../frontend/src/pages/StrategyList.tsx            |   589 -
+ .../frontend/src/pages/StrategyList/index.tsx      |   176 -
+ _patch_backup_20260321_v4/frontend/vite.config.ts  |    90 -
+ 2296 files changed, 86 insertions(+), 837366 deletions(-)

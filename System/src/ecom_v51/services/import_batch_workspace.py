@@ -69,6 +69,7 @@ class ImportBatchWorkspaceService:
         return {
             'workspaceBatchId': record.get('workspaceBatchId'),
             'dbBatchId': record.get('dbBatchId'),
+            'formalBatchId': record.get('formalBatchId'),
             'sessionId': record.get('sessionId'),
             'datasetKind': record.get('datasetKind'),
             'importProfile': record.get('importProfile'),
@@ -339,6 +340,33 @@ class ImportBatchWorkspaceService:
         self._upsert_index_item(summary)
         return summary
 
+
+    def attach_formal_batch_id(
+        self,
+        *,
+        session_id: int | None = None,
+        workspace_batch_id: str | None = None,
+        formal_batch_id: int | None = None,
+    ) -> Optional[Dict[str, Any]]:
+        if formal_batch_id in (None, ''):
+            return None
+        record: Optional[Dict[str, Any]] = None
+        if workspace_batch_id:
+            record = self._load_record_by_workspace_batch_id(str(workspace_batch_id))
+        if record is None and session_id not in (None, ''):
+            try:
+                record = self._load_record_by_session(int(session_id))
+            except Exception:
+                record = None
+        if record is None:
+            return None
+        record['formalBatchId'] = int(formal_batch_id)
+        record['updatedAt'] = self._now_iso()
+        self._save_json(self._record_path(str(record['workspaceBatchId'])), record)
+        summary = self._build_summary(record)
+        self._upsert_index_item(summary)
+        return summary
+
     def get_batch(self, session_id: int) -> Optional[Dict[str, Any]]:
         record = self._load_record_by_session(session_id)
         if record is None:
@@ -355,6 +383,8 @@ class ImportBatchWorkspaceService:
         summary = self._build_summary(record)
         return {
             **summary,
+            'batchId': record.get('formalBatchId') or record.get('dbBatchId'),
+            'formalBatchId': record.get('formalBatchId'),
             'parseSnapshot': record.get('parseSnapshot') or None,
             'confirmSnapshot': record.get('confirmSnapshot') or None,
             'finalSnapshot': record.get('finalSnapshot') or record.get('confirmSnapshot') or record.get('parseSnapshot') or None,

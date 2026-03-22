@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 
 from ecom_v51.ingest.orchestrator import IngestionOrchestrator
 from ecom_v51.registry.dataset_registry import DatasetRegistryService
+from ecom_v51.services.batch_service import BatchService
 from ecom_v51.services.import_batch_workspace import ImportBatchWorkspaceService
 from ecom_v51.services.import_service import ImportService
 
@@ -24,6 +25,7 @@ import_service = ImportService()
 dataset_registry = DatasetRegistryService(ROOT_DIR)
 orchestrator = IngestionOrchestrator()
 batch_workspace = ImportBatchWorkspaceService(ROOT_DIR)
+batch_service = BatchService(ROOT_DIR)
 
 
 def _build_safe_upload_filename(raw_filename: str | None) -> str:
@@ -45,6 +47,38 @@ def _build_safe_upload_filename(raw_filename: str | None) -> str:
 
 def _resolve_dataset_contract(dataset_kind: str | None, import_profile: str | None) -> Dict[str, Any]:
     return dataset_registry.get_dataset(dataset_kind=dataset_kind, import_profile=import_profile)
+
+
+def _get_batch_service() -> BatchService:
+    batch_service.workspace_service = batch_workspace
+    return batch_service
+
+
+
+def _persist_formal_batch_link(
+    *,
+    session_id: int | None,
+    workspace_batch_id: str | None,
+    formalized: Dict[str, Any] | None,
+) -> int | None:
+    if not isinstance(formalized, dict):
+        return None
+    formal_batch_id = formalized.get('batchId')
+    try:
+        if formal_batch_id in (None, ''):
+            return None
+        formal_batch_id = int(formal_batch_id)
+    except Exception:
+        return None
+    try:
+        batch_workspace.attach_formal_batch_id(
+            session_id=int(session_id) if session_id not in (None, '') else None,
+            workspace_batch_id=workspace_batch_id,
+            formal_batch_id=formal_batch_id,
+        )
+    except Exception:
+        pass
+    return formal_batch_id
 
 
 def _derive_parse_batch_status(parse_result: Dict[str, Any]) -> str:
@@ -208,6 +242,29 @@ def upload_file():
         )
         result['workspaceBatchId'] = persisted.get('workspaceBatchId')
         result['persistedBatchId'] = persisted.get('dbBatchId')
+        result['legacyImportBatchId'] = persisted.get('dbBatchId')
+        try:
+            formalized = _get_batch_service().save_parse_result(
+                session_id=int(result.get('sessionId') or 0),
+                parse_result=result,
+                shop_id=shop_id,
+                operator=operator,
+                source_mode='upload',
+                workspace_batch_id=persisted.get('workspaceBatchId'),
+                legacy_import_batch_id=persisted.get('dbBatchId'),
+            )
+            formal_batch_id = _persist_formal_batch_link(
+                session_id=int(result.get('sessionId') or 0),
+                workspace_batch_id=persisted.get('workspaceBatchId'),
+                formalized=formalized,
+            )
+            if formal_batch_id is not None:
+                result['batchId'] = formal_batch_id
+                result['formalBatchId'] = formal_batch_id
+                result['formalized'] = True
+        except Exception as formalize_exc:
+            result['formalized'] = False
+            result['formalizeWarning'] = str(formalize_exc)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -286,9 +343,35 @@ def confirm_import():
             operator=operator,
         )
         result['workspaceBatchId'] = persisted.get('workspaceBatchId')
-        if persisted.get('dbBatchId'):
-            result['batchId'] = persisted.get('dbBatchId')
         result['persistedBatchId'] = persisted.get('dbBatchId')
+        result['legacyImportBatchId'] = persisted.get('dbBatchId')
+        try:
+            formalized = _get_batch_service().save_confirm_result(
+                session_id=session_id,
+                parse_result=parse_result,
+                confirm_result=result,
+                shop_id=shop_id,
+                operator=operator,
+                manual_overrides=list(data.get('manualOverrides') or []),
+                workspace_batch_id=persisted.get('workspaceBatchId'),
+                legacy_import_batch_id=persisted.get('dbBatchId'),
+            )
+            formal_batch_id = _persist_formal_batch_link(
+                session_id=session_id,
+                workspace_batch_id=persisted.get('workspaceBatchId'),
+                formalized=formalized,
+            )
+            if formal_batch_id is not None:
+                result['batchId'] = formal_batch_id
+                result['formalBatchId'] = formal_batch_id
+                result['formalized'] = True
+            elif persisted.get('dbBatchId'):
+                result['batchId'] = persisted.get('dbBatchId')
+        except Exception as formalize_exc:
+            result['formalized'] = False
+            result['formalizeWarning'] = str(formalize_exc)
+            if persisted.get('dbBatchId'):
+                result['batchId'] = persisted.get('dbBatchId')
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -317,6 +400,12 @@ def list_batches():
     """工作台批次列表：优先返回持久化 workspace store。"""
     try:
         limit = int(request.args.get('limit') or 20)
+        try:
+            payload = _get_batch_service().list_recent_batches(limit=limit)
+            if payload:
+                return jsonify(payload)
+        except Exception:
+            pass
         return jsonify(batch_workspace.list_batches(limit=limit))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -326,6 +415,12 @@ def list_batches():
 def get_batch_snapshot(session_id: int):
     """批次详情：优先读持久化 workspace store，找不到再回退到内存 session。"""
     try:
+        try:
+            formalized = _get_batch_service().get_batch_detail(str(session_id))
+            if formalized:
+                return jsonify(formalized)
+        except Exception:
+            pass
         persisted = batch_workspace.get_batch(session_id)
         if persisted:
             return jsonify(persisted)
@@ -346,6 +441,12 @@ def get_batch_snapshot(session_id: int):
 def get_batch_by_workspace_id(workspace_batch_id: str):
     """按 workspaceBatchId 读取批次详情。"""
     try:
+        try:
+            formalized = _get_batch_service().get_batch_detail(workspace_batch_id)
+            if formalized:
+                return jsonify(formalized)
+        except Exception:
+            pass
         persisted = batch_workspace.get_batch_by_workspace_id(workspace_batch_id)
         if not persisted:
             return jsonify({'error': 'batch not found'}), 404
@@ -358,6 +459,12 @@ def get_batch_by_workspace_id(workspace_batch_id: str):
 def get_batch_audit(session_id: int):
     """批次审计时间线。"""
     try:
+        try:
+            formalized = _get_batch_service().get_batch_timeline(str(session_id))
+            if formalized:
+                return jsonify(formalized)
+        except Exception:
+            pass
         persisted = batch_workspace.get_batch(session_id)
         if not persisted:
             return jsonify({'error': 'batch not found'}), 404
@@ -395,6 +502,29 @@ def upload_server_file():
         )
         result['workspaceBatchId'] = persisted.get('workspaceBatchId')
         result['persistedBatchId'] = persisted.get('dbBatchId')
+        result['legacyImportBatchId'] = persisted.get('dbBatchId')
+        try:
+            formalized = _get_batch_service().save_parse_result(
+                session_id=int(result.get('sessionId') or 0),
+                parse_result=result,
+                shop_id=shop_id,
+                operator=operator,
+                source_mode='server_file',
+                workspace_batch_id=persisted.get('workspaceBatchId'),
+                legacy_import_batch_id=persisted.get('dbBatchId'),
+            )
+            formal_batch_id = _persist_formal_batch_link(
+                session_id=int(result.get('sessionId') or 0),
+                workspace_batch_id=persisted.get('workspaceBatchId'),
+                formalized=formalized,
+            )
+            if formal_batch_id is not None:
+                result['batchId'] = formal_batch_id
+                result['formalBatchId'] = formal_batch_id
+                result['formalized'] = True
+        except Exception as formalize_exc:
+            result['formalized'] = False
+            result['formalizeWarning'] = str(formalize_exc)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
