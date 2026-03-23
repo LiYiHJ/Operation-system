@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, TimestampMixin
@@ -191,3 +193,46 @@ class BatchQuarantineRow(Base, TimestampMixin):
     reason_cluster_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_auto_recoverable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+
+class RawRecord(Base, TimestampMixin):
+    __tablename__ = 'raw_record'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    batch_id: Mapped[int] = mapped_column(ForeignKey('ingest_batch.id'), nullable=False)
+    raw_stage: Mapped[str] = mapped_column(String(32), nullable=False, default='parse')
+    record_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    source_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    source_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    source_signature: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    preview_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+
+
+class ReplayJob(Base, TimestampMixin):
+    __tablename__ = 'replay_job'
+    __table_args__ = (UniqueConstraint('job_code', name='uq_replay_job_job_code'),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    batch_id: Mapped[int | None] = mapped_column(ForeignKey('ingest_batch.id'), nullable=True)
+    job_type: Mapped[str] = mapped_column(String(64), nullable=False, default='upload')
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default='queued')
+    trace_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    operator: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    request_payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    result_payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class JobEvent(Base, TimestampMixin):
+    __tablename__ = 'job_event'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey('replay_job.id'), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+

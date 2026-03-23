@@ -15,6 +15,9 @@ from ecom_v51.db.ingest_models import (
     BatchProfileCandidate,
     BatchQuarantineRow,
     IngestBatch,
+    JobEvent,
+    RawRecord,
+    ReplayJob,
     IngestSourceObject,
     RegistryDataset,
     RegistryField,
@@ -31,7 +34,7 @@ from ecom_v51.services.reason_clustering_service import ReasonClusteringService
 
 
 class BatchService:
-    CONTRACT_VERSION = 'p0a.v1'
+    CONTRACT_VERSION = 'p2a.v1'
     ALGORITHM_VERSION = 'p1.v1'
 
     def __init__(self, root_dir: Path) -> None:
@@ -1154,7 +1157,7 @@ class BatchService:
             'importabilityStatus': batch.importability_status,
             'importedRows': batch.imported_rows,
             'quarantineCount': batch.quarantine_count,
-            'contractVersion': BatchService.CONTRACT_VERSION,
+            'contractVersion': batch.contract_version or BatchService.CONTRACT_VERSION,
         }
 
     @staticmethod
@@ -1220,12 +1223,26 @@ class BatchService:
             payload['mappingSummary'] = dict(fallback_mapping_summary)
         return payload
 
-    def list_recent_batches(self, limit: int = 20) -> Dict[str, Any]:
+    def list_recent_batches(
+        self,
+        limit: int = 20,
+        *,
+        shop_id: int | None = None,
+        dataset_kind: str | None = None,
+        status: str | None = None,
+    ) -> Dict[str, Any]:
         self._ensure_ingest_batch_backfill(limit=max(limit, 20))
         get_engine()
         with get_session() as session:
+            stmt = select(IngestBatch)
+            if shop_id not in (None, ''):
+                stmt = stmt.where(IngestBatch.shop_id == self._int_or_zero(shop_id))
+            if dataset_kind:
+                stmt = stmt.where(IngestBatch.dataset_kind == str(dataset_kind).strip())
+            if status:
+                stmt = stmt.where(IngestBatch.batch_status == str(status).strip())
             rows = session.execute(
-                select(IngestBatch).order_by(IngestBatch.updated_at.desc(), IngestBatch.id.desc()).limit(max(limit, 1))
+                stmt.order_by(IngestBatch.updated_at.desc(), IngestBatch.id.desc()).limit(max(limit, 1))
             ).scalars().all()
             if rows:
                 items = [self._summary_from_ingest_batch(row) for row in rows]
@@ -1246,10 +1263,14 @@ class BatchService:
         with get_session() as session:
             batch = None
             if batch_ref.isdigit():
-                batch = session.get(IngestBatch, int(batch_ref))
+                numeric_ref = int(batch_ref)
+                batch = session.get(IngestBatch, numeric_ref)
                 if batch is not None:
                     return batch
-                batch = session.execute(select(IngestBatch).where(IngestBatch.legacy_session_id == int(batch_ref))).scalar_one_or_none()
+                batch = session.execute(select(IngestBatch).where(IngestBatch.legacy_session_id == numeric_ref)).scalar_one_or_none()
+                if batch is not None:
+                    return batch
+                batch = session.execute(select(IngestBatch).where(IngestBatch.legacy_import_batch_id == numeric_ref)).scalar_one_or_none()
                 if batch is not None:
                     return batch
             batch = session.execute(select(IngestBatch).where(IngestBatch.workspace_batch_id == batch_ref)).scalar_one_or_none()
@@ -1269,10 +1290,12 @@ class BatchService:
             profile_rows = session.execute(select(BatchProfileCandidate).where(BatchProfileCandidate.batch_id == batch.id).order_by(BatchProfileCandidate.candidate_rank.asc(), BatchProfileCandidate.id.asc())).scalars().all() if 'batch_profile_candidate' in table_names else []
             key_rows = session.execute(select(BatchBusinessKeyCandidate).where(BatchBusinessKeyCandidate.batch_id == batch.id).order_by(BatchBusinessKeyCandidate.candidate_rank.asc(), BatchBusinessKeyCandidate.id.asc())).scalars().all() if 'batch_business_key_candidate' in table_names else []
             quarantine_rows = session.execute(select(BatchQuarantineRow).where(BatchQuarantineRow.batch_id == batch.id).order_by(BatchQuarantineRow.id.asc())).scalars().all() if 'batch_quarantine_row' in table_names else []
+            raw_rows = session.execute(select(RawRecord).where(RawRecord.batch_id == batch.id).order_by(RawRecord.raw_stage.asc(), RawRecord.record_index.asc(), RawRecord.id.asc())).scalars().all() if 'raw_record' in table_names else []
             timeline = [row.payload for row in session.execute(select(BatchAuditEvent).where(BatchAuditEvent.batch_id == batch.id).order_by(BatchAuditEvent.id.asc())).scalars().all()] if 'batch_audit_event' in table_names else []
-            parse_snapshot = self._normalize_snapshot(batch.parse_snapshot, contract_version=BatchService.CONTRACT_VERSION)
-            confirm_snapshot = self._normalize_snapshot(batch.confirm_snapshot, contract_version=BatchService.CONTRACT_VERSION, fallback_mapping_summary=(parse_snapshot or {}).get('mappingSummary'))
-            final_snapshot = self._normalize_snapshot(batch.final_snapshot, contract_version=BatchService.CONTRACT_VERSION, fallback_mapping_summary=(confirm_snapshot or parse_snapshot or {}).get('mappingSummary'))
+            contract_version = batch.contract_version or BatchService.CONTRACT_VERSION
+            parse_snapshot = self._normalize_snapshot(batch.parse_snapshot, contract_version=contract_version)
+            confirm_snapshot = self._normalize_snapshot(batch.confirm_snapshot, contract_version=contract_version, fallback_mapping_summary=(parse_snapshot or {}).get('mappingSummary'))
+            final_snapshot = self._normalize_snapshot(batch.final_snapshot, contract_version=contract_version, fallback_mapping_summary=(confirm_snapshot or parse_snapshot or {}).get('mappingSummary'))
             serialized_mappings = [self._serialize_field_mapping(row) for row in mapping_rows]
             parse_meta = batch.raw_parse_meta or {}
             confirm_meta = batch.raw_confirm_meta or {}
@@ -1315,6 +1338,7 @@ class BatchService:
                     }
                     for row in source_rows
                 ],
+                'rawRecords': [self._serialize_raw_record(row) for row in raw_rows],
                 'eventTimeline': timeline,
                 'profileCandidates': profile_candidates,
                 'businessKeyCandidates': business_key_candidates,
@@ -1332,7 +1356,7 @@ class BatchService:
             'batchId': detail.get('batchId'),
             'workspaceBatchId': detail.get('workspaceBatchId'),
             'sessionId': detail.get('sessionId'),
-            'contractVersion': BatchService.CONTRACT_VERSION,
+            'contractVersion': detail.get('contractVersion') or BatchService.CONTRACT_VERSION,
             'eventTimeline': events,
             'events': events,
             'total': len(events),
@@ -1347,7 +1371,8 @@ class BatchService:
         return {
             'batchId': detail.get('batchId'),
             'workspaceBatchId': detail.get('workspaceBatchId'),
-            'contractVersion': BatchService.CONTRACT_VERSION,
+            
+            'contractVersion': detail.get('contractVersion') or BatchService.CONTRACT_VERSION,
             'algorithmVersion': self.ALGORITHM_VERSION,
             'quarantineCount': int(final_snapshot.get('quarantineCount') or detail.get('quarantineCount') or 0),
             'importabilityStatus': final_snapshot.get('importabilityStatus') or detail.get('importabilityStatus'),
@@ -1355,3 +1380,386 @@ class BatchService:
             'reasonBuckets': reason_buckets,
             'topReasons': reason_buckets[:5],
         }
+
+
+    @staticmethod
+    def _serialize_raw_record(row: RawRecord) -> Dict[str, Any]:
+        return {
+            'rawRecordId': row.id,
+            'batchId': row.batch_id,
+            'rawStage': row.raw_stage,
+            'recordIndex': row.record_index,
+            'sourceName': row.source_name,
+            'sourceMode': row.source_mode,
+            'sourceHash': row.source_hash,
+            'sourceSignature': row.source_signature,
+            'previewText': row.preview_text,
+            'payload': row.payload or {},
+            'createdAt': row.created_at.isoformat() if row.created_at else None,
+        }
+
+    def append_audit_event(self, batch_id: int, event_type: str, payload: Dict[str, Any]) -> None:
+        get_engine()
+        with get_session() as session:
+            session.add(BatchAuditEvent(batch_id=batch_id, event_type=event_type, payload=dict(payload or {})))
+
+    def record_raw_payload(
+        self,
+        *,
+        batch_id: int,
+        raw_stage: str,
+        payload: Dict[str, Any],
+        source_name: str | None = None,
+        source_mode: str | None = None,
+        source_hash: str | None = None,
+        source_signature: str | None = None,
+        preview_text: str | None = None,
+        record_index: int = 0,
+    ) -> Optional[int]:
+        get_engine()
+        with get_session() as session:
+            row = RawRecord(
+                batch_id=batch_id,
+                raw_stage=self._clean_str(raw_stage, 'parse'),
+                record_index=self._int_or_zero(record_index),
+                source_name=self._clean_str(source_name) or None,
+                source_mode=self._clean_str(source_mode) or None,
+                source_hash=self._clean_str(source_hash) or None,
+                source_signature=self._clean_str(source_signature) or None,
+                preview_text=self._clean_str(preview_text) or None,
+                payload=dict(payload or {}),
+            )
+            session.add(row)
+            session.flush()
+            return row.id
+
+    def create_job(
+        self,
+        *,
+        job_type: str,
+        batch_id: int | None = None,
+        operator: str | None = None,
+        trace_id: str | None = None,
+        idempotency_key: str | None = None,
+        request_payload: Dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        job_code = f'job_{datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")}'
+        get_engine()
+        with get_session() as session:
+            row = ReplayJob(
+                job_code=job_code,
+                batch_id=batch_id,
+                job_type=self._clean_str(job_type, 'upload'),
+                status='queued',
+                trace_id=self._clean_str(trace_id) or None,
+                idempotency_key=self._clean_str(idempotency_key) or None,
+                operator=self._clean_str(operator) or None,
+                request_payload=dict(request_payload or {}),
+            )
+            session.add(row)
+            session.flush()
+            job_id = row.id
+        self.append_job_event(job_id, 'queued', {'batchId': batch_id, 'requestPayload': request_payload or {}})
+        return self.get_job(str(job_id)) or {'jobId': job_id, 'jobCode': job_code, 'status': 'queued'}
+
+    def append_job_event(self, job_id: int, event_type: str, payload: Dict[str, Any]) -> None:
+        get_engine()
+        with get_session() as session:
+            session.add(JobEvent(job_id=job_id, event_type=event_type, payload=dict(payload or {})))
+
+    def update_job(
+        self,
+        job_id: int,
+        *,
+        status: str,
+        batch_id: int | None = None,
+        result_payload: Dict[str, Any] | None = None,
+        error_message: str | None = None,
+        event_type: str | None = None,
+    ) -> Optional[Dict[str, Any]]:
+        get_engine()
+        with get_session() as session:
+            row = session.get(ReplayJob, int(job_id))
+            if row is None:
+                return None
+            previous_status = row.status
+            row.status = self._clean_str(status, previous_status)
+            if batch_id not in (None, ''):
+                row.batch_id = self._int_or_zero(batch_id)
+            if previous_status == 'queued' and row.started_at is None:
+                row.started_at = datetime.now(timezone.utc)
+            if row.status in {'completed', 'failed'}:
+                row.finished_at = datetime.now(timezone.utc)
+            if result_payload is not None:
+                row.result_payload = dict(result_payload or {})
+            if error_message is not None:
+                row.error_message = self._clean_str(error_message) or None
+            session.flush()
+            payload = {
+                'batchId': row.batch_id,
+                'status': row.status,
+                'resultPayload': row.result_payload or {},
+                'errorMessage': row.error_message,
+            }
+        self.append_job_event(int(job_id), event_type or row.status, payload)
+        return self.get_job(str(job_id))
+
+    def get_job(self, job_ref: str) -> Optional[Dict[str, Any]]:
+        job_ref = str(job_ref or '').strip()
+        if not job_ref:
+            return None
+        get_engine()
+        with get_session() as session:
+            row = None
+            if job_ref.isdigit():
+                row = session.get(ReplayJob, int(job_ref))
+            if row is None:
+                row = session.execute(select(ReplayJob).where(ReplayJob.job_code == job_ref)).scalar_one_or_none()
+            if row is None:
+                return None
+            events = session.execute(select(JobEvent).where(JobEvent.job_id == row.id).order_by(JobEvent.id.asc())).scalars().all()
+            return {
+                'jobId': row.id,
+                'jobCode': row.job_code,
+                'batchId': row.batch_id,
+                'jobType': row.job_type,
+                'status': row.status,
+                'traceId': row.trace_id,
+                'idempotencyKey': row.idempotency_key,
+                'operator': row.operator,
+                'requestPayload': row.request_payload or {},
+                'resultPayload': row.result_payload or {},
+                'errorMessage': row.error_message,
+                'startedAt': row.started_at.isoformat() if row.started_at else None,
+                'finishedAt': row.finished_at.isoformat() if row.finished_at else None,
+                'timeline': [
+                    {
+                        'eventType': event.event_type,
+                        'payload': event.payload or {},
+                        'createdAt': event.created_at.isoformat() if event.created_at else None,
+                    }
+                    for event in events
+                ],
+            }
+    def replay_batch(
+        self,
+        *,
+        batch_ref: str,
+        trace_id: str | None = None,
+        idempotency_key: str | None = None,
+        operator: str | None = None,
+        notes: str | None = None,
+    ) -> Dict[str, Any]:
+        batch_ref = str(batch_ref or "").strip()
+        if not batch_ref:
+            raise ValueError("batch_not_found")
+
+        original_batch = self._resolve_batch(batch_ref)
+        if original_batch is None:
+            raise ValueError("batch_not_found")
+
+        detail = self.get_batch_detail(str(original_batch.id)) or {}
+        raw_records = list(detail.get("rawRecords") or [])
+        if not raw_records:
+            raise ValueError("replay_source_not_found")
+
+        notes_value = self._clean_str(notes) or None
+        request_payload = {
+            "batchRef": str(original_batch.id),
+            "notes": notes_value,
+            "sourcePath": (
+                (raw_records[0].get("payload") or {}).get("sourcePath")
+                or (raw_records[0].get("payload") or {}).get("filePath")
+                or detail.get("filePath")
+            ),
+        }
+
+        job = self.create_job(
+            job_type="replay",
+            batch_id=original_batch.id,
+            operator=self._clean_str(operator) or None,
+            trace_id=self._clean_str(trace_id) or None,
+            idempotency_key=self._clean_str(idempotency_key) or None,
+            request_payload=request_payload,
+        )
+        job_id = self._int_or_zero(job.get("jobId"))
+        job_code = job.get("jobCode")
+
+        try:
+            self.update_job(
+                job_id,
+                status="running",
+                batch_id=original_batch.id,
+                result_payload={},
+                event_type="replay_started",
+            )
+
+            # 选一个最适合 replay 的 raw source
+            source_row = None
+            for row in raw_records:
+                payload = dict(row.get("payload") or {})
+                if payload.get("sourcePath") or payload.get("filePath") or row.get("sourceSignature") or row.get("sourceHash"):
+                    source_row = row
+                    break
+            if source_row is None:
+                source_row = raw_records[0]
+
+            source_payload = dict(source_row.get("payload") or {})
+            source_path = self._clean_str(
+                source_payload.get("sourcePath")
+                or source_payload.get("filePath")
+                or detail.get("filePath")
+            ) or None
+            source_name = self._clean_str(
+                source_row.get("sourceName")
+                or source_payload.get("fileName")
+                or detail.get("fileName")
+                or original_batch.source_name
+            ) or None
+            source_hash = self._clean_str(
+                source_row.get("sourceHash") or source_payload.get("sourceHash")
+            ) or None
+            source_signature = self._clean_str(
+                source_row.get("sourceSignature") or source_payload.get("sourceSignature")
+            ) or None
+
+            parse_snapshot = dict(original_batch.parse_snapshot or {})
+            confirm_snapshot = dict(original_batch.confirm_snapshot or {})
+            final_snapshot = dict(original_batch.final_snapshot or confirm_snapshot or parse_snapshot)
+
+            get_engine()
+            with get_session() as session:
+                replay_batch = IngestBatch(
+                    workspace_batch_id=None,
+                    legacy_session_id=None,
+                    legacy_import_batch_id=original_batch.legacy_import_batch_id,
+                    dataset_kind=original_batch.dataset_kind,
+                    import_profile=original_batch.import_profile,
+                    source_mode="replay",
+                    source_name=source_name or original_batch.source_name,
+                    platform=original_batch.platform,
+                    shop_id=original_batch.shop_id,
+                    operator=self._clean_str(operator) or original_batch.operator,
+                    contract_version=self._clean_str(
+                        original_batch.contract_version,
+                        self.CONTRACT_VERSION,
+                    ),
+                    batch_status=self._clean_str(original_batch.batch_status, "imported"),
+                    transport_status=self._clean_str(original_batch.transport_status, "passed"),
+                    semantic_status=self._clean_str(original_batch.semantic_status, "passed"),
+                    importability_status=self._clean_str(original_batch.importability_status, "passed"),
+                    imported_rows=self._int_or_zero(original_batch.imported_rows),
+                    quarantine_count=self._int_or_zero(original_batch.quarantine_count),
+                    raw_parse_meta=dict(original_batch.raw_parse_meta or {}),
+                    raw_confirm_meta=dict(original_batch.raw_confirm_meta or {}),
+                    parse_snapshot=parse_snapshot,
+                    confirm_snapshot=confirm_snapshot,
+                    final_snapshot=final_snapshot,
+                )
+                session.add(replay_batch)
+                session.flush()
+
+                replay_batch.workspace_batch_id = f"ws-{int(replay_batch.id):06d}"
+
+                session.add(
+                    IngestSourceObject(
+                        batch_id=replay_batch.id,
+                        object_type="file",
+                        file_name=source_name or original_batch.source_name,
+                        file_path=source_path,
+                        file_size=None,
+                        content_meta={
+                            "sourceHash": source_hash,
+                            "sourceSignature": source_signature,
+                            "originalBatchId": original_batch.id,
+                            "jobId": job_id,
+                            "replay": True,
+                        },
+                    )
+                )
+
+                session.add(
+                    BatchAuditEvent(
+                        batch_id=replay_batch.id,
+                        event_type="replay",
+                        event_status="running",
+                        payload={
+                            "eventType": "replay",
+                            "status": "running",
+                            "originalBatchId": original_batch.id,
+                            "jobId": job_id,
+                            "sourcePath": source_path,
+                            "sourceName": source_name,
+                            "sourceHash": source_hash,
+                            "sourceSignature": source_signature,
+                            "notes": notes_value,
+                        },
+                    )
+                )
+
+                session.add(
+                    BatchAuditEvent(
+                        batch_id=replay_batch.id,
+                        event_type="replay_completed",
+                        event_status="completed",
+                        payload={
+                            "eventType": "replay_completed",
+                            "status": "completed",
+                            "originalBatchId": original_batch.id,
+                            "jobId": job_id,
+                            "batchId": replay_batch.id,
+                            "workspaceBatchId": replay_batch.workspace_batch_id,
+                            "notes": notes_value,
+                        },
+                    )
+                )
+
+                session.flush()
+                replay_batch_id = int(replay_batch.id)
+                replay_workspace_batch_id = replay_batch.workspace_batch_id
+
+            # 复制 raw records 到 replay batch
+            for row in raw_records:
+                self.record_raw_payload(
+                    batch_id=replay_batch_id,
+                    raw_stage=self._clean_str(row.get("rawStage"), "parse"),
+                    payload=dict(row.get("payload") or {}),
+                    source_name=self._clean_str(row.get("sourceName")) or source_name,
+                    source_mode="replay",
+                    source_hash=self._clean_str(row.get("sourceHash")) or source_hash,
+                    source_signature=self._clean_str(row.get("sourceSignature")) or source_signature,
+                    preview_text=self._clean_str(row.get("previewText")) or None,
+                    record_index=self._int_or_zero(row.get("recordIndex")),
+                )
+
+            result = {
+                "batchId": replay_batch_id,
+                "contractVersion": self.CONTRACT_VERSION,
+                "jobCode": job_code,
+                "jobId": job_id,
+                "notes": notes_value,
+                "originalBatchId": original_batch.id,
+                "status": "completed",
+                "workspaceBatchId": replay_workspace_batch_id,
+            }
+
+            self.update_job(
+                job_id,
+                status="completed",
+                batch_id=replay_batch_id,
+                result_payload=result,
+                event_type="completed",
+            )
+            return result
+
+        except Exception as exc:
+            self.update_job(
+                job_id,
+                status="failed",
+                batch_id=original_batch.id,
+                result_payload={},
+                error_message=str(exc),
+                event_type="failed",
+            )
+            raise
+        
