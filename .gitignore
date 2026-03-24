@@ -69,3 +69,18 @@ System/frontend/dist/
 System/data/import_batch_workspace/*.json
 patch_bundle_20260322_*.zip
 # END P0B ROUND 2 BOUNDARY
+# BEGIN PUSH CLEANUP PREP
+System/data/*.db
+System/data/*.sqlite
+System/data/*.sqlite3
+System/src/*.egg-info/
+System/src/uploads/
+!System/src/uploads/.gitkeep
+System/uploads/
+!System/uploads/.gitkeep
+*.log
+patch_bundle_*.zip
+*_full_pytest_*.txt
+*_targeted_tests_*.txt
+*_git_diff_stat_*.txt
+# END PUSH CLEANUP PREP
