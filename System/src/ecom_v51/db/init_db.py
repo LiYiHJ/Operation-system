@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import inspect, text
 
@@ -37,8 +37,8 @@ def _seed_platform(platform_code: str, platform_name: str) -> None:
             platform_code=platform_code,
             platform_name=platform_name,
             is_active=True,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         session.add(row)
         session.flush()

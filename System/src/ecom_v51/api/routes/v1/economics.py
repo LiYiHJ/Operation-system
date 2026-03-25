@@ -6,6 +6,8 @@ from flask import Blueprint, request
 
 from ecom_v51.services.economics_config_service import EconomicsConfigService
 from ecom_v51.services.economics_intake_service import EconomicsIntakeService
+from ecom_v51.services.profit_snapshot_service import ProfitSnapshotService
+from ecom_v51.services.profit_snapshot_review_service import ProfitSnapshotReviewService
 
 from .common import fail, ok
 
@@ -14,6 +16,8 @@ economics_bp = Blueprint('api_v1_economics', __name__)
 ROOT_DIR = Path(__file__).resolve().parents[5]
 economics_service = EconomicsIntakeService(ROOT_DIR)
 economics_config_service = EconomicsConfigService(ROOT_DIR)
+profit_snapshot_service = ProfitSnapshotService(ROOT_DIR, economics_service=economics_service)
+profit_snapshot_review_service = ProfitSnapshotReviewService(ROOT_DIR, profit_snapshot_service=profit_snapshot_service)
 
 
 def _get_economics_service() -> EconomicsIntakeService:
@@ -22,6 +26,14 @@ def _get_economics_service() -> EconomicsIntakeService:
 
 def _get_economics_config_service() -> EconomicsConfigService:
     return economics_config_service
+
+
+def _get_profit_snapshot_service() -> ProfitSnapshotService:
+    return profit_snapshot_service
+
+
+def _get_profit_snapshot_review_service() -> ProfitSnapshotReviewService:
+    return profit_snapshot_review_service
 
 
 @economics_bp.route('/batches/<batch_ref>/intake', methods=['GET'])
@@ -184,6 +196,159 @@ def pricing_recommend_contract_v1():
         return ok(data)
     except Exception as exc:
         return fail('pricing_recommend_contract_failed', '读取定价建议契约失败', details={'reason': str(exc)}, status_code=500)
+
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots', methods=['GET', 'POST'])
+def batch_profit_snapshots_v1(batch_ref: str):
+    try:
+        if request.method == 'POST':
+            payload = request.get_json(silent=True) or {}
+            source = str(payload.get('source') or 'solve').strip() or 'solve'
+            operator = str(payload.get('operator') or 'frontend_user').strip() or 'frontend_user'
+            note = str(payload.get('note') or '').strip() or None
+            filters = payload.get('filters') or {}
+            data = _get_profit_snapshot_service().save_batch_profit_snapshot(
+                batch_ref,
+                source=source,
+                operator=operator,
+                note=note,
+                filters=filters,
+            )
+            if not data:
+                return fail('batch_not_found', '批次不存在', status_code=404)
+            return ok(data, status_code=201)
+        limit = request.args.get('limit', default=20, type=int)
+        data = _get_profit_snapshot_service().list_batch_profit_snapshots(batch_ref, limit=limit)
+        if not data:
+            return fail('batch_not_found', '批次不存在', status_code=404)
+        return ok(data)
+    except ValueError as exc:
+        if str(exc) == 'unsupported_snapshot_source':
+            return fail('unsupported_profit_snapshot_source', '不支持的利润快照来源', status_code=400)
+        return fail('profit_snapshot_invalid', '利润快照参数非法', details={'reason': str(exc)}, status_code=400)
+    except Exception as exc:
+        return fail('profit_snapshot_failed', '读取或写入利润快照失败', details={'reason': str(exc)}, status_code=500)
+
+
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/<int:snapshot_id>', methods=['GET'])
+def batch_profit_snapshot_detail_v1(batch_ref: str, snapshot_id: int):
+    try:
+        data = _get_profit_snapshot_service().get_batch_profit_snapshot_detail(batch_ref, snapshot_id)
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_detail_failed', '读取利润快照详情失败', details={'reason': str(exc)}, status_code=500)
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/<int:snapshot_id>/explain', methods=['GET'])
+def batch_profit_snapshot_explain_v1(batch_ref: str, snapshot_id: int):
+    canonical_sku = str(request.args.get('canonicalSku') or '').strip() or None
+    try:
+        data = _get_profit_snapshot_service().get_batch_profit_snapshot_explain(batch_ref, snapshot_id, canonical_sku=canonical_sku)
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_explain_failed', '读取利润快照解释失败', details={'reason': str(exc)}, status_code=500)
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/compare', methods=['GET'])
+def batch_profit_snapshot_compare_v1(batch_ref: str):
+    left_snapshot_id = request.args.get('leftSnapshotId', type=int)
+    right_snapshot_id = request.args.get('rightSnapshotId', type=int)
+    canonical_sku = str(request.args.get('canonicalSku') or '').strip() or None
+    if left_snapshot_id is None or right_snapshot_id is None:
+        return fail('profit_snapshot_compare_ids_required', '利润快照比较需要 leftSnapshotId 和 rightSnapshotId', status_code=400)
+    try:
+        data = _get_profit_snapshot_service().get_batch_profit_snapshot_compare(
+            batch_ref,
+            left_snapshot_id,
+            right_snapshot_id,
+            canonical_sku=canonical_sku,
+        )
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_compare_failed', '读取利润快照比较失败', details={'reason': str(exc)}, status_code=500)
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/compare/explain-diff', methods=['GET'])
+def batch_profit_snapshot_explain_diff_v1(batch_ref: str):
+    left_snapshot_id = request.args.get('leftSnapshotId', type=int)
+    right_snapshot_id = request.args.get('rightSnapshotId', type=int)
+    canonical_sku = str(request.args.get('canonicalSku') or '').strip() or None
+    if left_snapshot_id is None or right_snapshot_id is None:
+        return fail('profit_snapshot_compare_ids_required', '利润快照解释差异需要 leftSnapshotId 和 rightSnapshotId', status_code=400)
+    try:
+        data = _get_profit_snapshot_service().get_batch_profit_snapshot_explain_diff(
+            batch_ref,
+            left_snapshot_id,
+            right_snapshot_id,
+            canonical_sku=canonical_sku,
+        )
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_explain_diff_failed', '读取利润快照解释差异失败', details={'reason': str(exc)}, status_code=500)
+
+
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/timeline', methods=['GET'])
+def batch_profit_snapshot_timeline_v1(batch_ref: str):
+    canonical_sku = str(request.args.get('canonicalSku') or '').strip() or None
+    limit = request.args.get('limit', default=50, type=int)
+    try:
+        data = _get_profit_snapshot_service().get_batch_profit_snapshot_timeline(batch_ref, canonical_sku=canonical_sku, limit=limit)
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_timeline_failed', '读取利润快照时间线失败', details={'reason': str(exc)}, status_code=500)
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/<int:snapshot_id>/review', methods=['GET'])
+def batch_profit_snapshot_review_surface_v1(batch_ref: str, snapshot_id: int):
+    canonical_sku = str(request.args.get('canonicalSku') or '').strip() or None
+    try:
+        data = _get_profit_snapshot_service().get_batch_profit_snapshot_review_surface(batch_ref, snapshot_id, canonical_sku=canonical_sku)
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_review_surface_failed', '读取利润快照 review 读面失败', details={'reason': str(exc)}, status_code=500)
+
+
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/<int:snapshot_id>/decision', methods=['GET'])
+def batch_profit_snapshot_decision_surface_v1(batch_ref: str, snapshot_id: int):
+    canonical_sku = str(request.args.get('canonicalSku') or '').strip() or None
+    try:
+        data = _get_profit_snapshot_review_service().get_batch_profit_snapshot_decision_surface(batch_ref, snapshot_id, canonical_sku=canonical_sku)
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_decision_surface_failed', '读取利润快照决策读面失败', details={'reason': str(exc)}, status_code=500)
+
+
+@economics_bp.route('/batches/<batch_ref>/profit-snapshots/<int:snapshot_id>/readiness', methods=['GET'])
+def batch_profit_snapshot_readiness_gate_v1(batch_ref: str, snapshot_id: int):
+    canonical_sku = str(request.args.get('canonicalSku') or '').strip() or None
+    try:
+        data = _get_profit_snapshot_review_service().get_batch_profit_snapshot_readiness_gate(batch_ref, snapshot_id, canonical_sku=canonical_sku)
+        if not data:
+            return fail('profit_snapshot_not_found', '利润快照不存在', status_code=404)
+        return ok(data)
+    except Exception as exc:
+        return fail('profit_snapshot_readiness_gate_failed', '读取利润快照 readiness gate 失败', details={'reason': str(exc)}, status_code=500)
 
 
 @economics_bp.route('/config/contract', methods=['GET'])

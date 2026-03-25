@@ -195,6 +195,8 @@ class BatchRuntimeService:
         trace_id: str,
         source_mode: str,
         file_path: Optional[Path],
+        reuse_workspace_batch_id: str | None = None,
+        reuse_legacy_batch_id: int | None = None,
     ) -> Dict[str, Any]:
         session_id = int(parse_result.get('sessionId') or 0)
         persisted = self.workspace_service.register_confirm(
@@ -204,6 +206,10 @@ class BatchRuntimeService:
             shop_id=shop_id,
             operator=operator,
         )
+        workspace_batch_id = reuse_workspace_batch_id or persisted.get('workspaceBatchId')
+        legacy_import_batch_id = reuse_legacy_batch_id if reuse_legacy_batch_id is not None else persisted.get('dbBatchId')
+        if workspace_batch_id:
+            confirm_result['workspaceBatchId'] = workspace_batch_id
         formalized = self.batch_service.save_confirm_result(
             session_id=session_id,
             parse_result=parse_result,
@@ -211,20 +217,21 @@ class BatchRuntimeService:
             shop_id=shop_id,
             operator=operator,
             manual_overrides=manual_overrides,
-            workspace_batch_id=persisted.get('workspaceBatchId'),
-            legacy_import_batch_id=persisted.get('dbBatchId'),
+            workspace_batch_id=workspace_batch_id,
+            legacy_import_batch_id=legacy_import_batch_id,
         )
         formal_batch_id = self._choose_batch_id(
             confirm_result.get('formalBatchId'),
             confirm_result.get('batchId'),
             formalized.get('batchId'),
             persisted.get('formalBatchId'),
+            reuse_legacy_batch_id,
             persisted.get('dbBatchId'),
         )
         if formal_batch_id is not None:
             self.workspace_service.attach_formal_batch_id(
                 session_id=session_id,
-                workspace_batch_id=persisted.get('workspaceBatchId'),
+                workspace_batch_id=workspace_batch_id,
                 formal_batch_id=formal_batch_id,
             )
             confirm_result['batchId'] = formal_batch_id
@@ -264,7 +271,7 @@ class BatchRuntimeService:
                     'eventType': 'replay_confirm' if source_mode == 'replay' else 'confirm',
                     'traceId': trace_id,
                     'batchId': formal_batch_id,
-                    'workspaceBatchId': persisted.get('workspaceBatchId'),
+                    'workspaceBatchId': workspace_batch_id,
                     'sessionId': session_id,
                     'batchStatus': (confirm_result.get('batchSnapshot') or {}).get('batchStatus') or confirm_result.get('batchStatus'),
                     'importabilityStatus': (confirm_result.get('batchSnapshot') or {}).get('importabilityStatus') or confirm_result.get('importabilityStatus'),
@@ -419,9 +426,45 @@ class BatchRuntimeService:
         if not session_id:
             raise ValueError('batch_session_missing')
         parse_result = self.import_service.get_session_result(session_id)
-        if not parse_result:
-            raise ValueError('session_missing_use_replay')
         shop_id = int(detail.get('shopId') or 1)
+        runtime_audit = {
+            'gateMode': gate_mode,
+            'notes': notes,
+        }
+        reused_workspace_batch_id = None
+        reused_legacy_batch_id = None
+        if not parse_result:
+            file_path = self._get_source_path(detail)
+            if not file_path:
+                raise ValueError('session_missing_use_replay')
+            parse_result = self.import_service.parse_import_file(str(file_path), shop_id=shop_id, operator=operator)
+            parse_result['sourceMode'] = str(detail.get('sourceMode') or 'upload')
+            parse_result['filePath'] = parse_result.get('filePath') or str(file_path)
+            parse_result['fileName'] = parse_result.get('fileName') or file_path.name
+            parse_result['fileSize'] = parse_result.get('fileSize') or file_path.stat().st_size
+            requested_session_id = session_id
+            session_id = int(parse_result.get('sessionId') or 0)
+            reused_workspace_batch_id = str(detail.get('workspaceBatchId') or '').strip() or None
+            reused_legacy_batch_id = self._choose_batch_id(detail.get('batchId'))
+            runtime_audit.update({
+                'sessionMode': 'rehydrated',
+                'requestedSessionId': requested_session_id,
+                'confirmedSessionId': session_id,
+            })
+            if reused_legacy_batch_id is not None:
+                self.batch_service.append_audit_event(
+                    reused_legacy_batch_id,
+                    'confirm_session_rehydrated',
+                    {
+                        'eventType': 'confirm_session_rehydrated',
+                        'traceId': trace_id,
+                        'batchId': reused_legacy_batch_id,
+                        'workspaceBatchId': reused_workspace_batch_id,
+                        'requestedSessionId': requested_session_id,
+                        'confirmedSessionId': session_id,
+                        'sourcePath': str(file_path),
+                    },
+                )
         manual_overrides = list(manual_overrides or [])
         job = self.batch_service.create_job(
             job_type='confirm',
@@ -455,17 +498,16 @@ class BatchRuntimeService:
                 trace_id=trace_id,
                 source_mode=str(parse_result.get('sourceMode') or detail.get('sourceMode') or 'upload'),
                 file_path=file_path,
+                reuse_workspace_batch_id=reused_workspace_batch_id,
+                reuse_legacy_batch_id=reused_legacy_batch_id,
             )
             result_payload = {
                 'batchId': confirm_info.get('formalBatchId'),
-                'workspaceBatchId': confirm_result.get('workspaceBatchId'),
+                'workspaceBatchId': confirm_result.get('workspaceBatchId') or reused_workspace_batch_id or detail.get('workspaceBatchId'),
                 'importedRows': confirm_result.get('importedRows'),
                 'quarantinedRows': confirm_result.get('quarantineCount'),
                 'importabilityStatus': confirm_result.get('importabilityStatus'),
-                'runtimeAudit': {
-                    'gateMode': gate_mode,
-                    'notes': notes,
-                },
+                'runtimeAudit': runtime_audit,
                 'status': 'completed',
                 'contractVersion': self.CONTRACT_VERSION,
             }
