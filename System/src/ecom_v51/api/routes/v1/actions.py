@@ -11,7 +11,7 @@ from ecom_v51.services.action_entry_service import ActionEntryService
 from ecom_v51.services.action_workspace_service import ActionWorkspaceService
 from ecom_v51.services.action_automation_service import ActionAutomationService
 
-from .common import fail, ok
+from .common import fail, get_trace_id, ok
 
 
 actions_bp = Blueprint('api_v1_actions', __name__)
@@ -212,22 +212,59 @@ def get_action_request_approval_history_v1(request_id: str):
 
 @actions_bp.route('/requests/<request_id>/push', methods=['POST'])
 def push_action_request_v1(request_id: str):
+    trace_id = get_trace_id()
     payload = request.get_json(silent=True) or {}
     operator = str(payload.get('operator') or 'system').strip() or 'system'
     channel = str(payload.get('channel') or '').strip() or None
     note = str(payload.get('note') or '').strip() or None
+    idempotency_key = str(request.headers.get('Idempotency-Key') or request.headers.get('IdempotencyKey') or payload.get('idempotencyKey') or '').strip() or None
     try:
-        return ok(_get_action_delivery_service().push(request_id, operator=operator, channel=channel, note=note), status_code=202)
+        data = _get_action_delivery_service().push(
+            request_id,
+            operator=operator,
+            channel=channel,
+            note=note,
+            trace_id=trace_id,
+            idempotency_key=idempotency_key,
+        )
+        return ok(data, trace_id=trace_id, status_code=202)
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'request_not_found':
+            return fail('request_not_found', '动作请求不存在', status_code=404, trace_id=trace_id)
+        if code == 'request_not_approved':
+            return fail('request_not_approved', '仅已批准请求允许执行推送', status_code=409, trace_id=trace_id)
+        return fail('action_push_failed', '执行动作推送失败', details={'reason': code}, status_code=409, trace_id=trace_id)
+    except Exception as exc:
+        return fail('action_push_failed', '执行动作推送失败', details={'reason': str(exc)}, status_code=500, trace_id=trace_id)
+
+
+
+
+@actions_bp.route('/requests/<request_id>/jobs', methods=['GET'])
+def list_action_request_jobs_v1(request_id: str):
+    try:
+        return ok(_get_action_delivery_service().list_request_jobs(request_id))
     except ValueError as exc:
         code = str(exc)
         if code == 'request_not_found':
             return fail('request_not_found', '动作请求不存在', status_code=404)
-        if code == 'request_not_approved':
-            return fail('request_not_approved', '仅已批准请求允许执行推送', status_code=409)
-        return fail('action_push_failed', '执行动作推送失败', details={'reason': code}, status_code=409)
+        return fail('request_jobs_failed', '读取动作作业列表失败', details={'reason': code}, status_code=409)
     except Exception as exc:
-        return fail('action_push_failed', '执行动作推送失败', details={'reason': str(exc)}, status_code=500)
+        return fail('request_jobs_failed', '读取动作作业列表失败', details={'reason': str(exc)}, status_code=500)
 
+
+@actions_bp.route('/requests/<request_id>/recovery', methods=['GET'])
+def get_action_request_recovery_v1(request_id: str):
+    try:
+        return ok(_get_action_delivery_service().get_request_recovery(request_id))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'request_not_found':
+            return fail('request_not_found', '动作请求不存在', status_code=404)
+        return fail('request_recovery_failed', '读取动作恢复视图失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('request_recovery_failed', '读取动作恢复视图失败', details={'reason': str(exc)}, status_code=500)
 
 @actions_bp.route('/requests/<request_id>/delivery', methods=['GET'])
 def get_action_request_delivery_v1(request_id: str):
@@ -380,6 +417,447 @@ def get_action_request_audit_trace_v1(request_id: str):
         return fail('audit_trace_failed', '读取动作审计轨迹失败', details={'reason': code}, status_code=409)
     except Exception as exc:
         return fail('audit_trace_failed', '读取动作审计轨迹失败', details={'reason': str(exc)}, status_code=500)
+
+
+
+
+@actions_bp.route('/jobs/summary', methods=['GET'])
+def get_action_jobs_summary_v1():
+    try:
+        request_id = str(request.args.get('requestId') or '').strip() or None
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        status = str(request.args.get('status') or '').strip() or None
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(
+            _get_action_delivery_service().queue_service.list_jobs_summary(
+                request_id=request_id,
+                batch_ref=batch_ref,
+                action_code=action_code,
+                status=status,
+                limit=limit,
+            )
+        )
+    except Exception as exc:
+        return fail('action_job_summary_failed', '读取动作作业汇总失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/jobs/dashboard', methods=['GET'])
+def get_action_jobs_dashboard_v1():
+    try:
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        limit = request.args.get('limit', default=10, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_jobs_dashboard(batch_ref=batch_ref, limit=limit))
+    except Exception as exc:
+        return fail('action_job_dashboard_failed', '读取动作作业看板失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/jobs/metrics', methods=['GET'])
+def get_action_jobs_metrics_v1():
+    try:
+        request_id = str(request.args.get('requestId') or '').strip() or None
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        status = str(request.args.get('status') or '').strip() or None
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(
+            _get_action_delivery_service().queue_service.get_jobs_metrics(
+                request_id=request_id,
+                batch_ref=batch_ref,
+                action_code=action_code,
+                status=status,
+                limit=limit,
+            )
+        )
+    except Exception as exc:
+        return fail('action_job_metrics_failed', '读取动作作业指标失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/jobs/failure-buckets', methods=['GET'])
+def get_action_jobs_failure_buckets_v1():
+    try:
+        request_id = str(request.args.get('requestId') or '').strip() or None
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(
+            _get_action_delivery_service().queue_service.get_failure_buckets(
+                request_id=request_id,
+                batch_ref=batch_ref,
+                action_code=action_code,
+                limit=limit,
+            )
+        )
+    except Exception as exc:
+        return fail('action_job_failure_buckets_failed', '读取动作作业失败桶失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/jobs/<job_id>/audit', methods=['GET'])
+def get_action_job_audit_v1(job_id: str):
+    try:
+        return ok(_get_action_delivery_service().queue_service.get_job_audit(job_id))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'job_not_found':
+            return fail('job_not_found', '作业不存在', status_code=404)
+        return fail('action_job_audit_failed', '读取动作作业审计视图失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_job_audit_failed', '读取动作作业审计视图失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/requests/<request_id>/audit', methods=['GET'])
+def get_action_request_audit_v1(request_id: str):
+    try:
+        return ok(_get_action_delivery_service().queue_service.get_request_audit(request_id))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'request_not_found':
+            return fail('request_not_found', '动作请求不存在', status_code=404)
+        return fail('action_request_audit_failed', '读取动作请求审计视图失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_request_audit_failed', '读取动作请求审计视图失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/batches/<batch_ref>/audit', methods=['GET'])
+def get_action_batch_audit_v1(batch_ref: str):
+    try:
+        return ok(_get_action_delivery_service().queue_service.get_batch_audit(batch_ref))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'batch_not_found':
+            return fail('batch_not_found', '批次不存在', status_code=404)
+        return fail('action_batch_audit_failed', '读取动作批次审计视图失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_batch_audit_failed', '读取动作批次审计视图失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/batches/<batch_ref>/queue-health', methods=['GET'])
+def get_action_batch_queue_health_v1(batch_ref: str):
+    try:
+        return ok(_get_action_delivery_service().queue_service.get_batch_queue_health(batch_ref))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'batch_not_found':
+            return fail('batch_not_found', '批次不存在', status_code=404)
+        return fail('batch_queue_health_failed', '读取批次队列健康度失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('batch_queue_health_failed', '读取批次队列健康度失败', details={'reason': str(exc)}, status_code=500)
+
+@actions_bp.route('/worker/overview', methods=['GET'])
+def get_action_worker_overview_v1():
+    try:
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        limit = request.args.get('limit', default=10, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_worker_overview(batch_ref=batch_ref, limit=limit))
+    except Exception as exc:
+        return fail('action_worker_overview_failed', '读取动作队列 worker 视图失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/claim-next', methods=['POST'])
+def claim_action_worker_next_job_v1():
+    trace_id = get_trace_id()
+    payload = request.get_json(silent=True) or {}
+    worker_id = str(payload.get('workerId') or payload.get('worker_id') or '').strip()
+    operator = str(payload.get('operator') or worker_id or 'worker').strip() or 'worker'
+    batch_ref = str(payload.get('batchRef') or '').strip() or None
+    note = str(payload.get('note') or '').strip() or None
+    try:
+        data = _get_action_delivery_service().queue_service.claim_next_job(worker_id=worker_id, operator=operator, batch_ref=batch_ref, note=note)
+        return ok(data, trace_id=trace_id, status_code=202)
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'worker_id_required':
+            return fail('worker_id_required', 'workerId 必填', status_code=400, trace_id=trace_id)
+        if code == 'no_job_available':
+            return fail('no_job_available', '当前没有可领取作业', status_code=409, trace_id=trace_id)
+        return fail('action_worker_claim_failed', '领取下一个动作作业失败', details={'reason': code}, status_code=409, trace_id=trace_id)
+    except Exception as exc:
+        return fail('action_worker_claim_failed', '领取下一个动作作业失败', details={'reason': str(exc)}, status_code=500, trace_id=trace_id)
+
+
+
+@actions_bp.route('/worker/stale-jobs', methods=['GET'])
+def get_action_worker_stale_jobs_v1():
+    try:
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        limit = request.args.get('limit', default=10, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_worker_stale_jobs(batch_ref=batch_ref, limit=limit))
+    except Exception as exc:
+        return fail('action_worker_stale_jobs_failed', '读取动作队列 stale jobs 失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/release-stale', methods=['POST'])
+def release_action_worker_stale_jobs_v1():
+    trace_id = get_trace_id()
+    payload = request.get_json(silent=True) or {}
+    batch_ref = str(payload.get('batchRef') or '').strip() or None
+    worker_id = str(payload.get('workerId') or payload.get('worker_id') or '').strip() or None
+    operator = str(payload.get('operator') or 'system').strip() or 'system'
+    limit = int(payload.get('limit') or 20)
+    reason = str(payload.get('reason') or '').strip() or None
+    note = str(payload.get('note') or '').strip() or None
+    try:
+        data = _get_action_delivery_service().queue_service.release_stale_jobs(batch_ref=batch_ref, worker_id=worker_id, operator=operator, limit=limit, reason=reason, note=note)
+        return ok(data, trace_id=trace_id, status_code=202)
+    except Exception as exc:
+        return fail('action_worker_release_stale_failed', '释放 stale 作业失败', details={'reason': str(exc)}, status_code=500, trace_id=trace_id)
+
+
+@actions_bp.route('/worker/lease-audit', methods=['GET'])
+def get_action_worker_lease_audit_v1():
+    try:
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        worker_id = str(request.args.get('workerId') or '').strip() or None
+        event_type = str(request.args.get('eventType') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_worker_lease_audit(batch_ref=batch_ref, worker_id=worker_id, event_type=event_type, action_code=action_code, limit=limit))
+    except Exception as exc:
+        return fail('action_worker_lease_audit_failed', '读取动作队列租约审计失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/command-audit', methods=['GET'])
+def get_action_worker_command_audit_v1():
+    try:
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        worker_id = str(request.args.get('workerId') or '').strip() or None
+        event_type = str(request.args.get('eventType') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_worker_command_audit(batch_ref=batch_ref, worker_id=worker_id, event_type=event_type, action_code=action_code, limit=limit))
+    except Exception as exc:
+        return fail('action_worker_command_audit_failed', '读取动作队列命令审计失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/command-audit/<event_id>', methods=['GET'])
+def get_action_worker_command_audit_detail_v1(event_id: str):
+    try:
+        return ok(_get_action_delivery_service().queue_service.get_worker_command_audit_detail(event_id))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'command_audit_event_not_found':
+            return fail('command_audit_event_not_found', '命令审计事件不存在', status_code=404)
+        return fail('action_worker_command_audit_detail_failed', '读取动作队列命令审计明细失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_worker_command_audit_detail_failed', '读取动作队列命令审计明细失败', details={'reason': str(exc)}, status_code=500)
+
+
+
+@actions_bp.route('/worker/bulk-results', methods=['GET'])
+def get_action_worker_bulk_results_v1():
+    try:
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        command = str(request.args.get('command') or '').strip() or None
+        worker_id = str(request.args.get('workerId') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        result_mode = str(request.args.get('resultMode') or '').strip() or None
+        root_bulk_command_id = str(request.args.get('rootBulkCommandId') or '').strip() or None
+        reexecute_of = str(request.args.get('reexecuteOf') or '').strip() or None
+        parent_bulk_command_id = str(request.args.get('parentBulkCommandId') or '').strip() or None
+        has_children = str(request.args.get('hasChildren') or '').strip() or None
+        lineage_depth = request.args.get('lineageDepth', default=None, type=int)
+        selection = str(request.args.get('selection') or '').strip() or None
+        reexecute_command = str(request.args.get('reexecuteCommand') or '').strip() or None
+        command_mode = str(request.args.get('commandMode') or '').strip() or None
+        source_bulk_command_id = str(request.args.get('sourceBulkCommandId') or '').strip() or None
+        offset = request.args.get('offset', default=0, type=int)
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_history(batch_ref=batch_ref, command=command, worker_id=worker_id, action_code=action_code, result_mode=result_mode, root_bulk_command_id=root_bulk_command_id, reexecute_of=reexecute_of, parent_bulk_command_id=parent_bulk_command_id, has_children=has_children, lineage_depth=lineage_depth, selection=selection, reexecute_command=reexecute_command, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, offset=offset, limit=limit))
+    except Exception as exc:
+        return fail('action_worker_bulk_results_failed', '读取动作队列批量命令结果失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/bulk-results/<bulk_command_id>', methods=['GET'])
+def get_action_worker_bulk_result_detail_v1(bulk_command_id: str):
+    try:
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_detail(bulk_command_id))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'bulk_command_not_found':
+            return fail('bulk_command_not_found', '批量命令结果不存在', status_code=404)
+        return fail('action_worker_bulk_result_detail_failed', '读取动作队列批量命令结果明细失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_worker_bulk_result_detail_failed', '读取动作队列批量命令结果明细失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/bulk-results/<bulk_command_id>/related', methods=['GET'])
+def get_action_worker_bulk_result_related_v1(bulk_command_id: str):
+    try:
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_related(bulk_command_id, limit=limit))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'bulk_command_not_found':
+            return fail('bulk_command_not_found', '批量命令结果不存在', status_code=404)
+        return fail('action_worker_bulk_result_related_failed', '读取动作队列批量命令关联结果失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_worker_bulk_result_related_failed', '读取动作队列批量命令关联结果失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/bulk-results/<bulk_command_id>/timeline', methods=['GET'])
+def get_action_worker_bulk_result_timeline_v1(bulk_command_id: str):
+    try:
+        result_mode = str(request.args.get('resultMode') or '').strip() or None
+        event_type = str(request.args.get('eventType') or '').strip() or None
+        command = str(request.args.get('command') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        lineage_depth = request.args.get('lineageDepth', default=None, type=int)
+        command_mode = str(request.args.get('commandMode') or '').strip() or None
+        source_bulk_command_id = str(request.args.get('sourceBulkCommandId') or '').strip() or None
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_timeline(bulk_command_id, result_mode=result_mode, event_type=event_type, command=command, action_code=action_code, lineage_depth=lineage_depth, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, limit=limit))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'bulk_command_not_found':
+            return fail('bulk_command_not_found', '批量命令结果不存在', status_code=404)
+        return fail('action_worker_bulk_result_timeline_failed', '读取批量命令结果时间线失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_worker_bulk_result_timeline_failed', '读取批量命令结果时间线失败', details={'reason': str(exc)}, status_code=500)
+
+
+
+@actions_bp.route('/worker/bulk-results/<bulk_command_id>/lineage-summary', methods=['GET'])
+def get_action_worker_bulk_result_lineage_summary_v1(bulk_command_id: str):
+    try:
+        event_type = str(request.args.get('eventType') or '').strip() or None
+        action_code = str(request.args.get('actionCode') or '').strip() or None
+        lineage_depth = request.args.get('lineageDepth', default=None, type=int)
+        command_mode = str(request.args.get('commandMode') or '').strip() or None
+        source_bulk_command_id = str(request.args.get('sourceBulkCommandId') or '').strip() or None
+        selection = str(request.args.get('selection') or '').strip() or None
+        reexecute_command = str(request.args.get('reexecuteCommand') or '').strip() or None
+        limit = request.args.get('limit', default=20, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_lineage_summary(bulk_command_id, event_type=event_type, action_code=action_code, lineage_depth=lineage_depth, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, selection=selection, reexecute_command=reexecute_command, limit=limit))
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'bulk_command_not_found':
+            return fail('bulk_command_not_found', '批量命令结果不存在', status_code=404)
+        return fail('action_worker_bulk_result_lineage_summary_failed', '读取批量命令 lineage 汇总失败', details={'reason': code}, status_code=409)
+    except Exception as exc:
+        return fail('action_worker_bulk_result_lineage_summary_failed', '读取批量命令 lineage 汇总失败', details={'reason': str(exc)}, status_code=500)
+
+
+@actions_bp.route('/worker/bulk-results/<bulk_command_id>/re-execute', methods=['POST'])
+def reexecute_action_worker_bulk_result_v1(bulk_command_id: str):
+    trace_id = get_trace_id()
+    payload = request.get_json(silent=True) or {}
+    selection = str(payload.get('selection') or 'failed').strip() or 'failed'
+    command = str(payload.get('command') or '').strip() or None
+    operator = str(payload.get('operator') or 'system').strip() or 'system'
+    worker_id = str(payload.get('workerId') or payload.get('worker_id') or '').strip() or None
+    reason = str(payload.get('reason') or '').strip() or None
+    note = str(payload.get('note') or '').strip() or None
+    external_ref = str(payload.get('externalRef') or '').strip() or None
+    try:
+        data = _get_action_delivery_service().queue_service.reexecute_bulk_command(
+            bulk_command_id,
+            selection=selection,
+            command=command,
+            operator=operator,
+            worker_id=worker_id,
+            reason=reason,
+            note=note,
+            external_ref=external_ref,
+        )
+        return ok(data, trace_id=trace_id, status_code=202)
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'bulk_command_not_found':
+            return fail('bulk_command_not_found', '批量命令结果不存在', status_code=404, trace_id=trace_id)
+        if code == 'unsupported_bulk_selection':
+            return fail('unsupported_bulk_selection', '不支持的批量历史重放选择', status_code=400, trace_id=trace_id)
+        if code == 'bulk_command_no_jobs_to_reexecute':
+            return fail('bulk_command_no_jobs_to_reexecute', '当前批量历史没有可再执行作业', status_code=409, trace_id=trace_id)
+        if code == 'unsupported_bulk_command':
+            return fail('unsupported_bulk_command', '不支持的批量命令', status_code=400, trace_id=trace_id)
+        return fail('action_worker_bulk_result_reexecute_failed', '重新执行批量命令失败', details={'reason': code}, status_code=409, trace_id=trace_id)
+    except Exception as exc:
+        return fail('action_worker_bulk_result_reexecute_failed', '重新执行批量命令失败', details={'reason': str(exc)}, status_code=500, trace_id=trace_id)
+
+
+@actions_bp.route('/worker/bulk-results/<bulk_command_id>/lineage-command', methods=['POST'])
+def reexecute_action_worker_bulk_result_lineage_v1(bulk_command_id: str):
+    trace_id = get_trace_id()
+    payload = request.get_json(silent=True) or {}
+    selection = str(payload.get('selection') or 'failed').strip() or 'failed'
+    command = str(payload.get('command') or '').strip() or None
+    scope = str(payload.get('scope') or 'entire_lineage').strip() or 'entire_lineage'
+    operator = str(payload.get('operator') or 'system').strip() or 'system'
+    worker_id = str(payload.get('workerId') or payload.get('worker_id') or '').strip() or None
+    reason = str(payload.get('reason') or '').strip() or None
+    note = str(payload.get('note') or '').strip() or None
+    external_ref = str(payload.get('externalRef') or '').strip() or None
+    try:
+        data = _get_action_delivery_service().queue_service.reexecute_bulk_command_lineage(
+            bulk_command_id,
+            selection=selection,
+            command=command,
+            scope=scope,
+            operator=operator,
+            worker_id=worker_id,
+            reason=reason,
+            note=note,
+            external_ref=external_ref,
+        )
+        return ok(data, trace_id=trace_id, status_code=202)
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'bulk_command_not_found':
+            return fail('bulk_command_not_found', '批量命令结果不存在', status_code=404, trace_id=trace_id)
+        if code == 'unsupported_bulk_selection':
+            return fail('unsupported_bulk_selection', '不支持的批量历史重放选择', status_code=400, trace_id=trace_id)
+        if code == 'unsupported_lineage_scope':
+            return fail('unsupported_lineage_scope', '不支持的 lineage 重放范围', status_code=400, trace_id=trace_id)
+        if code == 'bulk_command_no_jobs_to_reexecute':
+            return fail('bulk_command_no_jobs_to_reexecute', '当前 lineage 没有可再执行作业', status_code=409, trace_id=trace_id)
+        if code == 'unsupported_bulk_command':
+            return fail('unsupported_bulk_command', '不支持的批量命令', status_code=400, trace_id=trace_id)
+        return fail('action_worker_bulk_result_lineage_reexecute_failed', '重新执行 lineage 批量命令失败', details={'reason': code}, status_code=409, trace_id=trace_id)
+    except Exception as exc:
+        return fail('action_worker_bulk_result_lineage_reexecute_failed', '重新执行 lineage 批量命令失败', details={'reason': str(exc)}, status_code=500, trace_id=trace_id)
+
+
+@actions_bp.route('/worker/bulk-command', methods=['POST'])
+def execute_action_worker_bulk_command_v1():
+    trace_id = get_trace_id()
+    payload = request.get_json(silent=True) or {}
+    command = str(payload.get('command') or '').strip()
+    job_ids = payload.get('jobIds') if isinstance(payload.get('jobIds'), list) else []
+    operator = str(payload.get('operator') or 'system').strip() or 'system'
+    worker_id = str(payload.get('workerId') or payload.get('worker_id') or '').strip() or None
+    reason = str(payload.get('reason') or '').strip() or None
+    note = str(payload.get('note') or '').strip() or None
+    external_ref = str(payload.get('externalRef') or '').strip() or None
+    try:
+        data = _get_action_delivery_service().queue_service.execute_bulk_command(
+            command=command,
+            job_ids=job_ids,
+            operator=operator,
+            worker_id=worker_id,
+            reason=reason,
+            note=note,
+            external_ref=external_ref,
+        )
+        return ok(data, trace_id=trace_id, status_code=202)
+    except ValueError as exc:
+        code = str(exc)
+        if code == 'unsupported_bulk_command':
+            return fail('unsupported_bulk_command', '不支持的批量命令', status_code=400, trace_id=trace_id)
+        if code == 'job_ids_required':
+            return fail('job_ids_required', 'jobIds 必填', status_code=400, trace_id=trace_id)
+        return fail('action_worker_bulk_command_failed', '执行动作队列批量命令失败', details={'reason': code}, status_code=409, trace_id=trace_id)
+    except Exception as exc:
+        return fail('action_worker_bulk_command_failed', '执行动作队列批量命令失败', details={'reason': str(exc)}, status_code=500, trace_id=trace_id)
+
+
+@actions_bp.route('/store/overview', methods=['GET'])
+def get_action_store_overview_v1():
+    try:
+        batch_ref = str(request.args.get('batchRef') or '').strip() or None
+        limit = request.args.get('limit', default=10, type=int)
+        return ok(_get_action_delivery_service().queue_service.get_store_overview(batch_ref=batch_ref, limit=limit))
+    except Exception as exc:
+        return fail('action_store_overview_failed', '读取动作队列存储视图失败', details={'reason': str(exc)}, status_code=500)
 
 
 @actions_bp.route('/workspace/summary', methods=['GET'])

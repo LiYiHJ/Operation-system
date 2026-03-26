@@ -34,6 +34,13 @@ ACTION_APPROVAL_HISTORY: Dict[str, List[Dict[str, Any]]] = {}
 ACTION_DELIVERY_HISTORY: Dict[str, List[Dict[str, Any]]] = {}
 ACTION_CALLBACK_HISTORY: Dict[str, List[Dict[str, Any]]] = {}
 ACTION_COMPENSATION_HISTORY: Dict[str, List[Dict[str, Any]]] = {}
+ACTION_JOBS: Dict[str, Dict[str, Any]] = {}
+ACTION_JOB_EVENTS: Dict[str, List[Dict[str, Any]]] = {}
+ACTION_REQUEST_JOB_INDEX: Dict[str, List[str]] = {}
+ACTION_JOB_IDEMPOTENCY: Dict[str, str] = {}
+ACTION_JOB_COMMAND_IDEMPOTENCY: Dict[str, str] = {}
+ACTION_BULK_COMMANDS: Dict[str, Dict[str, Any]] = {}
+ACTION_BULK_COMMAND_ORDER: List[str] = []
 
 
 def utcnow_iso() -> str:
@@ -51,3 +58,10 @@ def reset_action_store() -> None:
     ACTION_DELIVERY_HISTORY.clear()
     ACTION_CALLBACK_HISTORY.clear()
     ACTION_COMPENSATION_HISTORY.clear()
+    ACTION_JOBS.clear()
+    ACTION_JOB_EVENTS.clear()
+    ACTION_REQUEST_JOB_INDEX.clear()
+    ACTION_JOB_IDEMPOTENCY.clear()
+    ACTION_JOB_COMMAND_IDEMPOTENCY.clear()
+    ACTION_BULK_COMMANDS.clear()
+    ACTION_BULK_COMMAND_ORDER.clear()

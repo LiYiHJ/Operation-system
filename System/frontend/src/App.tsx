@@ -17,6 +17,7 @@ const DecisionEngine = lazy(() => import('./pages/DecisionEngine'))
 const ProfitCalculator = lazy(() => import('./pages/ProfitCalculator'))
 const LoginPage = lazy(() => import('./pages/Login'))
 const SystemSettings = lazy(() => import('./pages/SystemSettings'))
+const ActionJobs = lazy(() => import('./pages/ActionJobs'))
 
 function PageLoading() {
   return <div style={{ padding: 24 }}>页面加载中...</div>
@@ -76,6 +77,15 @@ function App() {
               element={
                 <Suspense fallback={<PageLoading />}>
                   <SystemSettings />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="action-jobs"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <ActionJobs />
                 </Suspense>
               }
             />

@@ -16,6 +16,7 @@ import {
   BellOutlined,
   SettingOutlined,
   LogoutOutlined,
+  DeploymentUnitOutlined,
 } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { reminderApi } from '../services/api'
@@ -64,6 +65,7 @@ export default function Layout() {
     { key: '/ads', icon: <AimOutlined />, label: '广告管理' },
     { key: '/strategy', icon: <BulbOutlined />, label: '策略清单' },
     { key: '/decision', icon: <ThunderboltOutlined />, label: '智能决策' },
+    { key: '/action-jobs', icon: <DeploymentUnitOutlined />, label: '动作队列' },
     { key: '/settings', icon: <SettingOutlined />, label: '系统设置' },
   ]
 

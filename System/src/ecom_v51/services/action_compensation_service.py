@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from .action_queue_service import ActionQueueService
 from .action_store import (
     ACTION_CALLBACK_HISTORY,
     ACTION_COMPENSATION_HISTORY,
@@ -14,6 +15,9 @@ from .action_store import (
 
 class ActionCompensationService:
     CONTRACT_VERSION = 'p5.4.action_compensation.v1'
+
+    def __init__(self, queue_service: ActionQueueService | None = None) -> None:
+        self.queue_service = queue_service or ActionQueueService()
 
     def _get_request(self, request_id: str) -> Dict[str, Any]:
         item = ACTION_REQUESTS.get(str(request_id))
@@ -74,6 +78,7 @@ class ActionCompensationService:
             'compensationEvaluationId': new_id('comp'),
             'requestId': str(request_id),
             'deliveryId': delivery.get('deliveryId'),
+            'jobId': delivery.get('jobId') or item.get('lastJobId'),
             'callbackEventId': callback.get('callbackEventId'),
             'evaluatedAt': evaluated_at,
             'shouldCompensate': bool(policy_result.get('shouldCompensate')),
@@ -89,9 +94,33 @@ class ActionCompensationService:
         item['lastCompensationEvaluatedAt'] = evaluation['evaluatedAt']
         item['lastCompensationReason'] = evaluation['reason']
         item['lastCompensationRecommendedAction'] = evaluation['recommendedAction']
+        job_id = evaluation.get('jobId')
+        if job_id:
+            self.queue_service.append_job_event(
+                str(job_id),
+                event_type='compensation_evaluated',
+                status=item['compensationState'],
+                actor=evaluation['operator'],
+                message=evaluation['recommendedAction'],
+                payload={
+                    'compensationEvaluationId': evaluation['compensationEvaluationId'],
+                    'reason': evaluation['reason'],
+                    'level': evaluation['level'],
+                    'shouldCompensate': evaluation['shouldCompensate'],
+                },
+                event_at=evaluation['evaluatedAt'],
+            )
+            self.queue_service._touch_job(
+                str(job_id),
+                lastCompensationAt=evaluation['evaluatedAt'],
+                compensationState=item['compensationState'],
+                lastCompensationEvaluationId=evaluation['compensationEvaluationId'],
+                recoveryState='manual_review_recommended' if evaluation['shouldCompensate'] else None,
+            )
         return {
             'requestId': str(request_id),
             'deliveryId': delivery.get('deliveryId'),
+            'jobId': job_id,
             'compensationEvaluationId': evaluation['compensationEvaluationId'],
             'latestCompensationState': item['compensationState'],
             'evaluatedAt': evaluation['evaluatedAt'],
@@ -104,7 +133,7 @@ class ActionCompensationService:
         }
 
     def get_compensation_state(self, request_id: str) -> Dict[str, Any]:
-        self._get_request(request_id)
+        item = self._get_request(request_id)
         delivery = self._get_latest_delivery(request_id)
         history = ACTION_COMPENSATION_HISTORY.get(str(request_id), [])
         if not history:
@@ -114,6 +143,7 @@ class ActionCompensationService:
             'contractVersion': self.CONTRACT_VERSION,
             'requestId': str(request_id),
             'deliveryId': delivery.get('deliveryId'),
+            'jobId': delivery.get('jobId') or item.get('lastJobId'),
             'latestCompensationState': (latest or {}).get('level') if (latest or {}).get('shouldCompensate') else ((latest or {}) and 'not_required') or 'not_evaluated',
             'latestEvaluationId': (latest or {}).get('compensationEvaluationId'),
             'latestReason': (latest or {}).get('reason'),
