@@ -83,7 +83,12 @@ const STANDARD_FIELDS = {
 }
 
 
-export default function DataImportV2() {
+type DataImportV2Props = {
+  datasetKind?: string
+  importProfile?: string
+}
+
+export default function DataImportV2({ datasetKind = 'orders', importProfile = 'ozon_orders_report' }: DataImportV2Props) {
   const [currentStep, setCurrentStep] = useState(0)
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -95,10 +100,10 @@ export default function DataImportV2() {
   const semanticRisk = importResult?.finalStatus === 'risk'
 
   const renderGateTag = (status?: 'passed' | 'risk' | 'failed') => {
-    if (status === 'passed') return <Tag color="green">passed</Tag>
-    if (status === 'risk') return <Tag color="orange">risk</Tag>
-    if (status === 'failed') return <Tag color="red">failed</Tag>
-    return <Tag color="default">n/a</Tag>
+    if (status === 'passed') return <Tag color="green">通过</Tag>
+    if (status === 'risk') return <Tag color="orange">风险</Tag>
+    if (status === 'failed') return <Tag color="red">失败</Tag>
+    return <Tag color="default">未判定</Tag>
   }
 
   useEffect(() => {
@@ -121,6 +126,13 @@ export default function DataImportV2() {
         // keep local fallback
       })
   }, [])
+
+  useEffect(() => {
+    setCurrentStep(0)
+    setFileList([])
+    setSelectedFile(null)
+    setImportResult(null)
+  }, [datasetKind, importProfile])
 
   const buildDisplayStats = (result: ImportResult) => {
     const ignoredFields = new Set(result.stats?.ignoredFields || [])
@@ -170,7 +182,7 @@ export default function DataImportV2() {
     setCurrentStep(1)
 
     try {
-      const result = await importApi.uploadFile(selectedFile, 1)
+      const result = await importApi.uploadFile(selectedFile, 1, undefined, { datasetKind, importProfile })
       setImportResult(result)
       setCurrentStep(2)
       if (result.finalStatus === 'risk') {
@@ -294,10 +306,26 @@ export default function DataImportV2() {
         sessionId: importResult.sessionId,
         shopId: 1,
         manualOverrides: importResult.fieldMappings,
+        datasetKind: (importResult as any).datasetKind || datasetKind,
+        importProfile: (importResult as any).importProfile || importProfile,
       })
 
       if (result.status === 'success') {
-        message.success(`成功导入 ${result.importedRows} 条数据！`)
+        const uiOutcome = (result as any).uiOutcome
+        const userMessage = (result as any).userMessage
+        if (uiOutcome === 'blocked') {
+          message.warning(userMessage || `导入已阻断：0 条入库，${result.quarantineCount || 0} 条已隔离`)
+        } else if (uiOutcome === 'partial') {
+          message.warning(userMessage || `导入部分完成：已导入 ${result.importedRows || 0} 条`)
+        } else {
+          message.success(userMessage || `成功导入 ${result.importedRows || 0} 条数据！`)
+        }
+        setImportResult({
+          ...importResult,
+          ...(result as any),
+          datasetKind: (importResult as any).datasetKind || datasetKind,
+          importProfile: (importResult as any).importProfile || importProfile,
+        } as any)
         setCurrentStep(3)
       } else {
         throw new Error(result.errors?.[0] || '导入失败')
@@ -337,6 +365,11 @@ export default function DataImportV2() {
             <p>✅ 智能字段映射（支持俄语/中文/英语）</p>
             <p>✅ 手动调整映射（针对特殊格式）</p>
             <p>✅ 保存映射模板（下次导入直接使用）</p>
+            <p>
+              当前导入目标：
+              <Tag color="blue" style={{ marginLeft: 8 }}>{datasetKind}</Tag>
+              <Tag color="purple">{importProfile}</Tag>
+            </p>
           </div>
         }
         type="info"
@@ -695,11 +728,16 @@ export default function DataImportV2() {
         </Space>
 
         {/* 字段映射表格 */}
-        <Card title="字段映射调整" extra={<Tag color="blue">点击"映射到"列可手动调整</Tag>}>
+        <Card title="字段映射调整" extra={<Tag color="blue">点击“映射到”列可手动调整；大列表已恢复分页</Tag>}>
           <Table
             dataSource={importResult.fieldMappings}
             columns={columns}
-            pagination={false}
+            pagination={{
+              pageSize: 20,
+              showSizeChanger: true,
+              pageSizeOptions: ['20', '50', '100'],
+              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条 / 共 ${total} 条`,
+            }}
             rowKey="originalField"
             scroll={{ x: 1000 }}
           />
@@ -729,23 +767,58 @@ export default function DataImportV2() {
   }
 
   // 步骤3: 完成
-  const renderCompleteStep = () => (
+  const renderCompleteStep = () => {
+    const result = importResult as any
+    const uiOutcome = result?.uiOutcome || (result?.quarantineCount && !result?.importedRows ? 'blocked' : 'imported')
+    const title =
+      uiOutcome === 'blocked'
+        ? '导入已阻断'
+        : uiOutcome === 'partial'
+        ? '导入部分完成'
+        : uiOutcome === 'empty'
+        ? '流程已完成'
+        : '导入成功'
+    const color =
+      uiOutcome === 'blocked'
+        ? '#faad14'
+        : uiOutcome === 'partial'
+        ? '#fa8c16'
+        : '#52c41a'
+    const importedRows = result?.importedRows ?? 0
+    const quarantineCount = result?.quarantineCount ?? 0
+
+    return (
     <div style={{ textAlign: 'center', padding: '48px' }}>
-      <CheckCircleOutlined style={{ fontSize: '64px', color: '#52c41a' }} />
-      <h2 style={{ marginTop: '24px' }}>导入成功！</h2>
+      <CheckCircleOutlined style={{ fontSize: '64px', color }} />
+      <h2 style={{ marginTop: '24px' }}>{title}</h2>
       <p style={{ color: '#8c8c8c', fontSize: '16px' }}>
-        已成功导入 {importResult?.totalRows.toLocaleString()} 条数据
+        本次 {importedRows} 条入库，{quarantineCount} 条数据已隔离
       </p>
 
       <Divider />
 
+      <Alert
+        type={uiOutcome === 'blocked' ? 'warning' : uiOutcome === 'partial' ? 'info' : 'success'}
+        showIcon
+        style={{ maxWidth: 720, margin: '0 auto 24px' }}
+        message="执行摘要"
+        description={
+          <div style={{ textAlign: 'left' }}>
+            <div>batchStatus: {result?.batchStatus || '—'}</div>
+            <div>importability: {result?.importabilityStatus || '—'}</div>
+            <div>原因: {(result?.errors || result?.importabilityReasons || []).join(' / ') || '—'}</div>
+          </div>
+        }
+      />
+
       <Space>
-        <Button type="primary" onClick={() => window.location.href = '/dashboard'}>
-          查看仪表盘
+        <Button type="primary" onClick={() => window.location.href = '/import'}>
+          查看工作台
         </Button>
         <Button onClick={() => {
           setCurrentStep(0)
           setFileList([])
+          setSelectedFile(null)
           setImportResult(null)
         }}>
           继续导入
@@ -753,6 +826,7 @@ export default function DataImportV2() {
       </Space>
     </div>
   )
+  }
 
   return (
     <div style={{ padding: '24px' }}>
@@ -805,17 +879,15 @@ export default function DataImportV2() {
 
           <Tabs.TabPane tab="常见问题" key="faq">
             <ul>
-              <li><strong>Q: 文件表头不在第一行怎么办？</strong><br />
-                A: 系统会自动扫描前 20 行并尝试定位真实表头；若仍未识别，可先整理后再导入。
+              <li><strong>Q: 文件表头不在第一行怎么办？</strong>                系统会自动扫描前 20 行并尝试识别真实表头；如果识别不准，可在字段映射页手动调整。
               </li>
-              <li><strong>Q: 为什么会出现语义风险提示？</strong><br />
-                A: 这表示链路可达，但关键字段组合、结构风险或映射覆盖度尚未完全满足门禁条件，可查看 semantic gate reasons。
+              <li>
+                <strong>Q: 有未映射字段怎么办？</strong>
+                可以先导入核心字段；未映射字段会保留在映射结果里，后续可再补充规则或手动映射。
               </li>
-              <li><strong>Q: recoveryAttempted / headerRecoveryApplied / recoveryImproved 分别是什么意思？</strong><br />
-                A: recoveryAttempted 表示是否执行过表头恢复；headerRecoveryApplied 表示是否采用恢复后的 bundle；recoveryImproved 表示恢复后指标是否量化改善。
-              </li>
-              <li><strong>Q: JSON 是否已经完全验证？</strong><br />
-                A: 当前能力存在，但真实样本验证仍待补齐；现阶段 xlsx / csv 有实证，json 不应对外宣称已全部验证。
+              <li>
+                <strong>Q: 为什么会出现语义风险提示？</strong>
+                说明文件虽然可读取，但语义门禁检测到核心字段或结构风险，请先检查原因后再决定是否继续导入。
               </li>
             </ul>
           </Tabs.TabPane>

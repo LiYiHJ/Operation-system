@@ -1,5 +1,5 @@
 import { Row, Col, Card, Table, Tag, Statistic, Progress } from 'antd'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../../components/charts/LazyEChart'
 
 export default function StrategyList() {
   const strategySummary = {
@@ -142,12 +142,12 @@ export default function StrategyList() {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={12}>
           <Card>
-            <ReactECharts option={executionRateOption} style={{ height: 300 }} />
+            <LazyEChart option={executionRateOption} style={{ height: 300 }} />
           </Card>
         </Col>
         <Col span={12}>
           <Card>
-            <ReactECharts option={priorityDistOption} style={{ height: 300 }} />
+            <LazyEChart option={priorityDistOption} style={{ height: 300 }} />
           </Card>
         </Col>
       </Row>

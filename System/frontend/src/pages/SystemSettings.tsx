@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Alert, Button, Card, Checkbox, Col, Form, Input, Row, Select, Space, Switch, Table, Tabs, Tag, message } from 'antd'
-import { ReloadOutlined, ApiOutlined, SendOutlined, SafetyOutlined } from '@ant-design/icons'
+import { ReloadOutlined, ApiOutlined, SendOutlined, SafetyOutlined, SettingOutlined } from '@ant-design/icons'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { integrationApi } from '../services/api'
-import DataImportV2 from './DataImportV2'
 import { OpsPageHeader } from '../components/ops/ProductSection'
 
 export default function SystemSettings() {
@@ -51,7 +50,7 @@ export default function SystemSettings() {
     actionToken: cfg?.credentials?.actionToken || '',
     sellerId: cfg?.credentials?.sellerId || '',
     useMockOzon: !!cfg?.settings?.useMockOzon,
-    salesPushUrl: cfg?.settings?.sales_push_url || 'http://127.0.0.1:5000/api/integration/mock/sales-backend',
+    salesPushUrl: cfg?.settings?.sales_push_url || '/api/integration/mock/sales-backend',
   }), [cfg])
 
   const syncColumns = [
@@ -89,9 +88,10 @@ export default function SystemSettings() {
 
   return (
     <div style={{ padding: 24 }}>
-      <OpsPageHeader title="⚙️ 系统设置" subtitle="数据接入中心：Ozon API 自动拉取为主，文件导入为辅。" />
+      <OpsPageHeader title="⚙️ 系统设置" subtitle="这里仅保留平台连接、同步规则、模板与全局配置；导入执行已迁移到“数据工作台”。" />
       <Tabs
         defaultActiveKey="access"
+        type="card"
         items={[
           {
             key: 'access',
@@ -157,12 +157,25 @@ export default function SystemSettings() {
             ),
           },
           {
-            key: 'import',
-            label: '文件导入',
+            key: 'rules',
+            label: '模板与规则',
             children: (
-              <Card title="文件导入（备用入口）" extra={<Tag color="blue">文件导入 / API 接入统一在系统设置管理</Tag>}>
-                <DataImportV2 />
-              </Card>
+              <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                <Alert
+                  type="info"
+                  showIcon
+                  message="导入执行已迁移到数据工作台"
+                  description="系统设置只保留配置型能力。这里后续承载导入模板、字段映射策略、默认阈值和全局规则维护，不再承载日常导入流程。"
+                />
+                <Card title="当前规划" extra={<Tag color="blue"><SettingOutlined /> 配置型页面</Tag>}>
+                  <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+                    <li>字段映射模板维护</li>
+                    <li>默认导入 profile/阈值管理</li>
+                    <li>平台连接与同步范围配置</li>
+                    <li>全局规则与权限设置</li>
+                  </ul>
+                </Card>
+              </Space>
             ),
           },
           {

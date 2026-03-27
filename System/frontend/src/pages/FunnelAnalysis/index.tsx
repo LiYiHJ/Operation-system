@@ -1,5 +1,5 @@
 import { Row, Col, Card, Tag, Alert } from 'antd'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../../components/charts/LazyEChart'
 
 export default function FunnelAnalysis() {
   const funnelData = {
@@ -98,12 +98,12 @@ export default function FunnelAnalysis() {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={12}>
           <Card>
-            <ReactECharts option={funnelChartOption} style={{ height: 400 }} />
+            <LazyEChart option={funnelChartOption} style={{ height: 400 }} />
           </Card>
         </Col>
         <Col span={12}>
           <Card>
-            <ReactECharts option={rateTrendOption} style={{ height: 400 }} />
+            <LazyEChart option={rateTrendOption} style={{ height: 400 }} />
           </Card>
         </Col>
       </Row>

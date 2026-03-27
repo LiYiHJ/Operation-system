@@ -1,6 +1,6 @@
 import { Card, Row, Col, Table, Tag, Button, Select, Space, Statistic, Badge, Modal, Divider, Progress, Tooltip, message } from 'antd'
 import { CheckCircleOutlined, WarningOutlined, ClockCircleOutlined, BulbOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { strategyApi } from '../services/api'
@@ -383,17 +383,17 @@ export default function StrategyList() {
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         <Col xs={24} lg={8}>
           <Card>
-            <ReactECharts option={priorityDistributionOption} style={{ height: '300px' }} />
+            <LazyEChart option={priorityDistributionOption} style={{ height: '300px' }} />
           </Card>
         </Col>
         <Col xs={24} lg={8}>
           <Card>
-            <ReactECharts option={typeDistributionOption} style={{ height: '300px' }} />
+            <LazyEChart option={typeDistributionOption} style={{ height: '300px' }} />
           </Card>
         </Col>
         <Col xs={24} lg={8}>
           <Card>
-            <ReactECharts option={statusDistributionOption} style={{ height: '300px' }} />
+            <LazyEChart option={statusDistributionOption} style={{ height: '300px' }} />
           </Card>
         </Col>
       </Row>

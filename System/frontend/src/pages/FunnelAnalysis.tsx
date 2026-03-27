@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, Row, Col, Table, Tag, Button, Select, Space, Statistic, List, message, Empty } from 'antd'
 import { UserOutlined, ShoppingCartOutlined, DollarOutlined, SendOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { thematicApi } from '../services/api'
@@ -58,7 +58,7 @@ export default function FunnelAnalysis() {
       <Col xs={24} lg={6}><Card><Statistic title="总订单" value={data?.summary?.totalOrders || 0} formatter={(v) => formatInteger(v)} /></Card></Col>
     </Row>
     <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-      <Col xs={24} lg={14}><Card title="漏斗总览"><ReactECharts option={funnelChart} style={{ height: 340 }} /></Card></Col>
+      <Col xs={24} lg={14}><Card title="漏斗总览"><LazyEChart option={funnelChart} style={{ height: 340 }} /></Card></Col>
       <Col xs={24} lg={10}><Card title="问题识别 / 推荐动作">{data?.issues?.length ? <List size="small" dataSource={data?.issues || []} renderItem={(x: any) => <List.Item>{displayOrDash(x.sku)} / {displayOrDash(x.bottleneck)} / {displayOrDash(x.recommendation)}</List.Item>} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无问题" />}</Card></Col>
     </Row>
     <Card title="漏斗明细" extra={<Space><Select value={filter} onChange={setFilter} options={[{ value: 'all', label: '全部' }, { value: 'CTR', label: 'CTR瓶颈' }, { value: '加购率', label: '加购率瓶颈' }, { value: '下单率', label: '下单率瓶颈' }, { value: '无', label: '无瓶颈' }]} /><Button type="primary" onClick={() => navigate('/decision')}>去决策</Button></Space>}>

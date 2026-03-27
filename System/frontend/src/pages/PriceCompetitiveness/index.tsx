@@ -1,5 +1,5 @@
 import { Row, Col, Card, Table, Tag, Progress, Alert } from 'antd'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../../components/charts/LazyEChart'
 
 export default function PriceCompetitiveness() {
   const priceDistribution = {
@@ -97,12 +97,12 @@ export default function PriceCompetitiveness() {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={12}>
           <Card>
-            <ReactECharts option={priceZoneOption} style={{ height: 300 }} />
+            <LazyEChart option={priceZoneOption} style={{ height: 300 }} />
           </Card>
         </Col>
         <Col span={12}>
           <Card>
-            <ReactECharts option={priceIndexTrendOption} style={{ height: 300 }} />
+            <LazyEChart option={priceIndexTrendOption} style={{ height: 300 }} />
           </Card>
         </Col>
       </Row>

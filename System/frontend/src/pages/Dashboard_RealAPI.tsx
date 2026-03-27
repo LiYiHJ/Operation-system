@@ -1,6 +1,6 @@
 import { Row, Col, Card, Statistic, Table, Tag, Progress, Divider, Alert, Spin } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined, ShoppingCart, DollarOutlined, WarningOutlined, CheckCircleOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import dayjs from 'dayjs'
@@ -335,7 +335,7 @@ export default function Dashboard() {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={24}>
           <Card>
-            <ReactECharts option={trendChartOption} style={{ height: 300 }} />
+            <LazyEChart option={trendChartOption} style={{ height: 300 }} />
           </Card>
         </Col>
       </Row>

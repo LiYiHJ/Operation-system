@@ -1,6 +1,6 @@
 import { Row, Col, Card, Statistic, Table, Tag, Progress, Divider, Button, Space, List, Skeleton, Alert, Empty, Tabs } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined, ShoppingCartOutlined, DollarOutlined, WarningOutlined, RocketOutlined, ThunderboltOutlined, CheckCircleOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import dayjs from 'dayjs'
@@ -138,7 +138,7 @@ export default function Dashboard() {
             label: '趋势与告警',
             children: (
               <Row gutter={[16, 16]}>
-                <Col xs={24} lg={16}><Card title="趋势区：7日营收与订单"><ReactECharts option={trendChartOption} style={{ height: '320px' }} /></Card></Col>
+                <Col xs={24} lg={16}><Card title="趋势区：7日营收与订单"><LazyEChart option={trendChartOption} style={{ height: '320px' }} /></Card></Col>
                 <Col xs={24} lg={8}><Card title={<span><WarningOutlined /> 告警区：紧急事项</span>}><Table dataSource={metrics?.alerts || []} columns={alertColumns} locale={{ emptyText: '暂无告警' }} pagination={false} size="small" rowKey="sku" scroll={{ y: 280 }} /></Card></Col>
               </Row>
             ),

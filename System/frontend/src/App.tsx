@@ -1,24 +1,34 @@
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
 import Layout from './layout/Layout'
-import Dashboard from './pages/Dashboard'
-import DataImport from './pages/DataImportV2'
-import ABCAnalysis from './pages/ABCAnalysis'
-import PriceCompetitiveness from './pages/PriceCompetitiveness'
-import FunnelAnalysis from './pages/FunnelAnalysis'
-import InventoryAlert from './pages/InventoryAlert'
-import AdsManagement from './pages/AdsManagement'
-import StrategyList from './pages/StrategyList'
-import DecisionEngine from './pages/DecisionEngine'
-import ProfitCalculator from './pages/ProfitCalculator'
-import LoginPage from './pages/Login'
-import SystemSettings from './pages/SystemSettings'
 import { AuthProvider, useAuth } from './auth'
 import './App.css'
 
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const DataImport = lazy(() => import('./pages/DataWorkspace'))
+const ABCAnalysis = lazy(() => import('./pages/ABCAnalysis'))
+const PriceCompetitiveness = lazy(() => import('./pages/PriceCompetitiveness'))
+const FunnelAnalysis = lazy(() => import('./pages/FunnelAnalysis'))
+const InventoryAlert = lazy(() => import('./pages/InventoryAlert'))
+const AdsManagement = lazy(() => import('./pages/AdsManagement'))
+const StrategyList = lazy(() => import('./pages/StrategyList'))
+const DecisionEngine = lazy(() => import('./pages/DecisionEngine'))
+const ProfitCalculator = lazy(() => import('./pages/ProfitCalculator'))
+const LoginPage = lazy(() => import('./pages/Login'))
+const SystemSettings = lazy(() => import('./pages/SystemSettings'))
+const ActionJobs = lazy(() => import('./pages/ActionJobs'))
+
+function PageLoading() {
+  return <div style={{ padding: 24 }}>页面加载中...</div>
+}
+
 function ProtectedLayout() {
   const { user, loading } = useAuth()
+
   if (loading) return <div style={{ padding: 24 }}>加载中...</div>
   if (!user) return <Navigate to="/login" replace />
+
   return <Layout />
 }
 
@@ -32,20 +42,125 @@ function App() {
         }}
       >
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/login"
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <LoginPage />
+              </Suspense>
+            }
+          />
+
           <Route path="/" element={<ProtectedLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="import" element={<DataImport />} />
-            <Route path="settings" element={<SystemSettings />} />
-            <Route path="abc" element={<ABCAnalysis />} />
-            <Route path="price" element={<PriceCompetitiveness />} />
-            <Route path="funnel" element={<FunnelAnalysis />} />
-            <Route path="inventory" element={<InventoryAlert />} />
-            <Route path="ads" element={<AdsManagement />} />
-            <Route path="strategy" element={<StrategyList />} />
-            <Route path="decision" element={<DecisionEngine />} />
-            <Route path="profit" element={<ProfitCalculator />} />
+
+            <Route
+              path="dashboard"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <Dashboard />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="import"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <DataImport />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="settings"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <SystemSettings />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="action-jobs"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <ActionJobs />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="abc"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <ABCAnalysis />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="price"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <PriceCompetitiveness />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="funnel"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <FunnelAnalysis />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="inventory"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <InventoryAlert />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="ads"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <AdsManagement />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="strategy"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <StrategyList />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="decision"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <DecisionEngine />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="profit"
+              element={
+                <Suspense fallback={<PageLoading />}>
+                  <ProfitCalculator />
+                </Suspense>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

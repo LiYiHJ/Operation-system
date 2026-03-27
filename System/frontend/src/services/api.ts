@@ -29,7 +29,9 @@ import type {
   DecisionInput,
   DecisionOutput,
   ProfitResult,
-  AdCampaign
+  AdCampaign,
+  DatasetRegistryItem,
+  DatasetKind
 } from '../types'
 
 // ========== API 基础配置 ==========
@@ -39,7 +41,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 // 创建 axios 实例
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 300000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -144,11 +146,14 @@ export const importApi = {
   uploadFile: (
     file: File,
     shopId: number,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    options?: { datasetKind?: DatasetKind | string; importProfile?: string }
   ): Promise<ImportResult> => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('shop_id', shopId.toString())
+    if (options?.datasetKind) formData.append('dataset_kind', String(options.datasetKind))
+    if (options?.importProfile) formData.append('import_profile', String(options.importProfile))
 
     return apiClient.post('/import/upload', formData, {
       headers: {
@@ -166,7 +171,7 @@ export const importApi = {
   /**
    * 确认导入
    */
-  confirmImport: (data: ConfirmImportRequest): Promise<ConfirmImportResponse> => {
+  confirmImport: (data: ConfirmImportRequest & { datasetKind?: DatasetKind | string; importProfile?: string }): Promise<ConfirmImportResponse> => {
     return apiClient.post('/import/confirm', data)
   },
 
@@ -182,6 +187,14 @@ export const importApi = {
 
   getFieldRegistry: (): Promise<FieldRegistryResponse> => {
     return apiClient.get('/import/field-registry')
+  },
+
+  getDatasetRegistry: (): Promise<{ contractVersion?: string; datasets?: DatasetRegistryItem[] }> => {
+    return apiClient.get('/import/dataset-registry')
+  },
+
+  listImportBatches: (limit = 10): Promise<{ contractVersion?: string; source?: string; total?: number; items?: any[] }> => {
+    return apiClient.get('/import/batches', { params: { limit } })
   },
 }
 
@@ -282,6 +295,19 @@ export const profitApi = {
     scenarios?: any[]
   }): Promise<any> => {
     return apiClient.post('/profit/solve', data)
+  },
+
+  simulate: (data: {
+    salePrice: number
+    listPrice: number
+    variableRateTotal: number
+    fixedCostTotal: number
+    algorithmProfile?: string
+    layeredParams?: any
+    discountRatios?: number[]
+    scenarios?: any[]
+  }): Promise<any> => {
+    return apiClient.post('/profit/simulate', data)
   },
 
   saveSnapshot: (data: {

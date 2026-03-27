@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import Any
 
 import json
+import threading
 from urllib import request as urlrequest
 from urllib.error import URLError, HTTPError
 from sqlalchemy import inspect
+from sqlalchemy.exc import OperationalError
 
 from ecom_v51.db.models import (
     DimDate,
@@ -58,6 +60,9 @@ DOMAIN_SCOPES: list[dict[str, Any]] = [
     },
 ]
 
+_TABLES_READY = False
+_TABLES_LOCK = threading.Lock()
+
 
 class IntegrationService:
     def __init__(self, shop_id: int = 1, ensure_tables: bool = True):
@@ -67,14 +72,31 @@ class IntegrationService:
 
     @staticmethod
     def _ensure_tables() -> None:
-        engine = get_engine()
-        existing = set(inspect(engine).get_table_names())
-        to_create = []
-        for m in [ExternalDataSourceConfig, SyncRunLog, PushDeliveryLog, FactSkuExtDaily]:
-            if m.__table__.name not in existing:
-                to_create.append(m.__table__)
-        if to_create:
-            ExternalDataSourceConfig.metadata.create_all(bind=engine, tables=to_create)
+        global _TABLES_READY
+
+        if _TABLES_READY:
+            return
+
+        with _TABLES_LOCK:
+            if _TABLES_READY:
+                return
+
+            engine = get_engine()
+            models = [
+                ExternalDataSourceConfig,
+                SyncRunLog,
+                PushDeliveryLog,
+                FactSkuExtDaily,
+            ]
+
+            for model in models:
+                try:
+                    model.__table__.create(bind=engine, checkfirst=True)
+                except OperationalError as exc:
+                    if "already exists" not in str(exc).lower():
+                        raise
+
+            _TABLES_READY = True
 
     def list_domain_scopes(self) -> list[dict[str, Any]]:
         return DOMAIN_SCOPES

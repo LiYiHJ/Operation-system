@@ -15,7 +15,8 @@
         "ru": [
           "Артикул",
           "Артикул товара",
-          "Seller SKU"
+          "Seller SKU",
+          "Артикул продавца"
         ],
         "en": [
           "sku",
@@ -24,7 +25,8 @@
         ],
         "platform": [
           "Ozon SKU",
-          "Offer ID"
+          "Offer ID",
+          "Seller Article"
         ]
       },
       "type": "string",
@@ -35,6 +37,195 @@
       "displayLabel": "sku"
     },
     {
+      "canonical": "platform_sku",
+      "aliases": {
+        "zh": [
+          "平台SKU"
+        ],
+        "ru": [
+          "SKU",
+          "Ozon SKU"
+        ],
+        "en": [
+          "platform_sku"
+        ],
+        "platform": [
+          "SKU"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.platform_sku",
+      "displayLabel": "平台SKU"
+    },
+    {
+      "canonical": "product_name",
+      "aliases": {
+        "zh": [
+          "商品名称"
+        ],
+        "ru": [
+          "Товары",
+          "Название товара"
+        ],
+        "en": [
+          "product_name",
+          "title"
+        ],
+        "platform": [
+          "Product Name"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.product_name",
+      "displayLabel": "商品名称"
+    },
+    {
+      "canonical": "category_level_1",
+      "aliases": {
+        "zh": [
+          "一级类目"
+        ],
+        "ru": [
+          "Категория 1 уровня"
+        ],
+        "en": [
+          "category_level_1"
+        ],
+        "platform": [
+          "Category L1"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.category_level_1",
+      "displayLabel": "一级类目"
+    },
+    {
+      "canonical": "category_level_2",
+      "aliases": {
+        "zh": [
+          "二级类目"
+        ],
+        "ru": [
+          "Категория 2 уровня"
+        ],
+        "en": [
+          "category_level_2"
+        ],
+        "platform": [
+          "Category L2"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.category_level_2",
+      "displayLabel": "二级类目"
+    },
+    {
+      "canonical": "category_level_3",
+      "aliases": {
+        "zh": [
+          "三级类目"
+        ],
+        "ru": [
+          "Категория 3 уровня"
+        ],
+        "en": [
+          "category_level_3"
+        ],
+        "platform": [
+          "Category L3"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.category_level_3",
+      "displayLabel": "三级类目"
+    },
+    {
+      "canonical": "brand",
+      "aliases": {
+        "zh": [
+          "品牌"
+        ],
+        "ru": [
+          "Бренд"
+        ],
+        "en": [
+          "brand"
+        ],
+        "platform": [
+          "Brand"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.brand",
+      "displayLabel": "品牌"
+    },
+    {
+      "canonical": "model",
+      "aliases": {
+        "zh": [
+          "型号",
+          "款式"
+        ],
+        "ru": [
+          "Модель"
+        ],
+        "en": [
+          "model"
+        ],
+        "platform": [
+          "Model"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.model",
+      "displayLabel": "型号"
+    },
+    {
+      "canonical": "fulfillment_scheme",
+      "aliases": {
+        "zh": [
+          "履约模式",
+          "发货模式"
+        ],
+        "ru": [
+          "Схема работы"
+        ],
+        "en": [
+          "fulfillment_scheme"
+        ],
+        "platform": [
+          "Fulfillment Scheme"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "dim_product.fulfillment_scheme",
+      "displayLabel": "履约模式"
+    },
+    {
       "canonical": "abc_class",
       "aliases": {
         "zh": [
@@ -42,14 +233,18 @@
           "ABC等级"
         ],
         "ru": [
-          "ABC-класс"
+          "ABC-класс",
+          "ABC-анализ по количеству заказов",
+          "Продажи / ABC-анализ по сумме заказов"
         ],
         "en": [
           "abc_class",
           "abc class"
         ],
         "platform": [
-          "ABC"
+          "ABC",
+          "ABC by orders",
+          "ABC by revenue"
         ]
       },
       "type": "string",
@@ -94,13 +289,15 @@
           "在订单总额中的份额"
         ],
         "ru": [
-          "Доля суммы заказов"
+          "Доля суммы заказов",
+          "Доля в общей сумме заказов"
         ],
         "en": [
           "order_amount_share"
         ],
         "platform": [
-          "Revenue Share"
+          "Revenue Share",
+          "Order Amount Share"
         ]
       },
       "type": "string",
@@ -118,7 +315,9 @@
           "平均价格"
         ],
         "ru": [
-          "Средняя цена продажи"
+          "Средняя цена продажи",
+          "Факторы продаж / Средняя цена",
+          "Средняя цена"
         ],
         "en": [
           "avg_sale_price",
@@ -128,12 +327,12 @@
           "Average Sale Price"
         ]
       },
-      "type": "string",
+      "type": "number",
       "unit": null,
       "enumValues": [],
       "validator": "optional",
       "factTarget": "fact_sku_daily.avg_sale_price",
-      "displayLabel": "avg_sale_price"
+      "displayLabel": "平均销售价"
     },
     {
       "canonical": "impressions_total",
@@ -187,51 +386,51 @@
       "displayLabel": "impressions_search_catalog"
     },
     {
-      "canonical": "impression_to_click_cvr",
-      "aliases": {
-        "zh": [
-          "曝光-点击转化率"
-        ],
-        "ru": [
-          "Конверсия показ в клик"
-        ],
-        "en": [
-          "impression_to_click_cvr",
-          "ctr"
-        ],
-        "platform": [
-          "CTR"
-        ]
-      },
-      "type": "string",
-      "unit": null,
-      "enumValues": [],
-      "validator": "optional",
-      "factTarget": "fact_sku_daily.impression_to_click_cvr",
-      "displayLabel": "impression_to_click_cvr"
-    },
-    {
       "canonical": "search_catalog_position_avg",
       "aliases": {
         "zh": [
           "搜索目录平均位置"
         ],
         "ru": [
-          "Средняя позиция в поиске"
+          "Средняя позиция в поиске",
+          "Воронка продаж / Позиция в поиске и каталоге",
+          "Позиция в поиске и каталоге"
         ],
         "en": [
           "search_catalog_position_avg"
         ],
         "platform": [
-          "Avg Position"
+          "Avg Position",
+          "Search/Catalog Avg Position"
         ]
       },
-      "type": "string",
+      "type": "number",
       "unit": null,
       "enumValues": [],
       "validator": "optional",
       "factTarget": "fact_sku_daily.search_catalog_position_avg",
-      "displayLabel": "search_catalog_position_avg"
+      "displayLabel": "搜索目录平均位置"
+    },
+    {
+      "canonical": "impression_to_order_cvr",
+      "aliases": {
+        "zh": [],
+        "ru": [
+          "Конверсия из показа в заказ"
+        ],
+        "en": [
+          "impression_to_order_cvr"
+        ],
+        "platform": [
+          "Impression to Order CVR"
+        ]
+      },
+      "type": "number",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "fact_funnel_daily.impression_to_order_cvr",
+      "displayLabel": "曝光到下单转化率"
     },
     {
       "canonical": "search_catalog_to_card_cvr",
@@ -241,21 +440,23 @@
           "从搜索结果和目录中进入卡片的转化率"
         ],
         "ru": [
-          "Конверсия поиск в карточку"
+          "Конверсия поиск в карточку",
+          "Конверсия из поиска и каталога в карточку"
         ],
         "en": [
           "search_catalog_to_card_cvr"
         ],
         "platform": [
-          "Search to Card CVR"
+          "Search to Card CVR",
+          "Search/Catalog to Card CVR"
         ]
       },
-      "type": "string",
+      "type": "number",
       "unit": null,
       "enumValues": [],
       "validator": "optional",
-      "factTarget": "fact_sku_daily.search_catalog_to_card_cvr",
-      "displayLabel": "search_catalog_to_card_cvr"
+      "factTarget": "fact_funnel_daily.search_catalog_to_card_cvr",
+      "displayLabel": "搜索目录到商品卡转化率"
     },
     {
       "canonical": "product_card_visits",
@@ -266,7 +467,8 @@
         ],
         "ru": [
           "Переходы в карточку",
-          "Посещения карточки"
+          "Посещения карточки",
+          "Посещения карточки товара"
         ],
         "en": [
           "product_card_visits",
@@ -279,33 +481,9 @@
       "type": "number",
       "unit": null,
       "enumValues": [],
-      "validator": "non_negative",
+      "validator": "optional",
       "factTarget": "fact_sku_daily.product_card_visits",
       "displayLabel": "商品卡片访问"
-    },
-    {
-      "canonical": "add_to_cart_from_search_catalog",
-      "aliases": {
-        "zh": [
-          "搜索目录加购",
-          "从搜索结果和目录中添加至购物车"
-        ],
-        "ru": [
-          "Добавления в корзину из поиска"
-        ],
-        "en": [
-          "add_to_cart_from_search_catalog"
-        ],
-        "platform": [
-          "Add to cart from search"
-        ]
-      },
-      "type": "string",
-      "unit": null,
-      "enumValues": [],
-      "validator": "optional",
-      "factTarget": "fact_sku_daily.add_to_cart_from_search_catalog",
-      "displayLabel": "add_to_cart_from_search_catalog"
     },
     {
       "canonical": "search_catalog_to_cart_cvr",
@@ -315,45 +493,49 @@
           "从搜索结果和目录中添加至购物车的转化率"
         ],
         "ru": [
-          "Конверсия поиск в корзину"
+          "Конверсия поиск в корзину",
+          "Конверсия из поиска и каталога в корзину"
         ],
         "en": [
           "search_catalog_to_cart_cvr"
         ],
         "platform": [
-          "Search to Cart CVR"
+          "Search to Cart CVR",
+          "Search/Catalog to Cart CVR"
         ]
       },
-      "type": "string",
+      "type": "number",
       "unit": null,
       "enumValues": [],
       "validator": "optional",
-      "factTarget": "fact_sku_daily.search_catalog_to_cart_cvr",
-      "displayLabel": "search_catalog_to_cart_cvr"
+      "factTarget": "fact_funnel_daily.search_catalog_to_cart_cvr",
+      "displayLabel": "搜索目录到加购转化率"
     },
     {
-      "canonical": "add_to_cart_from_card",
+      "canonical": "add_to_cart_from_search_catalog",
       "aliases": {
         "zh": [
-          "商品卡加购",
-          "从商品卡片添加至购物车"
+          "搜索目录加购",
+          "从搜索结果和目录中添加至购物车"
         ],
         "ru": [
-          "Добавления в корзину из карточки"
+          "Добавления в корзину из поиска",
+          "Добавления из поиска и каталога в корзину"
         ],
         "en": [
-          "add_to_cart_from_card"
+          "add_to_cart_from_search_catalog"
         ],
         "platform": [
-          "Add to cart from card"
+          "Add to cart from search",
+          "Add to Cart from Search/Catalog"
         ]
       },
-      "type": "string",
+      "type": "number",
       "unit": null,
       "enumValues": [],
       "validator": "optional",
-      "factTarget": "fact_sku_daily.add_to_cart_from_card",
-      "displayLabel": "add_to_cart_from_card"
+      "factTarget": "fact_funnel_daily.add_to_cart_from_search_catalog",
+      "displayLabel": "搜索目录加购数"
     },
     {
       "canonical": "card_to_cart_cvr",
@@ -363,7 +545,8 @@
           "从商品卡片添加至购物车的转化率"
         ],
         "ru": [
-          "Конверсия карточка в корзину"
+          "Конверсия карточка в корзину",
+          "Конверсия из карточки в корзину"
         ],
         "en": [
           "card_to_cart_cvr"
@@ -372,12 +555,38 @@
           "Card to Cart CVR"
         ]
       },
-      "type": "percentage",
+      "type": "number",
       "unit": "%",
       "enumValues": [],
-      "validator": "non_negative",
-      "factTarget": "fact_sku_daily.card_to_cart_cvr",
-      "displayLabel": "card_to_cart_cvr"
+      "validator": "optional",
+      "factTarget": "fact_funnel_daily.card_to_cart_cvr",
+      "displayLabel": "商品卡到加购转化率"
+    },
+    {
+      "canonical": "add_to_cart_from_card",
+      "aliases": {
+        "zh": [
+          "商品卡加购",
+          "从商品卡片添加至购物车"
+        ],
+        "ru": [
+          "Добавления в корзину из карточки",
+          "Добавления из карточки в корзину"
+        ],
+        "en": [
+          "add_to_cart_from_card"
+        ],
+        "platform": [
+          "Add to cart from card",
+          "Add to Cart from Card"
+        ]
+      },
+      "type": "number",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "fact_funnel_daily.add_to_cart_from_card",
+      "displayLabel": "商品卡加购数"
     },
     {
       "canonical": "add_to_cart_total",
@@ -389,21 +598,23 @@
           "加购总数"
         ],
         "ru": [
-          "Добавления в корзину"
+          "Добавления в корзину",
+          "Добавления в корзину всего"
         ],
         "en": [
           "add_to_cart_total",
           "add_to_cart"
         ],
         "platform": [
-          "Add to Cart"
+          "Add to Cart",
+          "Total Add to Cart"
         ]
       },
       "type": "number",
       "unit": null,
       "enumValues": [],
       "validator": "non_negative",
-      "factTarget": "fact_sku_daily.add_to_cart_total",
+      "factTarget": "fact_funnel_daily.add_to_cart_total",
       "displayLabel": "加购数"
     },
     {
@@ -438,7 +649,8 @@
           "从购物车到订单的转化率"
         ],
         "ru": [
-          "Конверсия корзина в заказ"
+          "Конверсия корзина в заказ",
+          "Конверсия из корзины в заказ"
         ],
         "en": [
           "cart_to_order_cvr"
@@ -447,36 +659,12 @@
           "Cart to Order CVR"
         ]
       },
-      "type": "percentage",
+      "type": "number",
       "unit": "%",
       "enumValues": [],
-      "validator": "non_negative",
-      "factTarget": "fact_sku_daily.cart_to_order_cvr",
-      "displayLabel": "cart_to_order_cvr"
-    },
-    {
-      "canonical": "order_to_purchase_cvr",
-      "aliases": {
-        "zh": [
-          "下单-购买转化率",
-          "从订单到认购的转化率"
-        ],
-        "ru": [
-          "Конверсия заказ в выкуп"
-        ],
-        "en": [
-          "order_to_purchase_cvr"
-        ],
-        "platform": [
-          "Order to Purchase CVR"
-        ]
-      },
-      "type": "percentage",
-      "unit": "%",
-      "enumValues": [],
-      "validator": "non_negative",
-      "factTarget": "fact_sku_daily.order_to_purchase_cvr",
-      "displayLabel": "order_to_purchase_cvr"
+      "validator": "optional",
+      "factTarget": "fact_funnel_daily.cart_to_order_cvr",
+      "displayLabel": "加购到下单转化率"
     },
     {
       "canonical": "orders",
@@ -506,7 +694,7 @@
       "unit": null,
       "enumValues": [],
       "validator": "non_negative",
-      "factTarget": "fact_orders_daily.ordered_qty",
+      "factTarget": "fact_orders_daily.orders",
       "displayLabel": "下单数"
     },
     {
@@ -541,7 +729,8 @@
           "已配送商品"
         ],
         "ru": [
-          "Доставлено шт"
+          "Доставлено шт",
+          "Доставлено товаров"
         ],
         "en": [
           "items_delivered"
@@ -554,8 +743,33 @@
       "unit": null,
       "enumValues": [],
       "validator": "non_negative",
-      "factTarget": "fact_sku_daily.items_delivered",
-      "displayLabel": "items_delivered"
+      "factTarget": "fact_orders_daily.items_delivered",
+      "displayLabel": "履约件数"
+    },
+    {
+      "canonical": "order_to_purchase_cvr",
+      "aliases": {
+        "zh": [
+          "下单-购买转化率",
+          "从订单到认购的转化率"
+        ],
+        "ru": [
+          "Конверсия заказ в выкуп",
+          "Конверсия из заказа в выкуп"
+        ],
+        "en": [
+          "order_to_purchase_cvr"
+        ],
+        "platform": [
+          "Order to Purchase CVR"
+        ]
+      },
+      "type": "number",
+      "unit": "%",
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "fact_orders_daily.order_to_purchase_cvr",
+      "displayLabel": "下单到购买转化率"
     },
     {
       "canonical": "items_purchased",
@@ -565,7 +779,8 @@
           "已认购商品"
         ],
         "ru": [
-          "Выкуплено шт"
+          "Выкуплено шт",
+          "Выкуплено товаров"
         ],
         "en": [
           "items_purchased"
@@ -578,8 +793,8 @@
       "unit": null,
       "enumValues": [],
       "validator": "non_negative",
-      "factTarget": "fact_sku_daily.items_purchased",
-      "displayLabel": "items_purchased"
+      "factTarget": "fact_orders_daily.items_purchased",
+      "displayLabel": "购买件数"
     },
     {
       "canonical": "items_canceled",
@@ -589,7 +804,9 @@
           "已取消商品"
         ],
         "ru": [
-          "Отменено шт"
+          "Отменено шт",
+          "Отменено товаров (на дату отмены)",
+          "Отменено товаров (на дату заказа)"
         ],
         "en": [
           "items_canceled"
@@ -602,8 +819,8 @@
       "unit": null,
       "enumValues": [],
       "validator": "non_negative",
-      "factTarget": "fact_sku_daily.items_canceled",
-      "displayLabel": "items_canceled"
+      "factTarget": "fact_orders_daily.items_canceled",
+      "displayLabel": "取消件数"
     },
     {
       "canonical": "items_returned",
@@ -613,7 +830,9 @@
           "已退货商品"
         ],
         "ru": [
-          "Возвраты шт"
+          "Возвраты шт",
+          "Возвращено товаров (на дату возврата)",
+          "Возвращено товаров (на дату заказа)"
         ],
         "en": [
           "items_returned",
@@ -627,8 +846,8 @@
       "unit": null,
       "enumValues": [],
       "validator": "non_negative",
-      "factTarget": "fact_sku_daily.items_returned",
-      "displayLabel": "items_returned"
+      "factTarget": "fact_orders_daily.items_returned",
+      "displayLabel": "退货件数"
     },
     {
       "canonical": "discount_pct",
@@ -639,7 +858,8 @@
           "根据您的价格计算的折扣"
         ],
         "ru": [
-          "Скидка %"
+          "Скидка %",
+          "Скидка от вашей цены"
         ],
         "en": [
           "discount_pct",
@@ -649,12 +869,12 @@
           "Discount %"
         ]
       },
-      "type": "percentage",
+      "type": "number",
       "unit": "%",
       "enumValues": [],
-      "validator": "non_negative",
+      "validator": "optional",
       "factTarget": "fact_sku_daily.discount_pct",
-      "displayLabel": "discount_pct"
+      "displayLabel": "折扣率"
     },
     {
       "canonical": "price_index_status",
@@ -693,7 +913,8 @@
           "促销天数"
         ],
         "ru": [
-          "Дней в акции"
+          "Дней в акции",
+          "Дней в акциях"
         ],
         "en": [
           "promo_days_count"
@@ -702,11 +923,11 @@
           "Promo days"
         ]
       },
-      "type": "number",
+      "type": "string",
       "unit": null,
       "enumValues": [],
-      "validator": "non_negative",
-      "factTarget": "fact_sku_ext_daily.promo_days_count",
+      "validator": "optional",
+      "factTarget": "fact_sku_daily.promo_days_count",
       "displayLabel": "活动天数"
     },
     {
@@ -718,22 +939,24 @@
           "总体广告收入率"
         ],
         "ru": [
-          "Доля рекламной выручки"
+          "Доля рекламной выручки",
+          "Общая ДРР"
         ],
         "en": [
           "ad_revenue_rate",
           "roas"
         ],
         "platform": [
-          "Ad revenue rate"
+          "Ad revenue rate",
+          "Ad Revenue Rate"
         ]
       },
-      "type": "percentage",
+      "type": "number",
       "unit": "%",
       "enumValues": [],
-      "validator": "non_negative",
-      "factTarget": "fact_sku_daily.ad_revenue_rate",
-      "displayLabel": "ad_revenue_rate"
+      "validator": "optional",
+      "factTarget": "fact_ads_daily.ad_revenue_rate",
+      "displayLabel": "广告收入占比"
     },
     {
       "canonical": "ppc_days_count",
@@ -744,7 +967,8 @@
           "推广天数（按点击付费）"
         ],
         "ru": [
-          "Дней PPC"
+          "Дней PPC",
+          "Дней с продвижением (оплата за клик)"
         ],
         "en": [
           "ppc_days_count"
@@ -757,8 +981,8 @@
       "unit": null,
       "enumValues": [],
       "validator": "optional",
-      "factTarget": "fact_sku_daily.ppc_days_count",
-      "displayLabel": "ppc_days_count"
+      "factTarget": "fact_ads_daily.ppc_days_count",
+      "displayLabel": "PPC投放天数"
     },
     {
       "canonical": "review_count",
@@ -868,9 +1092,33 @@
       "type": "number",
       "unit": null,
       "enumValues": [],
-      "validator": "non_negative",
+      "validator": "optional",
       "factTarget": "fact_inventory_daily.stock_total",
-      "displayLabel": "库存"
+      "displayLabel": "库存总量"
+    },
+    {
+      "canonical": "impression_to_click_cvr",
+      "aliases": {
+        "zh": [
+          "曝光-点击转化率"
+        ],
+        "ru": [
+          "Конверсия показ в клик"
+        ],
+        "en": [
+          "impression_to_click_cvr",
+          "ctr"
+        ],
+        "platform": [
+          "CTR"
+        ]
+      },
+      "type": "string",
+      "unit": null,
+      "enumValues": [],
+      "validator": "optional",
+      "factTarget": "fact_sku_daily.impression_to_click_cvr",
+      "displayLabel": "impression_to_click_cvr"
     }
   ]
 }

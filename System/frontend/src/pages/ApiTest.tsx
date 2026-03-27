@@ -143,7 +143,7 @@ export default function ApiTest() {
    python run_api.py
 
 2. 确认后端运行：
-   访问 http://localhost:5000/api/health
+   访问 后端健康检查接口：/api/health
 
 3. 启动前端开发服务器：
    cd frontend

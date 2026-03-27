@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, Row, Col, Statistic, Tabs, Tag, Table, Space, Select, Button, List, message, Drawer, Typography, Empty, Tooltip } from 'antd'
 import { DollarOutlined, WarningOutlined, CheckCircleOutlined, ThunderboltOutlined, SendOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../components/charts/LazyEChart'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { thematicApi } from '../services/api'
@@ -123,8 +123,8 @@ export default function PriceCompetitiveness() {
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col xs={24} lg={12}><Card title="竞争力区域分布"><ReactECharts option={zoneChart} style={{ height: 320 }} /></Card></Col>
-        <Col xs={24} lg={12}><Card title="策略分组管理（引流/标准/高毛利/清仓/活动）"><ReactECharts option={groupChart} style={{ height: 320 }} /></Card></Col>
+        <Col xs={24} lg={12}><Card title="竞争力区域分布"><LazyEChart option={zoneChart} style={{ height: 320 }} /></Card></Col>
+        <Col xs={24} lg={12}><Card title="策略分组管理（引流/标准/高毛利/清仓/活动）"><LazyEChart option={groupChart} style={{ height: 320 }} /></Card></Col>
       </Row>
 
       <Tabs

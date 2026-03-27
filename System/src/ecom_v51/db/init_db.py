@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import inspect, text
 
@@ -11,6 +11,9 @@ from ecom_v51.db.session import get_engine, get_session
 
 # 必须导入 models，确保 metadata 注册完整
 from ecom_v51.db import models  # noqa: F401
+from ecom_v51.db import ingest_models  # noqa: F401
+from ecom_v51.services.batch_service import BatchService
+from ecom_v51.config.settings import settings
 
 
 def _seed_platform(platform_code: str, platform_name: str) -> None:
@@ -34,8 +37,8 @@ def _seed_platform(platform_code: str, platform_name: str) -> None:
             platform_code=platform_code,
             platform_name=platform_name,
             is_active=True,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         session.add(row)
         session.flush()
@@ -64,11 +67,29 @@ def init_db(seed_ozon: bool = True) -> None:
         'dim_category',
         'dim_sku',
         'import_batch',
+        'ingest_batch',
+        'registry_dataset',
+        'registry_profile',
+        'registry_field',
+        'registry_gate_policy',
+        'batch_gate_result',
+        'batch_audit_event',
+        'batch_profile_candidate',
+        'batch_business_key_candidate',
+        'batch_quarantine_row',
+        'mapping_feedback',
+        'raw_record',
+        'replay_job',
+        'job_event',
         'external_data_source_config',
         'sync_run_log',
         'push_delivery_log',
     ]:
         print(f" - {name}: {'OK' if name in table_names else 'MISSING'}")
+
+    batch_service = BatchService(settings.BASE_DIR)
+    seeded = batch_service.sync_registry_from_yaml()
+    print(f"Registry seed summary: {seeded}")
 
     if seed_ozon:
         _seed_platform(platform_code='ozon', platform_name='Ozon')

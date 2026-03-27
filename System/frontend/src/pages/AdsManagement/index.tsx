@@ -1,6 +1,6 @@
 import { Row, Col, Card, Table, Tag, Statistic, Alert, Progress } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
-import ReactECharts from 'echarts-for-react'
+import LazyEChart from '../../components/charts/LazyEChart'
 
 export default function AdsManagement() {
   const adsSummary = {
@@ -130,12 +130,12 @@ export default function AdsManagement() {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={12}>
           <Card>
-            <ReactECharts option={spendTrendOption} style={{ height: 300 }} />
+            <LazyEChart option={spendTrendOption} style={{ height: 300 }} />
           </Card>
         </Col>
         <Col span={12}>
           <Card>
-            <ReactECharts option={roasDistOption} style={{ height: 300 }} />
+            <LazyEChart option={roasDistOption} style={{ height: 300 }} />
           </Card>
         </Col>
       </Row>

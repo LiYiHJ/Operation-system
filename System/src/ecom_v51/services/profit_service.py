@@ -82,6 +82,66 @@ class ProfitService:
             },
         ]
 
+    def simulate_matrix(
+        self,
+        *,
+        sale_price: float,
+        list_price: float,
+        variable_rate_total: float,
+        fixed_cost_total: float,
+        algorithm_profile: str = 'ozon_daily_profit',
+        layered_params: dict | None = None,
+        discount_ratios: list[float] | None = None,
+        scenarios: list[dict] | None = None,
+    ) -> dict[str, object]:
+        merged = self._merge_layered_params(layered_params)
+        payload = ProfitInput(
+            sale_price=sale_price or merged['sale_price'],
+            list_price=list_price or merged['list_price'],
+            variable_rate_total=variable_rate_total or merged['variable_rate_total'],
+            fixed_cost_total=fixed_cost_total or merged['fixed_cost_total'],
+        )
+        current = self.solver.solve_current(payload)
+        ratios = [float(x) for x in (discount_ratios or [1.0, 0.95, 0.9, 0.85, 0.8])]
+        ratio_set = []
+        for ratio in ratios:
+            if ratio <= 0:
+                continue
+            ratio_set.append(ratio)
+        if 1.0 not in ratio_set:
+            ratio_set.insert(0, 1.0)
+        discount_rows = [asdict(x) for x in self.solver.simulate_discounts(payload, ratio_set)]
+
+        scenario_rows = []
+        for item in scenarios or []:
+            name = str(item.get('name') or '场景')
+            layer = item.get('layered_params') or {}
+            params = self._merge_layered_params(layer)
+            scenario_payload = ProfitInput(
+                sale_price=float(params.get('sale_price', payload.sale_price)),
+                list_price=float(params.get('list_price', payload.list_price)),
+                variable_rate_total=float(params.get('variable_rate_total', payload.variable_rate_total)),
+                fixed_cost_total=float(params.get('fixed_cost_total', payload.fixed_cost_total)),
+            )
+            scenario_rows.append({'name': name, 'input': asdict(scenario_payload), 'result': asdict(self.solver.solve_current(scenario_payload))})
+
+        break_even_price = float(current.break_even_price)
+        safety_floor_price = round(break_even_price * 1.05, 4)
+        target_margin_floor_price = round(self.solver.target_margin_price(0.1, payload.variable_rate_total, payload.fixed_cost_total), 4)
+        return {
+            'algorithm_profile': algorithm_profile,
+            'input': asdict(payload),
+            'current': asdict(current),
+            'discountScenarios': discount_rows,
+            'customScenarios': scenario_rows,
+            'pricingGuardrails': {
+                'breakEvenPrice': round(break_even_price, 4),
+                'safetyFloorPrice': safety_floor_price,
+                'targetMargin10Price': target_margin_floor_price,
+            },
+            'riskScan': self._build_risk_scan(asdict(current), payload),
+        }
+
     def solve(
         self,
         *,

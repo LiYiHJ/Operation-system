@@ -44,9 +44,18 @@ def simulate():
         data = request.get_json()
 
         service = ProfitService()
-        # TODO: 实现利润模拟
+        result = service.simulate_matrix(
+            sale_price=float(data.get('salePrice') or 0),
+            list_price=float(data.get('listPrice') or 0),
+            variable_rate_total=float(data.get('variableRateTotal') or 0),
+            fixed_cost_total=float(data.get('fixedCostTotal') or 0),
+            algorithm_profile=data.get('algorithmProfile', 'ozon_daily_profit'),
+            layered_params=data.get('layeredParams'),
+            discount_ratios=data.get('discountRatios'),
+            scenarios=data.get('scenarios'),
+        )
 
-        return jsonify({'status': 'ok'})
+        return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
