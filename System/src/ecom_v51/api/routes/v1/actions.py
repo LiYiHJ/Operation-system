@@ -660,9 +660,10 @@ def get_action_worker_bulk_results_v1():
         reexecute_command = str(request.args.get('reexecuteCommand') or '').strip() or None
         command_mode = str(request.args.get('commandMode') or '').strip() or None
         source_bulk_command_id = str(request.args.get('sourceBulkCommandId') or '').strip() or None
+        lineage_scope = str(request.args.get('lineageScope') or '').strip() or None
         offset = request.args.get('offset', default=0, type=int)
         limit = request.args.get('limit', default=20, type=int)
-        return ok(_get_action_delivery_service().queue_service.get_bulk_command_history(batch_ref=batch_ref, command=command, worker_id=worker_id, action_code=action_code, result_mode=result_mode, root_bulk_command_id=root_bulk_command_id, reexecute_of=reexecute_of, parent_bulk_command_id=parent_bulk_command_id, has_children=has_children, lineage_depth=lineage_depth, selection=selection, reexecute_command=reexecute_command, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, offset=offset, limit=limit))
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_history(batch_ref=batch_ref, command=command, worker_id=worker_id, action_code=action_code, result_mode=result_mode, root_bulk_command_id=root_bulk_command_id, reexecute_of=reexecute_of, parent_bulk_command_id=parent_bulk_command_id, has_children=has_children, lineage_depth=lineage_depth, selection=selection, reexecute_command=reexecute_command, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, lineage_scope=lineage_scope, offset=offset, limit=limit))
     except Exception as exc:
         return fail('action_worker_bulk_results_failed', '读取动作队列批量命令结果失败', details={'reason': str(exc)}, status_code=500)
 
@@ -704,8 +705,11 @@ def get_action_worker_bulk_result_timeline_v1(bulk_command_id: str):
         lineage_depth = request.args.get('lineageDepth', default=None, type=int)
         command_mode = str(request.args.get('commandMode') or '').strip() or None
         source_bulk_command_id = str(request.args.get('sourceBulkCommandId') or '').strip() or None
+        lineage_scope = str(request.args.get('lineageScope') or '').strip() or None
+        selection = str(request.args.get('selection') or '').strip() or None
+        reexecute_command = str(request.args.get('reexecuteCommand') or '').strip() or None
         limit = request.args.get('limit', default=20, type=int)
-        return ok(_get_action_delivery_service().queue_service.get_bulk_command_timeline(bulk_command_id, result_mode=result_mode, event_type=event_type, command=command, action_code=action_code, lineage_depth=lineage_depth, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, limit=limit))
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_timeline(bulk_command_id, result_mode=result_mode, event_type=event_type, command=command, action_code=action_code, lineage_depth=lineage_depth, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, lineage_scope=lineage_scope, selection=selection, reexecute_command=reexecute_command, limit=limit))
     except ValueError as exc:
         code = str(exc)
         if code == 'bulk_command_not_found':
@@ -719,15 +723,18 @@ def get_action_worker_bulk_result_timeline_v1(bulk_command_id: str):
 @actions_bp.route('/worker/bulk-results/<bulk_command_id>/lineage-summary', methods=['GET'])
 def get_action_worker_bulk_result_lineage_summary_v1(bulk_command_id: str):
     try:
+        result_mode = str(request.args.get('resultMode') or '').strip() or None
         event_type = str(request.args.get('eventType') or '').strip() or None
+        command = str(request.args.get('command') or '').strip() or None
         action_code = str(request.args.get('actionCode') or '').strip() or None
         lineage_depth = request.args.get('lineageDepth', default=None, type=int)
         command_mode = str(request.args.get('commandMode') or '').strip() or None
         source_bulk_command_id = str(request.args.get('sourceBulkCommandId') or '').strip() or None
+        lineage_scope = str(request.args.get('lineageScope') or '').strip() or None
         selection = str(request.args.get('selection') or '').strip() or None
         reexecute_command = str(request.args.get('reexecuteCommand') or '').strip() or None
         limit = request.args.get('limit', default=20, type=int)
-        return ok(_get_action_delivery_service().queue_service.get_bulk_command_lineage_summary(bulk_command_id, event_type=event_type, action_code=action_code, lineage_depth=lineage_depth, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, selection=selection, reexecute_command=reexecute_command, limit=limit))
+        return ok(_get_action_delivery_service().queue_service.get_bulk_command_lineage_summary(bulk_command_id, result_mode=result_mode, event_type=event_type, command=command, action_code=action_code, lineage_depth=lineage_depth, command_mode=command_mode, source_bulk_command_id=source_bulk_command_id, lineage_scope=lineage_scope, selection=selection, reexecute_command=reexecute_command, limit=limit))
     except ValueError as exc:
         code = str(exc)
         if code == 'bulk_command_not_found':

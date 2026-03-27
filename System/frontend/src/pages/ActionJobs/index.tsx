@@ -79,13 +79,18 @@ export default function ActionJobsPage() {
   const [bulkHistoryReexecuteCommand, setBulkHistoryReexecuteCommand] = useState<string>('')
   const [bulkHistoryCommandMode, setBulkHistoryCommandMode] = useState<string>('')
   const [bulkHistorySourceBulkCommandId, setBulkHistorySourceBulkCommandId] = useState<string>('')
+  const [bulkHistoryLineageScope, setBulkHistoryLineageScope] = useState<string>('')
   const [bulkHistoryOffset, setBulkHistoryOffset] = useState<number>(0)
   const [bulkTimelineEventType, setBulkTimelineEventType] = useState<string>('')
+  const [bulkTimelineResultMode, setBulkTimelineResultMode] = useState<string>('')
   const [bulkTimelineCommand, setBulkTimelineCommand] = useState<string>('')
   const [bulkTimelineActionCode, setBulkTimelineActionCode] = useState<string>('')
   const [bulkTimelineLineageDepth, setBulkTimelineLineageDepth] = useState<string>('')
   const [bulkTimelineCommandMode, setBulkTimelineCommandMode] = useState<string>('')
   const [bulkTimelineSourceBulkCommandId, setBulkTimelineSourceBulkCommandId] = useState<string>('')
+  const [bulkTimelineLineageScope, setBulkTimelineLineageScope] = useState<string>('')
+  const [bulkTimelineSelection, setBulkTimelineSelection] = useState<string>('')
+  const [bulkTimelineReexecuteCommand, setBulkTimelineReexecuteCommand] = useState<string>('')
   const [messageApi, contextHolder] = message.useMessage()
   const normalizedBatchRef = batchRef.trim() || undefined
   const normalizedAuditWorkerId = auditWorkerId.trim() || undefined
@@ -102,12 +107,17 @@ export default function ActionJobsPage() {
   const normalizedBulkHistoryReexecuteCommand = bulkHistoryReexecuteCommand.trim() || undefined
   const normalizedBulkHistoryCommandMode = bulkHistoryCommandMode.trim() || undefined
   const normalizedBulkHistorySourceBulkCommandId = bulkHistorySourceBulkCommandId.trim() || undefined
+  const normalizedBulkHistoryLineageScope = bulkHistoryLineageScope.trim() || undefined
   const normalizedBulkTimelineEventType = bulkTimelineEventType.trim() || undefined
+  const normalizedBulkTimelineResultMode = bulkTimelineResultMode.trim() || undefined
   const normalizedBulkTimelineCommand = bulkTimelineCommand.trim() || undefined
   const normalizedBulkTimelineActionCode = bulkTimelineActionCode.trim() || undefined
   const normalizedBulkTimelineLineageDepth = bulkTimelineLineageDepth.trim() ? Number(bulkTimelineLineageDepth.trim()) : undefined
   const normalizedBulkTimelineCommandMode = bulkTimelineCommandMode.trim() || undefined
   const normalizedBulkTimelineSourceBulkCommandId = bulkTimelineSourceBulkCommandId.trim() || undefined
+  const normalizedBulkTimelineLineageScope = bulkTimelineLineageScope.trim() || undefined
+  const normalizedBulkTimelineSelection = bulkTimelineSelection.trim() || undefined
+  const normalizedBulkTimelineReexecuteCommand = bulkTimelineReexecuteCommand.trim() || undefined
 
   const dashboardQuery = useQuery<ActionDashboardResponse>({
     queryKey: ['action-jobs-dashboard', normalizedBatchRef],
@@ -173,8 +183,8 @@ export default function ActionJobsPage() {
   })
 
   const bulkHistoryQuery = useQuery<ActionBulkCommandHistoryResponse>({
-    queryKey: ['action-jobs-bulk-history', normalizedBatchRef, normalizedBulkHistoryCommand, normalizedBulkHistoryWorkerId, normalizedBulkHistoryActionCode, normalizedBulkHistoryResultMode, normalizedBulkHistoryParentBulkCommandId, normalizedBulkHistoryHasChildren, normalizedBulkHistoryLineageDepth, normalizedBulkHistorySelection, normalizedBulkHistoryReexecuteCommand, normalizedBulkHistoryCommandMode, normalizedBulkHistorySourceBulkCommandId, bulkHistoryOffset],
-    queryFn: () => actionQueueApi.getBulkCommandHistory({ batchRef: normalizedBatchRef, command: normalizedBulkHistoryCommand, workerId: normalizedBulkHistoryWorkerId, actionCode: normalizedBulkHistoryActionCode, resultMode: normalizedBulkHistoryResultMode, parentBulkCommandId: normalizedBulkHistoryParentBulkCommandId, hasChildren: normalizedBulkHistoryHasChildren, lineageDepth: normalizedBulkHistoryLineageDepth, selection: normalizedBulkHistorySelection, reexecuteCommand: normalizedBulkHistoryReexecuteCommand, commandMode: normalizedBulkHistoryCommandMode, sourceBulkCommandId: normalizedBulkHistorySourceBulkCommandId, offset: bulkHistoryOffset, limit: 10 }),
+    queryKey: ['action-jobs-bulk-history', normalizedBatchRef, normalizedBulkHistoryCommand, normalizedBulkHistoryWorkerId, normalizedBulkHistoryActionCode, normalizedBulkHistoryResultMode, normalizedBulkHistoryParentBulkCommandId, normalizedBulkHistoryHasChildren, normalizedBulkHistoryLineageDepth, normalizedBulkHistorySelection, normalizedBulkHistoryReexecuteCommand, normalizedBulkHistoryCommandMode, normalizedBulkHistorySourceBulkCommandId, normalizedBulkHistoryLineageScope, bulkHistoryOffset],
+    queryFn: () => actionQueueApi.getBulkCommandHistory({ batchRef: normalizedBatchRef, command: normalizedBulkHistoryCommand, workerId: normalizedBulkHistoryWorkerId, actionCode: normalizedBulkHistoryActionCode, resultMode: normalizedBulkHistoryResultMode, parentBulkCommandId: normalizedBulkHistoryParentBulkCommandId, hasChildren: normalizedBulkHistoryHasChildren, lineageDepth: normalizedBulkHistoryLineageDepth, selection: normalizedBulkHistorySelection, reexecuteCommand: normalizedBulkHistoryReexecuteCommand, commandMode: normalizedBulkHistoryCommandMode, sourceBulkCommandId: normalizedBulkHistorySourceBulkCommandId, lineageScope: normalizedBulkHistoryLineageScope, offset: bulkHistoryOffset, limit: 10 }),
     staleTime: 15_000,
   })
 
@@ -193,15 +203,15 @@ export default function ActionJobsPage() {
   })
 
   const bulkTimelineQuery = useQuery<ActionBulkCommandTimelineResponse>({
-    queryKey: ['action-jobs-bulk-timeline', selectedBulkCommandId, normalizedBulkTimelineEventType, normalizedBulkTimelineCommand, normalizedBulkTimelineActionCode, normalizedBulkTimelineLineageDepth, normalizedBulkTimelineCommandMode, normalizedBulkTimelineSourceBulkCommandId],
-    queryFn: () => actionQueueApi.getBulkCommandTimeline(selectedBulkCommandId as string, { eventType: normalizedBulkTimelineEventType, command: normalizedBulkTimelineCommand, actionCode: normalizedBulkTimelineActionCode, lineageDepth: normalizedBulkTimelineLineageDepth, commandMode: normalizedBulkTimelineCommandMode, sourceBulkCommandId: normalizedBulkTimelineSourceBulkCommandId, limit: 20 }),
+    queryKey: ['action-jobs-bulk-timeline', selectedBulkCommandId, normalizedBulkTimelineResultMode, normalizedBulkTimelineEventType, normalizedBulkTimelineCommand, normalizedBulkTimelineActionCode, normalizedBulkTimelineLineageDepth, normalizedBulkTimelineCommandMode, normalizedBulkTimelineSourceBulkCommandId, normalizedBulkTimelineLineageScope, normalizedBulkTimelineSelection, normalizedBulkTimelineReexecuteCommand],
+    queryFn: () => actionQueueApi.getBulkCommandTimeline(selectedBulkCommandId as string, { resultMode: normalizedBulkTimelineResultMode, eventType: normalizedBulkTimelineEventType, command: normalizedBulkTimelineCommand, actionCode: normalizedBulkTimelineActionCode, lineageDepth: normalizedBulkTimelineLineageDepth, commandMode: normalizedBulkTimelineCommandMode, sourceBulkCommandId: normalizedBulkTimelineSourceBulkCommandId, lineageScope: normalizedBulkTimelineLineageScope, selection: normalizedBulkTimelineSelection, reexecuteCommand: normalizedBulkTimelineReexecuteCommand, limit: 20 }),
     enabled: Boolean(selectedBulkCommandId),
     staleTime: 15_000,
   })
 
   const bulkLineageSummaryQuery = useQuery<ActionBulkCommandLineageSummaryResponse>({
-    queryKey: ['action-jobs-bulk-lineage-summary', selectedBulkCommandId, normalizedBulkTimelineEventType, normalizedBulkTimelineActionCode, normalizedBulkTimelineLineageDepth, normalizedBulkTimelineCommandMode, normalizedBulkTimelineSourceBulkCommandId, normalizedBulkHistorySelection, normalizedBulkHistoryReexecuteCommand],
-    queryFn: () => actionQueueApi.getBulkCommandLineageSummary(selectedBulkCommandId as string, { eventType: normalizedBulkTimelineEventType, actionCode: normalizedBulkTimelineActionCode, lineageDepth: normalizedBulkTimelineLineageDepth, commandMode: normalizedBulkTimelineCommandMode, sourceBulkCommandId: normalizedBulkTimelineSourceBulkCommandId, selection: normalizedBulkHistorySelection, reexecuteCommand: normalizedBulkHistoryReexecuteCommand, limit: 10 }),
+    queryKey: ['action-jobs-bulk-lineage-summary', selectedBulkCommandId, normalizedBulkTimelineResultMode, normalizedBulkTimelineEventType, normalizedBulkTimelineCommand, normalizedBulkTimelineActionCode, normalizedBulkTimelineLineageDepth, normalizedBulkTimelineCommandMode, normalizedBulkTimelineSourceBulkCommandId, normalizedBulkTimelineLineageScope, normalizedBulkTimelineSelection, normalizedBulkTimelineReexecuteCommand],
+    queryFn: () => actionQueueApi.getBulkCommandLineageSummary(selectedBulkCommandId as string, { resultMode: normalizedBulkTimelineResultMode, eventType: normalizedBulkTimelineEventType, command: normalizedBulkTimelineCommand, actionCode: normalizedBulkTimelineActionCode, lineageDepth: normalizedBulkTimelineLineageDepth, commandMode: normalizedBulkTimelineCommandMode, sourceBulkCommandId: normalizedBulkTimelineSourceBulkCommandId, lineageScope: normalizedBulkTimelineLineageScope, selection: normalizedBulkTimelineSelection, reexecuteCommand: normalizedBulkTimelineReexecuteCommand, limit: 10 }),
     enabled: Boolean(selectedBulkCommandId),
     staleTime: 15_000,
   })
@@ -247,25 +257,42 @@ export default function ActionJobsPage() {
 
   const applyBulkLinkedFilters = (mode: 'history' | 'timeline', payload?: Record<string, unknown> | null) => {
     const filters = (payload || {}) as Record<string, unknown>
+    const linkedActionCodes = Array.isArray(filters.actionCodes)
+      ? (filters.actionCodes as unknown[]).map((item) => String(item || '').trim()).filter(Boolean)
+      : []
+    const linkedActionCode = String(filters.actionCode || linkedActionCodes[0] || '')
     if (mode === 'history') {
       setBulkHistoryOffset(0)
+      setBulkHistoryCommand(String(filters.command || ''))
       setBulkHistoryParentBulkCommandId(String(filters.parentBulkCommandId || ''))
       setBulkHistorySourceBulkCommandId(String(filters.sourceBulkCommandId || filters.focusBulkCommandId || ''))
+      setBulkHistoryActionCode(linkedActionCode)
+      setBulkHistoryResultMode(String(filters.resultMode || ''))
       setBulkHistoryLineageDepth(filters.lineageDepth !== undefined && filters.lineageDepth !== null ? String(filters.lineageDepth) : '')
+      setBulkHistoryLineageScope(String(filters.lineageScope || ''))
       setBulkHistoryCommandMode(String(filters.commandMode || ''))
       setBulkHistorySelection(String(filters.selection || ''))
       setBulkHistoryReexecuteCommand(String(filters.reexecuteCommand || ''))
     } else {
+      setBulkTimelineResultMode(String(filters.resultMode || ''))
+      setBulkTimelineCommand(String(filters.command || ''))
       setBulkTimelineSourceBulkCommandId(String(filters.sourceBulkCommandId || filters.focusBulkCommandId || ''))
       if (filters.lineageDepth !== undefined && filters.lineageDepth !== null) {
         setBulkTimelineLineageDepth(String(filters.lineageDepth))
       }
+      if (filters.lineageScope !== undefined) {
+        setBulkTimelineLineageScope(String(filters.lineageScope || ''))
+      }
       if (filters.commandMode !== undefined) {
         setBulkTimelineCommandMode(String(filters.commandMode || ''))
       }
-      if (filters.actionCode !== undefined) {
-        setBulkTimelineActionCode(String(filters.actionCode || ''))
+      if (filters.selection !== undefined) {
+        setBulkTimelineSelection(String(filters.selection || ''))
       }
+      if (filters.reexecuteCommand !== undefined) {
+        setBulkTimelineReexecuteCommand(String(filters.reexecuteCommand || ''))
+      }
+      setBulkTimelineActionCode(linkedActionCode)
       if (filters.eventType !== undefined) {
         setBulkTimelineEventType(String(filters.eventType || ''))
       }
@@ -523,7 +550,8 @@ export default function ActionJobsPage() {
           <Input placeholder="reexecuteCommand" value={bulkHistoryReexecuteCommand} onChange={(e) => { setBulkHistoryOffset(0); setBulkHistoryReexecuteCommand(e.target.value) }} style={{ width: 180 }} />
           <Input placeholder="commandMode direct/reexecute/lineage" value={bulkHistoryCommandMode} onChange={(e) => { setBulkHistoryOffset(0); setBulkHistoryCommandMode(e.target.value) }} style={{ width: 220 }} />
           <Input placeholder="sourceBulkCommandId" value={bulkHistorySourceBulkCommandId} onChange={(e) => { setBulkHistoryOffset(0); setBulkHistorySourceBulkCommandId(e.target.value) }} style={{ width: 180 }} />
-          <Button onClick={() => { setBulkHistoryOffset(0); setBulkHistoryCommand(''); setBulkHistoryWorkerId(''); setBulkHistoryActionCode(''); setBulkHistoryResultMode(''); setBulkHistoryParentBulkCommandId(''); setBulkHistoryHasChildren(''); setBulkHistoryLineageDepth(''); setBulkHistorySelection(''); setBulkHistoryReexecuteCommand(''); setBulkHistoryCommandMode(''); setBulkHistorySourceBulkCommandId('') }}>清空筛选</Button>
+          <Input placeholder="lineageScope direct/entire_lineage" value={bulkHistoryLineageScope} onChange={(e) => { setBulkHistoryOffset(0); setBulkHistoryLineageScope(e.target.value) }} style={{ width: 240 }} />
+          <Button onClick={() => { setBulkHistoryOffset(0); setBulkHistoryCommand(''); setBulkHistoryWorkerId(''); setBulkHistoryActionCode(''); setBulkHistoryResultMode(''); setBulkHistoryParentBulkCommandId(''); setBulkHistoryHasChildren(''); setBulkHistoryLineageDepth(''); setBulkHistorySelection(''); setBulkHistoryReexecuteCommand(''); setBulkHistoryCommandMode(''); setBulkHistorySourceBulkCommandId(''); setBulkHistoryLineageScope('') }}>清空筛选</Button>
         </Space>
         <Descriptions column={1} size="small" style={{ marginBottom: 12 }}>
           <Descriptions.Item label="历史命令总数">{bulkHistoryQuery.data?.summary?.totalCommands ?? 0}</Descriptions.Item>
@@ -562,10 +590,24 @@ export default function ActionJobsPage() {
               ))}
             </Space>
           </Descriptions.Item>
+          <Descriptions.Item label="Action Code 汇总">
+            <Space wrap>
+              {Object.entries((bulkHistoryQuery.data?.actionCodeSummary || {})).map(([key, value]) => (
+                <Tag key={key} color="gold">{key}: {String(value)}</Tag>
+              ))}
+            </Space>
+          </Descriptions.Item>
           <Descriptions.Item label="Command Mode 汇总">
             <Space wrap>
               {Object.entries((bulkHistoryQuery.data?.commandModeSummary || {})).map(([key, value]) => (
                 <Tag key={key} color="purple">{key}: {String(value)}</Tag>
+              ))}
+            </Space>
+          </Descriptions.Item>
+          <Descriptions.Item label="Lineage Scope 汇总">
+            <Space wrap>
+              {Object.entries(((bulkHistoryQuery.data as Record<string, any> | undefined)?.lineageScopeSummary || {})).map(([key, value]) => (
+                <Tag key={key} color="lime">{key}: {String(value)}</Tag>
               ))}
             </Space>
           </Descriptions.Item>
@@ -588,6 +630,7 @@ export default function ActionJobsPage() {
             { title: '批量命令', dataIndex: 'bulkCommandId', key: 'bulkCommandId' },
             { title: '命令', dataIndex: 'command', key: 'command', render: (value: string) => <Tag color="purple">{value}</Tag> },
             { title: '模式', dataIndex: 'commandMode', key: 'commandMode', render: (value: string) => <Tag color="magenta">{value || 'direct'}</Tag> },
+            { title: 'lineageScope', dataIndex: 'lineageScope', key: 'lineageScope', render: (value: string) => <Tag color="lime">{value || 'direct'}</Tag> },
             { title: '结果模式', dataIndex: 'resultMode', key: 'resultMode', render: (value: string) => renderStatusTag(value) },
             { title: '操作人', dataIndex: 'operator', key: 'operator', render: (value: string | null | undefined) => value || '—' },
             { title: '成功/失败', key: 'summary', render: (_: unknown, row: Record<string, any>) => `${row.summary?.succeededJobs ?? 0} / ${row.summary?.failedJobs ?? 0}` },
@@ -877,6 +920,66 @@ export default function ActionJobsPage() {
           {Object.entries((bulkRelatedQuery.data?.resultModeSummary || {})).map(([key, value]) => (
             <Tag key={key} color="purple">{key}: {String(value)}</Tag>
           ))}
+          {Object.entries((bulkRelatedQuery.data?.actionCodeSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="cyan">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.commandModeSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="magenta">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.selectionSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="gold">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.reexecuteCommandSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="volcano">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.lineageScopeSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="lime">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.operatorSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="geekblue">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.workerIdSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="orange">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.reasonSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="red">reason:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.externalRefSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="geekblue">ext:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.requestIdSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="green">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.batchRefSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="blue">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.rootBulkCommandSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="processing">root:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.sourceBulkCommandSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="purple">source:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.parentBulkCommandSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="magenta">parent:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.lineageDepthSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="geekblue">depth:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries(((bulkRelatedQuery.data as Record<string, any> | undefined)?.childCountSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="cyan">children:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries(((bulkRelatedQuery.data as Record<string, any> | undefined)?.descendantCountSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="purple">desc:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.noteSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="default">note:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.itemStatusSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="blue">status:{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries((bulkRelatedQuery.data?.errorReasonSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="red">error:{key}: {String(value)}</Tag>
+          ))}
         </Space>
         <Table<Record<string, unknown>>
           rowKey={(row) => String(row.bulkCommandId || '')}
@@ -888,7 +991,45 @@ export default function ActionJobsPage() {
           columns={[
             { title: '结果', dataIndex: 'bulkCommandId', key: 'bulkCommandId' },
             { title: '命令', dataIndex: 'command', key: 'command' },
+            { title: '命令模式', dataIndex: 'commandMode', key: 'commandMode', render: (value: unknown) => <Tag color="magenta">{String(value || 'direct')}</Tag> },
             { title: '模式', dataIndex: 'resultMode', key: 'resultMode', render: (value: unknown) => renderStatusTag(String(value || '—')) },
+            { title: '动作', key: 'actionCodes', render: (_: unknown, row: Record<string, unknown>) => {
+              const values = Array.isArray(row.actionCodes) ? (row.actionCodes as unknown[]).map((item) => String(item || '').trim()).filter(Boolean) : []
+              return values.length ? <Space size={4} wrap>{values.map((value) => <Tag key={value} color="cyan">{value}</Tag>)}</Space> : '—'
+            } },
+            { title: 'selection', dataIndex: 'selection', key: 'selection', render: (value: unknown) => <Tag color="gold">{String(value || 'direct')}</Tag> },
+            { title: 'reexecuteCommand', dataIndex: 'reexecuteCommand', key: 'reexecuteCommand', render: (value: unknown) => value ? <Tag color="volcano">{String(value)}</Tag> : '—' },
+            { title: 'lineageScope', dataIndex: 'lineageScope', key: 'lineageScope', render: (value: unknown) => <Tag color="lime">{String(value || 'direct')}</Tag> },
+            { title: 'operator', dataIndex: 'operator', key: 'operator', render: (value: unknown) => String(value || '—') },
+            { title: 'workerId', dataIndex: 'workerId', key: 'workerId', render: (value: unknown) => String(value || '—') },
+            { title: 'reason', dataIndex: 'reason', key: 'reason', render: (value: unknown) => String(value || '—') },
+            { title: 'externalRef', dataIndex: 'externalRef', key: 'externalRef', render: (value: unknown) => String(value || '—') },
+            { title: 'requestIds', key: 'requestIds', render: (_: unknown, row: Record<string, unknown>) => {
+              const values = Array.isArray(row.requestIds) ? (row.requestIds as unknown[]).map((item) => String(item || '').trim()).filter(Boolean) : []
+              return values.length ? <Space size={4} wrap>{values.map((value) => <Tag key={value} color="green">{value}</Tag>)}</Space> : '—'
+            } },
+            { title: 'batchRefs', key: 'batchRefs', render: (_: unknown, row: Record<string, unknown>) => {
+              const values = Array.isArray(row.batchRefs) ? (row.batchRefs as unknown[]).map((item) => String(item || '').trim()).filter(Boolean) : []
+              return values.length ? <Space size={4} wrap>{values.map((value) => <Tag key={value} color="blue">{value}</Tag>)}</Space> : '—'
+            } },
+            { title: 'rootBulkCommandId', dataIndex: 'rootBulkCommandId', key: 'rootBulkCommandId', render: (value: unknown) => String(value || '—') },
+            { title: 'parentBulkCommandId', dataIndex: 'parentBulkCommandId', key: 'parentBulkCommandId', render: (value: unknown) => String(value || '—') },
+            { title: 'lineageDepth', dataIndex: 'lineageDepth', key: 'lineageDepth', render: (value: unknown) => String(value ?? '0') },
+            { title: 'childCount', dataIndex: 'childCount', key: 'childCount', render: (value: unknown) => String(value ?? '0') },
+            { title: 'descendantCount', dataIndex: 'descendantCount', key: 'descendantCount', render: (value: unknown) => String(value ?? '0') },
+            { title: 'sourceBulkCommandIds', key: 'sourceBulkCommandIds', render: (_: unknown, row: Record<string, unknown>) => {
+              const values = Array.isArray(row.sourceBulkCommandIds) ? (row.sourceBulkCommandIds as unknown[]).map((item) => String(item || '').trim()).filter(Boolean) : []
+              return values.length ? <Space size={4} wrap>{values.map((value) => <Tag key={value} color="purple">{value}</Tag>)}</Space> : '—'
+            } },
+            { title: 'note', dataIndex: 'note', key: 'note', render: (value: unknown) => String(value || '—') },
+            { title: 'itemStatusSummary', key: 'itemStatusSummary', render: (_: unknown, row: Record<string, unknown>) => {
+              const values = Object.entries((row.itemStatusSummary as Record<string, unknown>) || {})
+              return values.length ? <Space size={4} wrap>{values.map(([key, value]) => <Tag key={key} color="blue">{key}:{String(value)}</Tag>)}</Space> : '—'
+            } },
+            { title: 'errorReasonSummary', key: 'errorReasonSummary', render: (_: unknown, row: Record<string, unknown>) => {
+              const values = Object.entries((row.errorReasonSummary as Record<string, unknown>) || {})
+              return values.length ? <Space size={4} wrap>{values.map(([key, value]) => <Tag key={key} color="red">{key}:{String(value)}</Tag>)}</Space> : '—'
+            } },
             { title: '来源', key: 'reexecuteOf', render: (_: unknown, row: Record<string, unknown>) => String((row.lineage as Record<string, unknown> | undefined)?.reexecuteOf || '—') },
             { title: '当前', key: 'isCurrent', render: (_: unknown, row: Record<string, unknown>) => Boolean(row.isCurrent) ? <Tag color="green">current</Tag> : <Tag>linked</Tag> },
           ]}
@@ -900,8 +1041,8 @@ export default function ActionJobsPage() {
           {((bulkDetailQuery.data?.secondaryActions as Record<string, any> | undefined)?.rerunnableCommands || []).map((cmd: string) => (
             <Button key={`lineage-${cmd}`} type="dashed" onClick={() => rerunBulkHistoryAcrossLineage(cmd)}>{`对 lineage 失败项执行 ${cmd}`}</Button>
           ))}
-          <Button type="default" onClick={() => applyBulkLinkedFilters('history', (bulkLineageSummaryQuery.data?.linkedHistoryFilters as Record<string, unknown> | undefined) || (bulkDetailQuery.data?.navigationContext as Record<string, unknown> | undefined))}>联动到历史筛选</Button>
-          <Button type="default" onClick={() => applyBulkLinkedFilters('timeline', (bulkLineageSummaryQuery.data?.linkedTimelineFilters as Record<string, unknown> | undefined) || (bulkDetailQuery.data?.navigationContext as Record<string, unknown> | undefined))}>联动到时间线筛选</Button>
+          <Button type="default" onClick={() => applyBulkLinkedFilters('history', (bulkRelatedQuery.data?.linkedHistoryFilters as Record<string, unknown> | undefined) || (bulkLineageSummaryQuery.data?.linkedHistoryFilters as Record<string, unknown> | undefined) || (bulkDetailQuery.data?.navigationContext as Record<string, unknown> | undefined))}>联动到历史筛选</Button>
+          <Button type="default" onClick={() => applyBulkLinkedFilters('timeline', (bulkRelatedQuery.data?.linkedTimelineFilters as Record<string, unknown> | undefined) || (bulkLineageSummaryQuery.data?.linkedTimelineFilters as Record<string, unknown> | undefined) || (bulkDetailQuery.data?.navigationContext as Record<string, unknown> | undefined))}>联动到时间线筛选</Button>
         </Space>
         <Card size="small" title="Lineage Summary" loading={bulkLineageSummaryQuery.isLoading} style={{ marginBottom: 16 }}>
           {renderSummaryCards(bulkLineageSummaryQuery.data?.summary)}
@@ -909,6 +1050,12 @@ export default function ActionJobsPage() {
           <Space wrap style={{ marginBottom: 8 }}>
             {Object.entries((bulkLineageSummaryQuery.data?.commandModeSummary || {})).map(([key, value]) => (
               <Tag key={key} color="magenta">{key}: {String(value)}</Tag>
+            ))}
+            {Object.entries((bulkLineageSummaryQuery.data?.actionCodeSummary || {})).map(([key, value]) => (
+              <Tag key={key} color="gold">{key}: {String(value)}</Tag>
+            ))}
+            {Object.entries(((bulkLineageSummaryQuery.data as Record<string, any> | undefined)?.lineageScopeSummary || {})).map(([key, value]) => (
+              <Tag key={key} color="lime">{key}: {String(value)}</Tag>
             ))}
             {Object.entries((bulkLineageSummaryQuery.data?.eventTypeSummary || {})).map(([key, value]) => (
               <Tag key={key} color="blue">{key}: {String(value)}</Tag>
@@ -939,12 +1086,16 @@ export default function ActionJobsPage() {
         <Typography.Title level={5}>结果时间线</Typography.Title>
         <Space wrap style={{ marginBottom: 12 }}>
           <Input placeholder="eventType" value={bulkTimelineEventType} onChange={(e) => setBulkTimelineEventType(e.target.value)} style={{ width: 140 }} />
+          <Input placeholder="resultMode" value={bulkTimelineResultMode} onChange={(e) => setBulkTimelineResultMode(e.target.value)} style={{ width: 140 }} />
           <Input placeholder="command" value={bulkTimelineCommand} onChange={(e) => setBulkTimelineCommand(e.target.value)} style={{ width: 140 }} />
           <Input placeholder="actionCode" value={bulkTimelineActionCode} onChange={(e) => setBulkTimelineActionCode(e.target.value)} style={{ width: 140 }} />
           <Input placeholder="depth" value={bulkTimelineLineageDepth} onChange={(e) => setBulkTimelineLineageDepth(e.target.value)} style={{ width: 100 }} />
           <Input placeholder="commandMode" value={bulkTimelineCommandMode} onChange={(e) => setBulkTimelineCommandMode(e.target.value)} style={{ width: 140 }} />
           <Input placeholder="sourceBulkCommandId" value={bulkTimelineSourceBulkCommandId} onChange={(e) => setBulkTimelineSourceBulkCommandId(e.target.value)} style={{ width: 180 }} />
-          <Button onClick={() => { setBulkTimelineEventType(''); setBulkTimelineCommand(''); setBulkTimelineActionCode(''); setBulkTimelineLineageDepth(''); setBulkTimelineCommandMode(''); setBulkTimelineSourceBulkCommandId('') }}>清空时间线筛选</Button>
+          <Input placeholder="lineageScope" value={bulkTimelineLineageScope} onChange={(e) => setBulkTimelineLineageScope(e.target.value)} style={{ width: 160 }} />
+          <Input placeholder="selection" value={bulkTimelineSelection} onChange={(e) => setBulkTimelineSelection(e.target.value)} style={{ width: 140 }} />
+          <Input placeholder="reexecuteCommand" value={bulkTimelineReexecuteCommand} onChange={(e) => setBulkTimelineReexecuteCommand(e.target.value)} style={{ width: 180 }} />
+          <Button onClick={() => { setBulkTimelineEventType(''); setBulkTimelineResultMode(''); setBulkTimelineCommand(''); setBulkTimelineActionCode(''); setBulkTimelineLineageDepth(''); setBulkTimelineCommandMode(''); setBulkTimelineSourceBulkCommandId(''); setBulkTimelineLineageScope(''); setBulkTimelineSelection(''); setBulkTimelineReexecuteCommand('') }}>清空时间线筛选</Button>
         </Space>
         <Space wrap style={{ marginBottom: 12 }}>
           {Object.entries((bulkTimelineQuery.data?.commandSummary || {})).map(([key, value]) => (
@@ -959,8 +1110,17 @@ export default function ActionJobsPage() {
           {Object.entries((bulkTimelineQuery.data?.actionCodeSummary || {})).map(([key, value]) => (
             <Tag key={key} color="gold">{key}: {String(value)}</Tag>
           ))}
+          {Object.entries(((bulkTimelineQuery.data as Record<string, any> | undefined)?.selectionSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="orange">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries(((bulkTimelineQuery.data as Record<string, any> | undefined)?.reexecuteCommandSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="volcano">{key}: {String(value)}</Tag>
+          ))}
           {Object.entries((bulkTimelineQuery.data?.commandModeSummary || {})).map(([key, value]) => (
             <Tag key={key} color="magenta">{key}: {String(value)}</Tag>
+          ))}
+          {Object.entries(((bulkTimelineQuery.data as Record<string, any> | undefined)?.lineageScopeSummary || {})).map(([key, value]) => (
+            <Tag key={key} color="lime">{key}: {String(value)}</Tag>
           ))}
           {Object.entries((bulkTimelineQuery.data?.lineageSummary || {})).map(([key, value]) => (
             <Tag key={key} color="cyan">{key}: {String(value)}</Tag>
@@ -978,6 +1138,9 @@ export default function ActionJobsPage() {
             { title: '结果', dataIndex: 'bulkCommandId', key: 'bulkCommandId' },
             { title: '事件', dataIndex: 'eventType', key: 'eventType', render: (value: unknown) => <Tag>{String(value || '—')}</Tag> },
             { title: '命令', dataIndex: 'command', key: 'command' },
+            { title: 'lineageScope', dataIndex: 'lineageScope', key: 'lineageScope', render: (value: unknown) => <Tag color="lime">{String(value || 'direct')}</Tag> },
+            { title: 'selection', dataIndex: 'selection', key: 'selection', render: (value: unknown) => <Tag color="orange">{String(value || 'direct')}</Tag> },
+            { title: 'reexecuteCommand', dataIndex: 'reexecuteCommand', key: 'reexecuteCommand', render: (value: unknown) => String(value || 'direct') },
             { title: '动作', key: 'actionCodes', render: (_: unknown, row: Record<string, any>) => String((row.actionCodes || []).join(', ') || '—') },
             { title: '模式', dataIndex: 'resultMode', key: 'resultMode', render: (value: unknown) => renderStatusTag(String(value || '—')) },
             { title: '深度', key: 'lineageDepth', render: (_: unknown, row: Record<string, any>) => String(row.lineage?.lineageDepth ?? 0) },

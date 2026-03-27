@@ -1415,21 +1415,40 @@ class ActionQueueService:
             return True
         return normalized in self._bulk_source_ids(record)
 
+    def _bulk_navigation_result_mode(self, record: Dict[str, Any]) -> str | None:
+        actual_mode = self._bulk_result_mode(record)
+        command_mode = str(record.get('commandMode') or '').strip().lower() or 'direct'
+        if command_mode == 'lineage':
+            return actual_mode
+        selection = str(record.get('selection') or '').strip().lower() or None
+        if selection in {'failed', 'succeeded'}:
+            return selection
+        if actual_mode == 'partial':
+            return 'failed'
+        return actual_mode
+
     def _bulk_linked_filters(self, record: Dict[str, Any]) -> Dict[str, Any]:
         bulk_id = str(record.get('bulkCommandId') or '')
         lineage = self._bulk_lineage_payload(record)
         root_id = str(lineage.get('rootBulkCommandId') or bulk_id)
         parent_id = str(lineage.get('reexecuteOf') or '').strip() or None
+        lineage_scope = str(record.get('lineageScope') or '').strip() or None
+        action_codes = [str(code) for code in (dict(record.get('scope') or {}).get('actionCodes') or []) if str(code).strip()]
+        primary_action_code = action_codes[0] if len(action_codes) == 1 else None
         return {
             'focusBulkCommandId': bulk_id,
             'rootBulkCommandId': root_id,
             'parentBulkCommandId': parent_id,
             'sourceBulkCommandId': bulk_id,
             'lineageDepth': int(lineage.get('lineageDepth') or 0),
+            'lineageScope': lineage_scope,
+            'command': str(record.get('command') or '').strip() or None,
+            'resultMode': self._bulk_navigation_result_mode(record),
             'commandMode': str(record.get('commandMode') or 'direct'),
             'selection': str(record.get('selection') or '').strip() or None,
             'reexecuteCommand': str(record.get('reexecuteCommand') or '').strip() or None,
-            'actionCodes': [str(code) for code in (dict(record.get('scope') or {}).get('actionCodes') or []) if str(code).strip()],
+            'actionCode': primary_action_code,
+            'actionCodes': action_codes,
         }
 
     def get_bulk_command_related(self, bulk_command_id: str, *, limit: int = 20) -> Dict[str, Any]:
@@ -1442,24 +1461,126 @@ class ActionQueueService:
         limited = related_records[:normalized_limit]
         command_summary: dict[str, int] = {}
         result_mode_summary: dict[str, int] = {}
+        action_code_summary: dict[str, int] = {}
+        command_mode_summary: dict[str, int] = {}
+        selection_summary: dict[str, int] = {}
+        reexecute_command_summary: dict[str, int] = {}
+        lineage_scope_summary: dict[str, int] = {}
+        operator_summary: dict[str, int] = {}
+        worker_id_summary: dict[str, int] = {}
+        reason_summary: dict[str, int] = {}
+        external_ref_summary: dict[str, int] = {}
+        request_id_summary: dict[str, int] = {}
+        batch_ref_summary: dict[str, int] = {}
+        root_bulk_command_summary: dict[str, int] = {}
+        source_bulk_command_summary: dict[str, int] = {}
+        parent_bulk_command_summary: dict[str, int] = {}
+        lineage_depth_summary: dict[str, int] = {}
+        child_count_summary: dict[str, int] = {}
+        descendant_count_summary: dict[str, int] = {}
+        note_summary: dict[str, int] = {}
+        item_status_summary: dict[str, int] = {}
+        error_reason_summary: dict[str, int] = {}
+        related_scope_seen: set[str] = set()
+        for item in limited:
+            for scoped_item in [*(item.get('items') or []), *(item.get('errors') or [])]:
+                request_id = str(scoped_item.get('requestId') or '').strip()
+                job_id = str(scoped_item.get('jobId') or '').strip()
+                batch_ref = str(scoped_item.get('batchRef') or scoped_item.get('batchId') or 'unscoped').strip() or 'unscoped'
+                dedupe_key = request_id or job_id or f"batch:{batch_ref}"
+                if dedupe_key in related_scope_seen:
+                    continue
+                related_scope_seen.add(dedupe_key)
+                request_key = request_id or 'unscoped'
+                request_id_summary[request_key] = int(request_id_summary.get(request_key, 0)) + 1
+                batch_ref_summary[batch_ref] = int(batch_ref_summary.get(batch_ref, 0)) + 1
         items: list[Dict[str, Any]] = []
         for item in limited:
-            command_key = str(item.get('command') or 'unknown')
             result_mode = self._bulk_result_mode(item)
+            command_key = str(item.get('command') or 'unknown')
+            command_mode_key = str(item.get('commandMode') or 'direct')
+            selection_key = str(item.get('selection') or 'direct')
+            reexecute_command_key = str(item.get('reexecuteCommand') or 'direct')
+            lineage_scope_key = str(item.get('lineageScope') or 'direct')
+            scope = dict(item.get('scope') or {})
+            lineage_payload = self._bulk_lineage_payload(item)
+            action_codes = [str(code) for code in scope.get('actionCodes') or [] if str(code).strip()]
+            request_ids = [str(request_id) for request_id in scope.get('requestIds') or [] if str(request_id).strip()]
+            batch_refs = [str(batch_ref) for batch_ref in scope.get('batchRefs') or [] if str(batch_ref).strip()]
+            root_bulk_command_id = str(lineage_payload.get('rootBulkCommandId') or item.get('rootBulkCommandId') or item.get('bulkCommandId') or '').strip()
+            parent_bulk_command_id = str(lineage_payload.get('reexecuteOf') or item.get('reexecuteOf') or '').strip()
+            lineage_depth_value = int(lineage_payload.get('lineageDepth') or 0)
+            source_bulk_command_ids = [str(source_id) for source_id in lineage_payload.get('sourceBulkCommandIds') or [] if str(source_id).strip()]
+            child_count_value = int(lineage_payload.get('childCount') or 0)
+            descendant_count_value = int(lineage_payload.get('descendantCount') or 0)
+            note_value = str(item.get('note') or '').strip()
+            item_status_payload = {str(key): int(value) for key, value in dict(item.get('itemStatusSummary') or {}).items() if str(key).strip()}
+            error_reason_payload = {str(key): int(value) for key, value in dict(item.get('errorReasonSummary') or {}).items() if str(key).strip()}
+            primary_action_code = action_codes[0] if len(action_codes) == 1 else None
+            operator_key = str(item.get('operator') or 'system')
+            worker_id_key = str(item.get('workerId') or 'unassigned')
+            reason_key = str(item.get('reason') or 'unspecified').strip() or 'unspecified'
+            external_ref_key = str(item.get('externalRef') or 'unlinked').strip() or 'unlinked'
             command_summary[command_key] = int(command_summary.get(command_key, 0)) + 1
             result_mode_summary[result_mode] = int(result_mode_summary.get(result_mode, 0)) + 1
+            command_mode_summary[command_mode_key] = int(command_mode_summary.get(command_mode_key, 0)) + 1
+            selection_summary[selection_key] = int(selection_summary.get(selection_key, 0)) + 1
+            reexecute_command_summary[reexecute_command_key] = int(reexecute_command_summary.get(reexecute_command_key, 0)) + 1
+            lineage_scope_summary[lineage_scope_key] = int(lineage_scope_summary.get(lineage_scope_key, 0)) + 1
+            operator_summary[operator_key] = int(operator_summary.get(operator_key, 0)) + 1
+            worker_id_summary[worker_id_key] = int(worker_id_summary.get(worker_id_key, 0)) + 1
+            reason_summary[reason_key] = int(reason_summary.get(reason_key, 0)) + 1
+            external_ref_summary[external_ref_key] = int(external_ref_summary.get(external_ref_key, 0)) + 1
+            if note_value:
+                note_summary[note_value] = int(note_summary.get(note_value, 0)) + 1
+            for status_key, count in item_status_payload.items():
+                item_status_summary[status_key] = int(item_status_summary.get(status_key, 0)) + int(count)
+            for reason_key, count in error_reason_payload.items():
+                error_reason_summary[reason_key] = int(error_reason_summary.get(reason_key, 0)) + int(count)
+            if root_bulk_command_id:
+                root_bulk_command_summary[root_bulk_command_id] = int(root_bulk_command_summary.get(root_bulk_command_id, 0)) + 1
+            if parent_bulk_command_id:
+                parent_bulk_command_summary[parent_bulk_command_id] = int(parent_bulk_command_summary.get(parent_bulk_command_id, 0)) + 1
+            lineage_depth_summary[str(lineage_depth_value)] = int(lineage_depth_summary.get(str(lineage_depth_value), 0)) + 1
+            child_count_summary[str(child_count_value)] = int(child_count_summary.get(str(child_count_value), 0)) + 1
+            descendant_count_summary[str(descendant_count_value)] = int(descendant_count_summary.get(str(descendant_count_value), 0)) + 1
+            for source_bulk_command_id in source_bulk_command_ids:
+                source_bulk_command_summary[source_bulk_command_id] = int(source_bulk_command_summary.get(source_bulk_command_id, 0)) + 1
+            for code in action_codes or ['unknown']:
+                action_code_summary[code] = int(action_code_summary.get(code, 0)) + 1
             items.append({
                 'bulkCommandId': item.get('bulkCommandId'),
                 'eventAt': item.get('eventAt'),
                 'command': item.get('command'),
-                'commandMode': item.get('commandMode'),
+                'commandMode': command_mode_key,
+                'selection': selection_key,
+                'reexecuteCommand': None if reexecute_command_key == 'direct' else reexecute_command_key,
+                'lineageScope': lineage_scope_key,
                 'operator': item.get('operator'),
                 'workerId': item.get('workerId'),
+                'reason': item.get('reason'),
+                'externalRef': item.get('externalRef'),
                 'summary': dict(item.get('summary') or {}),
                 'resultMode': result_mode,
-                'lineage': self._bulk_lineage_payload(item),
+                'actionCode': primary_action_code,
+                'actionCodes': action_codes,
+                'requestIds': request_ids,
+                'batchRefs': batch_refs,
+                'rootBulkCommandId': root_bulk_command_id or None,
+                'parentBulkCommandId': parent_bulk_command_id or None,
+                'lineageDepth': lineage_depth_value,
+                'childCount': child_count_value,
+                'descendantCount': descendant_count_value,
+                'sourceBulkCommandIds': source_bulk_command_ids,
+                'note': note_value or None,
+                'itemStatusSummary': item_status_payload,
+                'errorReasonSummary': error_reason_payload,
+                'lineage': lineage_payload,
+                'linkedHistoryFilters': self._bulk_linked_filters(item),
+                'linkedTimelineFilters': self._bulk_linked_filters(item),
                 'isCurrent': str(item.get('bulkCommandId') or '') == bulk_id,
             })
+        linked_filters = self._bulk_linked_filters(record)
         return {
             'contractVersion': self.CONTRACT_VERSION,
             'bulkCommandId': bulk_id,
@@ -1470,6 +1591,28 @@ class ActionQueueService:
             },
             'commandSummary': command_summary,
             'resultModeSummary': result_mode_summary,
+            'actionCodeSummary': action_code_summary,
+            'commandModeSummary': command_mode_summary,
+            'selectionSummary': selection_summary,
+            'reexecuteCommandSummary': reexecute_command_summary,
+            'lineageScopeSummary': lineage_scope_summary,
+            'operatorSummary': operator_summary,
+            'workerIdSummary': worker_id_summary,
+            'reasonSummary': reason_summary,
+            'externalRefSummary': external_ref_summary,
+            'requestIdSummary': request_id_summary,
+            'batchRefSummary': batch_ref_summary,
+            'rootBulkCommandSummary': root_bulk_command_summary,
+            'sourceBulkCommandSummary': source_bulk_command_summary,
+            'parentBulkCommandSummary': parent_bulk_command_summary,
+            'lineageDepthSummary': lineage_depth_summary,
+            'childCountSummary': child_count_summary,
+            'descendantCountSummary': descendant_count_summary,
+            'noteSummary': note_summary,
+            'itemStatusSummary': item_status_summary,
+            'errorReasonSummary': error_reason_summary,
+            'linkedHistoryFilters': linked_filters,
+            'linkedTimelineFilters': linked_filters,
             'items': items,
             'total': len(related_records),
         }
@@ -1491,6 +1634,7 @@ class ActionQueueService:
         reexecute_command: str | None = None,
         command_mode: str | None = None,
         source_bulk_command_id: str | None = None,
+        lineage_scope: str | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> Dict[str, Any]:
@@ -1506,6 +1650,7 @@ class ActionQueueService:
         reexecute_command_filter = str(reexecute_command or '').strip() or None
         command_mode_filter = str(command_mode or '').strip() or None
         source_bulk_filter = str(source_bulk_command_id or '').strip() or None
+        lineage_scope_filter = str(lineage_scope or '').strip() or None
         has_children_filter: bool | None = None
         if isinstance(has_children, bool):
             has_children_filter = has_children
@@ -1523,6 +1668,7 @@ class ActionQueueService:
         selection_summary: dict[str, int] = {}
         reexecute_command_summary: dict[str, int] = {}
         command_mode_summary: dict[str, int] = {}
+        lineage_scope_summary: dict[str, int] = {}
         lineage_summary = {
             'rootResults': 0,
             'childResults': 0,
@@ -1569,6 +1715,9 @@ class ActionQueueService:
                 continue
             if not self._matches_source_bulk_filter(record, source_bulk_filter):
                 continue
+            current_lineage_scope = str(record.get('lineageScope') or '').strip() or 'direct'
+            if lineage_scope_filter and current_lineage_scope != lineage_scope_filter:
+                continue
             lineage_payload = self._bulk_lineage_payload(record)
             child_count = int(lineage_payload.get('childCount') or 0)
             depth = int(lineage_payload.get('lineageDepth') or 0)
@@ -1602,6 +1751,7 @@ class ActionQueueService:
             reexecute_key = str(record.get('reexecuteCommand') or 'direct')
             reexecute_command_summary[reexecute_key] = int(reexecute_command_summary.get(reexecute_key, 0)) + 1
             command_mode_summary[current_command_mode] = int(command_mode_summary.get(current_command_mode, 0)) + 1
+            lineage_scope_summary[current_lineage_scope] = int(lineage_scope_summary.get(current_lineage_scope, 0)) + 1
             for code in action_codes:
                 action_code_summary[code] = int(action_code_summary.get(code, 0)) + 1
             items.append({
@@ -1618,7 +1768,7 @@ class ActionQueueService:
                 'selection': record.get('selection'),
                 'reexecuteCommand': record.get('reexecuteCommand'),
                 'commandMode': current_command_mode,
-                'lineageScope': record.get('lineageScope'),
+                'lineageScope': record.get('lineageScope') or 'direct',
                 'sourceBulkCommandIds': [str(item) for item in record.get('sourceBulkCommandIds') or [] if str(item).strip()],
                 'navigation': self._bulk_linked_filters(record),
                 'itemStatusSummary': dict(record.get('itemStatusSummary') or {}),
@@ -1645,6 +1795,7 @@ class ActionQueueService:
                 'reexecuteCommand': reexecute_command_filter,
                 'commandMode': command_mode_filter,
                 'sourceBulkCommandId': source_bulk_filter,
+                'lineageScope': lineage_scope_filter,
                 'offset': normalized_offset,
                 'limit': normalized_limit,
             },
@@ -1656,10 +1807,13 @@ class ActionQueueService:
             'selectionSummary': selection_summary,
             'reexecuteCommandSummary': reexecute_command_summary,
             'commandModeSummary': command_mode_summary,
+            'lineageScopeSummary': lineage_scope_summary,
             'linkedFilterSummary': {
                 'rootBulkCommandId': 1 if root_filter else 0,
                 'parentBulkCommandId': 1 if parent_filter else 0,
                 'sourceBulkCommandId': 1 if source_bulk_filter else 0,
+                'actionCode': 1 if action_filter else 0,
+                'lineageScope': 1 if lineage_scope_filter else 0,
             },
             'pagination': {
                 'offset': normalized_offset,
@@ -1722,6 +1876,9 @@ class ActionQueueService:
         lineage_depth: int | None = None,
         command_mode: str | None = None,
         source_bulk_command_id: str | None = None,
+        lineage_scope: str | None = None,
+        selection: str | None = None,
+        reexecute_command: str | None = None,
         limit: int = 20,
     ) -> Dict[str, Any]:
         bulk_id = str(bulk_command_id or '').strip()
@@ -1729,23 +1886,30 @@ class ActionQueueService:
         if not record:
             raise ValueError('bulk_command_not_found')
         normalized_mode = str(result_mode or '').strip() or None
+        normalized_result_mode = str(result_mode or '').strip() or None
         normalized_event_type = str(event_type or '').strip() or None
         normalized_command = str(command or '').strip() or None
         normalized_action_code = str(action_code or '').strip() or None
         normalized_command_mode = str(command_mode or '').strip() or None
         normalized_source_bulk_command_id = str(source_bulk_command_id or '').strip() or None
+        normalized_lineage_scope = str(lineage_scope or '').strip() or None
+        normalized_selection = str(selection or '').strip() or None
+        normalized_reexecute_command = str(reexecute_command or '').strip() or None
         depth_filter = None if lineage_depth is None else int(lineage_depth)
         timeline_items: list[Dict[str, Any]] = []
         command_summary: dict[str, int] = {}
         result_mode_summary: dict[str, int] = {}
         event_type_summary: dict[str, int] = {}
         action_code_summary: dict[str, int] = {}
+        selection_summary: dict[str, int] = {}
+        reexecute_command_summary: dict[str, int] = {}
         command_mode_summary: dict[str, int] = {}
+        lineage_scope_summary: dict[str, int] = {}
         lineage_summary = {'rootEvents': 0, 'childEvents': 0, 'maxDepth': 0}
         for item in self._bulk_related_records(bulk_id):
             if not self._matches_source_bulk_filter(item, normalized_source_bulk_command_id):
                 continue
-            current_mode = self._bulk_result_mode(item)
+            current_mode = self._bulk_navigation_result_mode(item) or self._bulk_result_mode(item)
             if normalized_mode and current_mode != normalized_mode:
                 continue
             lineage_payload = self._bulk_lineage_payload(item)
@@ -1761,6 +1925,15 @@ class ActionQueueService:
             current_command_mode = str(item.get('commandMode') or 'direct')
             if normalized_command_mode and current_command_mode != normalized_command_mode:
                 continue
+            current_lineage_scope = str(item.get('lineageScope') or '').strip() or 'direct'
+            if normalized_lineage_scope and current_lineage_scope != normalized_lineage_scope:
+                continue
+            current_selection = str(item.get('selection') or '').strip() or 'direct'
+            if normalized_selection and current_selection != normalized_selection:
+                continue
+            current_reexecute_command = str(item.get('reexecuteCommand') or '').strip() or 'direct'
+            if normalized_reexecute_command and current_reexecute_command != normalized_reexecute_command:
+                continue
             scope = dict(item.get('scope') or {})
             action_codes = [str(code) for code in scope.get('actionCodes') or [] if str(code).strip()]
             if normalized_action_code and normalized_action_code not in action_codes:
@@ -1768,7 +1941,10 @@ class ActionQueueService:
             command_summary[command_key] = int(command_summary.get(command_key, 0)) + 1
             result_mode_summary[current_mode] = int(result_mode_summary.get(current_mode, 0)) + 1
             event_type_summary[event_type_value] = int(event_type_summary.get(event_type_value, 0)) + 1
+            selection_summary[current_selection] = int(selection_summary.get(current_selection, 0)) + 1
+            reexecute_command_summary[current_reexecute_command] = int(reexecute_command_summary.get(current_reexecute_command, 0)) + 1
             command_mode_summary[current_command_mode] = int(command_mode_summary.get(current_command_mode, 0)) + 1
+            lineage_scope_summary[current_lineage_scope] = int(lineage_scope_summary.get(current_lineage_scope, 0)) + 1
             if depth == 0:
                 lineage_summary['rootEvents'] += 1
             else:
@@ -1783,6 +1959,9 @@ class ActionQueueService:
                 'eventAt': item.get('eventAt'),
                 'command': item.get('command'),
                 'commandMode': current_command_mode,
+                'selection': item.get('selection') or 'direct',
+                'reexecuteCommand': item.get('reexecuteCommand') or 'direct',
+                'lineageScope': item.get('lineageScope') or 'direct',
                 'operator': item.get('operator'),
                 'workerId': item.get('workerId'),
                 'resultMode': current_mode,
@@ -1804,6 +1983,9 @@ class ActionQueueService:
                 'lineageDepth': depth_filter,
                 'commandMode': normalized_command_mode,
                 'sourceBulkCommandId': normalized_source_bulk_command_id,
+                'lineageScope': normalized_lineage_scope,
+                'selection': normalized_selection,
+                'reexecuteCommand': normalized_reexecute_command,
                 'limit': normalized_limit,
             },
             'lineage': self._bulk_lineage_payload(record),
@@ -1815,7 +1997,10 @@ class ActionQueueService:
             'resultModeSummary': result_mode_summary,
             'eventTypeSummary': event_type_summary,
             'actionCodeSummary': action_code_summary,
+            'selectionSummary': selection_summary,
+            'reexecuteCommandSummary': reexecute_command_summary,
             'commandModeSummary': command_mode_summary,
+            'lineageScopeSummary': lineage_scope_summary,
             'lineageSummary': lineage_summary,
             'items': limited,
             'total': len(timeline_items),
@@ -1826,11 +2011,14 @@ class ActionQueueService:
         self,
         bulk_command_id: str,
         *,
+        result_mode: str | None = None,
         event_type: str | None = None,
+        command: str | None = None,
         action_code: str | None = None,
         lineage_depth: int | None = None,
         command_mode: str | None = None,
         source_bulk_command_id: str | None = None,
+        lineage_scope: str | None = None,
         selection: str | None = None,
         reexecute_command: str | None = None,
         limit: int = 20,
@@ -1839,10 +2027,13 @@ class ActionQueueService:
         record = ACTION_BULK_COMMANDS.get(bulk_id)
         if not record:
             raise ValueError('bulk_command_not_found')
+        normalized_result_mode = str(result_mode or '').strip() or None
         normalized_event_type = str(event_type or '').strip() or None
+        normalized_command = str(command or '').strip() or None
         normalized_action_code = str(action_code or '').strip() or None
         normalized_command_mode = str(command_mode or '').strip() or None
         normalized_source_bulk_command_id = str(source_bulk_command_id or '').strip() or None
+        normalized_lineage_scope = str(lineage_scope or '').strip() or None
         normalized_selection = str(selection or '').strip() or None
         normalized_reexecute_command = str(reexecute_command or '').strip() or None
         depth_filter = None if lineage_depth is None else int(lineage_depth)
@@ -1853,6 +2044,7 @@ class ActionQueueService:
         selection_summary: dict[str, int] = {}
         reexecute_command_summary: dict[str, int] = {}
         command_mode_summary: dict[str, int] = {}
+        lineage_scope_summary: dict[str, int] = {}
         event_type_summary: dict[str, int] = {}
         lineage_summary = {
             'rootResults': 0,
@@ -1878,6 +2070,9 @@ class ActionQueueService:
             current_command_mode = str(item.get('commandMode') or 'direct')
             if normalized_command_mode and current_command_mode != normalized_command_mode:
                 continue
+            current_lineage_scope = str(item.get('lineageScope') or '').strip() or 'direct'
+            if normalized_lineage_scope and current_lineage_scope != normalized_lineage_scope:
+                continue
             if normalized_selection and str(item.get('selection') or '').strip() != normalized_selection:
                 continue
             if normalized_reexecute_command and str(item.get('reexecuteCommand') or '').strip() != normalized_reexecute_command:
@@ -1886,8 +2081,14 @@ class ActionQueueService:
             action_codes = [str(code) for code in scope.get('actionCodes') or [] if str(code).strip()]
             if normalized_action_code and normalized_action_code not in action_codes:
                 continue
+            command_key = str(item.get('command') or 'unknown')
+            if normalized_command and command_key != normalized_command:
+                continue
             event_type_value = 'bulk_result_created' if not lineage_payload.get('reexecuteOf') else 'bulk_result_reexecuted'
             if normalized_event_type and event_type_value != normalized_event_type:
+                continue
+            result_mode = self._bulk_navigation_result_mode(item) or self._bulk_result_mode(item)
+            if normalized_result_mode and result_mode != normalized_result_mode:
                 continue
             related_records.append(item)
             totals['totalResults'] += 1
@@ -1896,8 +2097,6 @@ class ActionQueueService:
             totals['totalSucceededJobs'] += int(summary.get('succeededJobs') or 0)
             totals['totalFailedJobs'] += int(summary.get('failedJobs') or 0)
             source_ids.update([str(source_id) for source_id in item.get('sourceBulkCommandIds') or [] if str(source_id).strip()])
-            command_key = str(item.get('command') or 'unknown')
-            result_mode = self._bulk_result_mode(item)
             selection_key = str(item.get('selection') or 'direct')
             reexecute_key = str(item.get('reexecuteCommand') or 'direct')
             command_summary[command_key] = int(command_summary.get(command_key, 0)) + 1
@@ -1905,6 +2104,7 @@ class ActionQueueService:
             selection_summary[selection_key] = int(selection_summary.get(selection_key, 0)) + 1
             reexecute_command_summary[reexecute_key] = int(reexecute_command_summary.get(reexecute_key, 0)) + 1
             command_mode_summary[current_command_mode] = int(command_mode_summary.get(current_command_mode, 0)) + 1
+            lineage_scope_summary[current_lineage_scope] = int(lineage_scope_summary.get(current_lineage_scope, 0)) + 1
             event_type_summary[event_type_value] = int(event_type_summary.get(event_type_value, 0)) + 1
             if depth == 0:
                 lineage_summary['rootResults'] += 1
@@ -1919,11 +2119,16 @@ class ActionQueueService:
         ordered_related = sorted(related_records, key=lambda item: str(item.get('eventAt') or ''), reverse=True)
         timeline = self.get_bulk_command_timeline(
             bulk_id,
+            result_mode=normalized_result_mode,
             event_type=normalized_event_type,
+            command=normalized_command,
             action_code=normalized_action_code,
             lineage_depth=depth_filter,
             command_mode=normalized_command_mode,
             source_bulk_command_id=normalized_source_bulk_command_id,
+            lineage_scope=normalized_lineage_scope,
+            selection=normalized_selection,
+            reexecute_command=normalized_reexecute_command,
             limit=limit,
         )
         latest_results = [
@@ -1932,21 +2137,26 @@ class ActionQueueService:
                 'eventAt': item.get('eventAt'),
                 'command': item.get('command'),
                 'commandMode': item.get('commandMode'),
-                'resultMode': self._bulk_result_mode(item),
+                'lineageScope': item.get('lineageScope') or 'direct',
+                'resultMode': self._bulk_navigation_result_mode(item) or self._bulk_result_mode(item),
                 'summary': dict(item.get('summary') or {}),
                 'lineage': self._bulk_lineage_payload(item),
             }
             for item in ordered_related[: min(max(int(limit or 0), 1), 10)]
         ]
+        linked_filters = self._bulk_linked_filters(record)
         return {
             'contractVersion': self.CONTRACT_VERSION,
             'bulkCommandId': bulk_id,
             'scope': {
+                'resultMode': normalized_result_mode,
                 'eventType': normalized_event_type,
+                'command': normalized_command,
                 'actionCode': normalized_action_code,
                 'lineageDepth': depth_filter,
                 'commandMode': normalized_command_mode,
                 'sourceBulkCommandId': normalized_source_bulk_command_id,
+                'lineageScope': normalized_lineage_scope,
                 'selection': normalized_selection,
                 'reexecuteCommand': normalized_reexecute_command,
                 'limit': max(int(limit or 0), 0) or 20,
@@ -1959,15 +2169,27 @@ class ActionQueueService:
             'selectionSummary': selection_summary,
             'reexecuteCommandSummary': reexecute_command_summary,
             'commandModeSummary': command_mode_summary,
+            'lineageScopeSummary': lineage_scope_summary,
             'eventTypeSummary': event_type_summary,
             'lineageSummary': lineage_summary,
-            'linkedHistoryFilters': self._bulk_linked_filters(record),
+            'linkedHistoryFilters': {
+                **linked_filters,
+                'resultMode': normalized_result_mode if normalized_result_mode is not None else linked_filters.get('resultMode'),
+                'command': normalized_command if normalized_command is not None else linked_filters.get('command'),
+                'actionCode': normalized_action_code if normalized_action_code is not None else linked_filters.get('actionCode'),
+                'lineageScope': normalized_lineage_scope if normalized_lineage_scope is not None else linked_filters.get('lineageScope'),
+            },
             'linkedTimelineFilters': {
-                **self._bulk_linked_filters(record),
+                **linked_filters,
+                'resultMode': normalized_result_mode if normalized_result_mode is not None else linked_filters.get('resultMode'),
                 'eventType': normalized_event_type,
-                'actionCode': normalized_action_code,
+                'command': normalized_command if normalized_command is not None else linked_filters.get('command'),
+                'actionCode': normalized_action_code if normalized_action_code is not None else linked_filters.get('actionCode'),
                 'commandMode': normalized_command_mode,
                 'sourceBulkCommandId': normalized_source_bulk_command_id,
+                'lineageScope': normalized_lineage_scope if normalized_lineage_scope is not None else linked_filters.get('lineageScope'),
+                'selection': normalized_selection if normalized_selection is not None else linked_filters.get('selection'),
+                'reexecuteCommand': normalized_reexecute_command if normalized_reexecute_command is not None else linked_filters.get('reexecuteCommand'),
             },
             'latestResults': latest_results,
             'timeline': timeline.get('items', []),
@@ -2148,7 +2370,8 @@ class ActionQueueService:
                 job = self._get_job(job_id)
                 effective_worker = worker_id
                 if normalized_command in {'release-lease', 'mark-succeeded', 'mark-failed'}:
-                    effective_worker = str(worker_id or job.get('workerId') or '').strip() or None
+                    job_worker_id = str(job.get('workerId') or '').strip() or None
+                    effective_worker = job_worker_id or (str(worker_id or '').strip() or None)
                 if normalized_command == 'release-lease':
                     payload = self.release_job_lease(job_id, worker_id=str(effective_worker or ''), operator=operator, reason=reason, note=note)
                 elif normalized_command == 'mark-succeeded':

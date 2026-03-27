@@ -115,6 +115,7 @@ export interface ActionBulkCommandHistoryItem {
   eventAt?: string
   command?: string
   commandMode?: string | null
+  lineageScope?: string | null
   operator?: string | null
   workerId?: string | null
   scope?: Record<string, unknown>
@@ -132,9 +133,11 @@ export interface ActionBulkCommandHistoryResponse {
   commandSummary?: SummaryMap
   resultModeSummary?: SummaryMap
   actionCodeSummary?: SummaryMap
+  actionCodeSummary?: SummaryMap
   selectionSummary?: SummaryMap
   reexecuteCommandSummary?: SummaryMap
   commandModeSummary?: SummaryMap
+  lineageScopeSummary?: SummaryMap
   pagination?: Record<string, unknown>
   items?: ActionBulkCommandHistoryItem[]
   total?: number
@@ -147,6 +150,28 @@ export interface ActionBulkCommandRelatedResponse {
   summary?: SummaryMap
   commandSummary?: SummaryMap
   resultModeSummary?: SummaryMap
+  actionCodeSummary?: SummaryMap
+  commandModeSummary?: SummaryMap
+  selectionSummary?: SummaryMap
+  reexecuteCommandSummary?: SummaryMap
+  lineageScopeSummary?: SummaryMap
+  operatorSummary?: SummaryMap
+  workerIdSummary?: SummaryMap
+  reasonSummary?: SummaryMap
+  externalRefSummary?: SummaryMap
+  requestIdSummary?: SummaryMap
+  batchRefSummary?: SummaryMap
+  rootBulkCommandSummary?: SummaryMap
+  sourceBulkCommandSummary?: SummaryMap
+  parentBulkCommandSummary?: SummaryMap
+  lineageDepthSummary?: SummaryMap
+  childCountSummary?: SummaryMap
+  descendantCountSummary?: SummaryMap
+  noteSummary?: SummaryMap
+  itemStatusSummary?: SummaryMap
+  errorReasonSummary?: SummaryMap
+  linkedHistoryFilters?: Record<string, unknown>
+  linkedTimelineFilters?: Record<string, unknown>
   items?: Array<Record<string, unknown>>
   total?: number
 }
@@ -159,9 +184,13 @@ export interface ActionBulkCommandTimelineResponse {
   summary?: SummaryMap
   commandSummary?: SummaryMap
   resultModeSummary?: SummaryMap
+  actionCodeSummary?: SummaryMap
   eventTypeSummary?: SummaryMap
   actionCodeSummary?: SummaryMap
+  selectionSummary?: SummaryMap
+  reexecuteCommandSummary?: SummaryMap
   commandModeSummary?: SummaryMap
+  lineageScopeSummary?: SummaryMap
   lineageSummary?: SummaryMap
   items?: Array<Record<string, unknown>>
   total?: number
@@ -176,9 +205,11 @@ export interface ActionBulkCommandLineageSummaryResponse {
   commandSummary?: SummaryMap
   resultModeSummary?: SummaryMap
   actionCodeSummary?: SummaryMap
+  actionCodeSummary?: SummaryMap
   selectionSummary?: SummaryMap
   reexecuteCommandSummary?: SummaryMap
   commandModeSummary?: SummaryMap
+  lineageScopeSummary?: SummaryMap
   eventTypeSummary?: SummaryMap
   lineageSummary?: SummaryMap
   linkedHistoryFilters?: Record<string, unknown>
@@ -324,8 +355,8 @@ export const actionQueueApi = {
   releaseStaleJobs: async (batchRef?: string): Promise<ActionStaleReleaseResponse> => {
     return postJson<ActionStaleReleaseResponse>('/api/v1/actions/worker/release-stale', { batchRef, operator: 'frontend', limit: 10, reason: 'frontend_release_stale' })
   },
-  getBulkCommandHistory: async (filters?: { batchRef?: string; command?: string; workerId?: string; actionCode?: string; resultMode?: string; rootBulkCommandId?: string; reexecuteOf?: string; parentBulkCommandId?: string; hasChildren?: string; lineageDepth?: number; selection?: string; reexecuteCommand?: string; commandMode?: string; sourceBulkCommandId?: string; offset?: number; limit?: number }): Promise<ActionBulkCommandHistoryResponse> => {
-    return fetchJson<ActionBulkCommandHistoryResponse>(withQuery('/api/v1/actions/worker/bulk-results', { batchRef: filters?.batchRef, command: filters?.command, workerId: filters?.workerId, actionCode: filters?.actionCode, resultMode: filters?.resultMode, rootBulkCommandId: filters?.rootBulkCommandId, reexecuteOf: filters?.reexecuteOf, parentBulkCommandId: filters?.parentBulkCommandId, hasChildren: filters?.hasChildren, lineageDepth: filters?.lineageDepth, selection: filters?.selection, reexecuteCommand: filters?.reexecuteCommand, commandMode: filters?.commandMode, sourceBulkCommandId: filters?.sourceBulkCommandId, offset: filters?.offset, limit: filters?.limit ?? 10 }))
+  getBulkCommandHistory: async (filters?: { batchRef?: string; command?: string; workerId?: string; actionCode?: string; resultMode?: string; rootBulkCommandId?: string; reexecuteOf?: string; parentBulkCommandId?: string; hasChildren?: string; lineageDepth?: number; selection?: string; reexecuteCommand?: string; commandMode?: string; sourceBulkCommandId?: string; lineageScope?: string; offset?: number; limit?: number }): Promise<ActionBulkCommandHistoryResponse> => {
+    return fetchJson<ActionBulkCommandHistoryResponse>(withQuery('/api/v1/actions/worker/bulk-results', { batchRef: filters?.batchRef, command: filters?.command, workerId: filters?.workerId, actionCode: filters?.actionCode, resultMode: filters?.resultMode, rootBulkCommandId: filters?.rootBulkCommandId, reexecuteOf: filters?.reexecuteOf, parentBulkCommandId: filters?.parentBulkCommandId, hasChildren: filters?.hasChildren, lineageDepth: filters?.lineageDepth, selection: filters?.selection, reexecuteCommand: filters?.reexecuteCommand, commandMode: filters?.commandMode, sourceBulkCommandId: filters?.sourceBulkCommandId, lineageScope: filters?.lineageScope, offset: filters?.offset, limit: filters?.limit ?? 10 }))
   },
   getBulkCommandDetail: async (bulkCommandId: string): Promise<ActionBulkCommandDetailResponse> => {
     return fetchJson<ActionBulkCommandDetailResponse>(`/api/v1/actions/worker/bulk-results/${bulkCommandId}`)
@@ -333,11 +364,11 @@ export const actionQueueApi = {
   getBulkCommandRelated: async (bulkCommandId: string): Promise<ActionBulkCommandRelatedResponse> => {
     return fetchJson<ActionBulkCommandRelatedResponse>(withQuery(`/api/v1/actions/worker/bulk-results/${bulkCommandId}/related`, { limit: 20 }))
   },
-  getBulkCommandTimeline: async (bulkCommandId: string, filters?: { resultMode?: string; eventType?: string; command?: string; actionCode?: string; lineageDepth?: number; commandMode?: string; sourceBulkCommandId?: string; limit?: number }): Promise<ActionBulkCommandTimelineResponse> => {
-    return fetchJson<ActionBulkCommandTimelineResponse>(withQuery(`/api/v1/actions/worker/bulk-results/${bulkCommandId}/timeline`, { resultMode: filters?.resultMode, eventType: filters?.eventType, command: filters?.command, actionCode: filters?.actionCode, lineageDepth: filters?.lineageDepth, commandMode: filters?.commandMode, sourceBulkCommandId: filters?.sourceBulkCommandId, limit: filters?.limit ?? 20 }))
+  getBulkCommandTimeline: async (bulkCommandId: string, filters?: { resultMode?: string; eventType?: string; command?: string; actionCode?: string; lineageDepth?: number; commandMode?: string; sourceBulkCommandId?: string; lineageScope?: string; selection?: string; reexecuteCommand?: string; limit?: number }): Promise<ActionBulkCommandTimelineResponse> => {
+    return fetchJson<ActionBulkCommandTimelineResponse>(withQuery(`/api/v1/actions/worker/bulk-results/${bulkCommandId}/timeline`, { resultMode: filters?.resultMode, eventType: filters?.eventType, command: filters?.command, actionCode: filters?.actionCode, lineageDepth: filters?.lineageDepth, commandMode: filters?.commandMode, sourceBulkCommandId: filters?.sourceBulkCommandId, lineageScope: filters?.lineageScope, selection: filters?.selection, reexecuteCommand: filters?.reexecuteCommand, limit: filters?.limit ?? 20 }))
   },
-  getBulkCommandLineageSummary: async (bulkCommandId: string, filters?: { eventType?: string; actionCode?: string; lineageDepth?: number; commandMode?: string; sourceBulkCommandId?: string; selection?: string; reexecuteCommand?: string; limit?: number }): Promise<ActionBulkCommandLineageSummaryResponse> => {
-    return fetchJson<ActionBulkCommandLineageSummaryResponse>(withQuery(`/api/v1/actions/worker/bulk-results/${bulkCommandId}/lineage-summary`, { eventType: filters?.eventType, actionCode: filters?.actionCode, lineageDepth: filters?.lineageDepth, commandMode: filters?.commandMode, sourceBulkCommandId: filters?.sourceBulkCommandId, selection: filters?.selection, reexecuteCommand: filters?.reexecuteCommand, limit: filters?.limit ?? 20 }))
+  getBulkCommandLineageSummary: async (bulkCommandId: string, filters?: { resultMode?: string; eventType?: string; command?: string; actionCode?: string; lineageDepth?: number; commandMode?: string; sourceBulkCommandId?: string; lineageScope?: string; selection?: string; reexecuteCommand?: string; limit?: number }): Promise<ActionBulkCommandLineageSummaryResponse> => {
+    return fetchJson<ActionBulkCommandLineageSummaryResponse>(withQuery(`/api/v1/actions/worker/bulk-results/${bulkCommandId}/lineage-summary`, { resultMode: filters?.resultMode, eventType: filters?.eventType, command: filters?.command, actionCode: filters?.actionCode, lineageDepth: filters?.lineageDepth, commandMode: filters?.commandMode, sourceBulkCommandId: filters?.sourceBulkCommandId, lineageScope: filters?.lineageScope, selection: filters?.selection, reexecuteCommand: filters?.reexecuteCommand, limit: filters?.limit ?? 20 }))
   },
   reexecuteBulkCommand: async (bulkCommandId: string, options?: { selection?: string; command?: string; workerId?: string; reason?: string; note?: string; externalRef?: string }): Promise<ActionBulkCommandResponse> => {
     return postJson<ActionBulkCommandResponse>(`/api/v1/actions/worker/bulk-results/${bulkCommandId}/re-execute`, {
